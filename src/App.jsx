@@ -90,6 +90,9 @@ export default function App() {
     try { return localStorage.getItem('fi_dark') === '1'; } catch { return false; }
   });
   const [themeClicks, setThemeClicks] = useState(0);
+  const [childMode, setChildMode] = useState(() => {
+    try { return sessionStorage.getItem('fi_child') === '1'; } catch { return false; }
+  });
   const [sessionCompleted, setSessionCompleted] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem('fi_completed') || '{}'); } catch { return {}; }
   });
@@ -275,7 +278,7 @@ export default function App() {
     else { finalizeCurrentTask(); setScreen("select"); setTask(null); setPendingBranch(null); }
   };
 
-  const send = useCallback(() => {
+  const send = useCallback(async () => {
     if (sending || !input.trim()) return;
     const txt = input.trim();
     setInput(""); setSending(true);
@@ -295,7 +298,7 @@ export default function App() {
       fbIdx,
       streak,
     };
-    const { reply, newState, resultType } = processUserMessage(txt, task, engineState);
+    const { reply, newState, resultType } = await processUserMessage(txt, task, engineState);
     const delay = resultType === "found" ? CONFIG.delay_ms.found : CONFIG.delay_ms.other;
 
     setTimeout(() => {
@@ -350,58 +353,90 @@ export default function App() {
   const dm = darkMode;
 
   /* ─── SCREEN: SELECT ─── */
-  if (screen === "select") return (
-    <div className={`min-h-[100dvh] px-4 py-5 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#1a1a2e] text-[#E0E0E0]' : 'bg-[#FAF9F6]'}`}>
-      <style>{`@keyframes blink{0%,80%{opacity:.2}40%{opacity:1}}`}</style>
-      <div className="max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto">
-        {/* Parent-focused Header */}
-        <div className="mb-6">
-          <h1 className={`font-['Playfair_Display',Georgia,serif] text-[24px] md:text-[32px] leading-tight mb-2 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
-            Найди несколько решений 🧠
+  if (screen === "select") {
+    /* ── PARENT HANDOFF SCREEN ── */
+    if (!childMode) return (
+      <div className={`min-h-[100dvh] flex flex-col items-center justify-center px-6 py-10 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#1a1a2e] text-[#E0E0E0]' : 'bg-[#FAF9F6]'}`}>
+        <style>{`@keyframes blink{0%,80%{opacity:.2}40%{opacity:1}}`}</style>
+        <div className="max-w-[420px] w-full">
+          <h1 className={`font-['Playfair_Display',Georgia,serif] text-[26px] md:text-[32px] leading-tight mb-3 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
+            Формула Интеллекта
           </h1>
-          <p className="text-[14px] text-gray-600 mb-4 leading-relaxed max-w-[550px]">
-            Предложите ребёнку 4 нестандартные задачи. Вы удивитесь, как быстро он научится находить выход там, где другие заходят в тупик.
+          <p className={`text-[15px] leading-relaxed mb-6 ${dm ? 'text-[#B0B0C0]' : 'text-[#4A4A4A]'}`}>
+            4 нестандартные задачи на изобретательное мышление — для детей 8–12 лет. Каждая задача учит видеть противоречие и находить несколько решений с помощью того, что уже есть под рукой.
           </p>
 
-          <div className="flex items-center gap-3 py-2 px-4 bg-green-50 rounded-xl border border-green-100 inline-flex shadow-sm">
-            <span className="text-xl">✨</span>
-            <span className="text-[13px] font-bold text-green-800 uppercase tracking-wide">Готовы к «Вау-эффекту»? Передайте телефон ребёнку.</span>
+          <div className={`rounded-2xl p-4 mb-6 ${dm ? 'bg-[#16213e]' : 'bg-white'} border ${dm ? 'border-white/10' : 'border-gray-100'} shadow-sm`}>
+            <p className="text-[13px] font-bold text-gray-500 uppercase tracking-wider mb-3">Как это работает:</p>
+            <div className="space-y-2 text-[14px] text-gray-600">
+              <div className="flex gap-2"><span>1.</span><span>Ребёнок читает задачу и предлагает решения в чате</span></div>
+              <div className="flex gap-2"><span>2.</span><span>Бот задаёт наводящие вопросы — не даёт готовых ответов</span></div>
+              <div className="flex gap-2"><span>3.</span><span>В конце вы видите аналитику и сколько решений нашёл ребёнок</span></div>
+            </div>
           </div>
-        </div>
 
-        {/* Child-focused Intro */}
-        <div className={`rounded-2xl p-4 mb-6 flex gap-3 items-start ${dm ? 'bg-amber-900/20' : 'bg-amber-50'} border ${dm ? 'border-amber-700/30' : 'border-amber-100'} shadow-sm`}>
-          <span className="text-3xl cursor-pointer select-none active:scale-95 transition-transform"
-            title="Для учителя"
-            onClick={handleAdminClick}>{CONFIG.character.avatar}</span>
-          <div>
-            <div className="text-[12px] font-bold text-amber-600 mb-0.5 uppercase tracking-wider">{CONFIG.character.name}</div>
-            <div className="text-[16px] text-gray-800 leading-snug"
-              dangerouslySetInnerHTML={{ __html: 'Привет! В каждой задаче спрятана идея. Ты найдёшь её, если внимательно посмотришь на предметы вокруг. В этих задачах нет «правильных» ответов — только твои <b>находки</b>. Выбирай любое испытание и давай <b>разберёмся</b> вместе! 🌟' }} />
-            <p className="text-[13px] text-gray-500 mt-2 italic">Что ты заметишь первым?</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {TASKS.map((t) => {
-            const completed = sessionCompleted[t.id];
-            return (
-              <div key={t.id} onClick={() => selectTask(t)}
-                role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && selectTask(t)}
-                className={`rounded-2xl p-4 cursor-pointer border-2 transition-all duration-200 shadow-sm outline-none focus:border-[#2D6A4F] ${dm ? 'bg-[#16213e]' : 'bg-white'} ${completed ? 'border-[#2D6A4F]/30 opacity-60' : `border-transparent hover:border-[#2D6A4F] hover:-translate-y-0.5`}`}>
-                <div className="mb-3 relative">
-                  <TaskImage task={t} size="small" />
-                  {completed && <div className="absolute top-1 right-1 bg-[#2D6A4F] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✓</div>}
-                </div>
-                <div className="font-bold text-[15px] mb-1 text-[#1B1B1B]">{t.title}</div>
-                <div className="text-[13px] text-gray-500 leading-snug">{completed ? 'Решено ✔' : t.teaser}</div>
-              </div>
-            );
-          })}
+          <button
+            onClick={() => {
+              try { sessionStorage.setItem('fi_child', '1'); } catch { }
+              setChildMode(true);
+            }}
+            className="w-full bg-[#2D6A4F] text-white border-none rounded-2xl py-4 px-6 text-[17px] font-bold cursor-pointer hover:bg-[#24533e] transition-colors shadow-md mb-3">
+            Передать телефон ребёнку →
+          </button>
+          <p className="text-center text-[12px] text-gray-400">Нажмите и передайте телефон — дальше бот работает сам</p>
         </div>
       </div>
-    </div>
-  );
+    );
+
+    /* ── CHILD TASK SELECT SCREEN ── */
+    return (
+      <div className={`min-h-[100dvh] px-4 py-5 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#1a1a2e] text-[#E0E0E0]' : 'bg-[#FAF9F6]'}`}>
+        <div className="max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto">
+
+          {/* Small "back to parent" link */}
+          <div className="flex justify-end mb-3">
+            <button onClick={() => {
+              try { sessionStorage.removeItem('fi_child'); } catch { }
+              setChildMode(false);
+            }} className="text-[12px] text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer underline">
+              👋 Для родителя
+            </button>
+          </div>
+
+          {/* Идейка greeting */}
+          <div className={`rounded-2xl p-4 mb-6 flex gap-3 items-start ${dm ? 'bg-amber-900/20' : 'bg-amber-50'} border ${dm ? 'border-amber-700/30' : 'border-amber-100'} shadow-sm`}>
+            <span className="text-3xl cursor-pointer select-none active:scale-95 transition-transform"
+              title="Для учителя"
+              onClick={handleAdminClick}>{CONFIG.character.avatar}</span>
+            <div>
+              <div className="text-[12px] font-bold text-amber-600 mb-0.5 uppercase tracking-wider">{CONFIG.character.name}</div>
+              <div className="text-[16px] text-gray-800 leading-snug">
+                Привет! Выбирай любую задачу. В каждой — своя загадка: что-то мешает, и нужно придумать хитрое решение. Подсказки будут, если застрянешь. <strong>Готов?</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {TASKS.map((t) => {
+              const completed = sessionCompleted[t.id];
+              return (
+                <div key={t.id} onClick={() => selectTask(t)}
+                  role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && selectTask(t)}
+                  className={`rounded-2xl p-4 cursor-pointer border-2 transition-all duration-200 shadow-sm outline-none focus:border-[#2D6A4F] ${dm ? 'bg-[#16213e]' : 'bg-white'} ${completed ? 'border-[#2D6A4F]/30 opacity-60' : `border-transparent hover:border-[#2D6A4F] hover:-translate-y-0.5`}`}>
+                  <div className="mb-3 relative">
+                    <TaskImage task={t} size="small" />
+                    {completed && <div className="absolute top-1 right-1 bg-[#2D6A4F] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✓</div>}
+                  </div>
+                  <div className={`font-bold text-[15px] mb-1 ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>{t.title}</div>
+                  <div className="text-[13px] text-gray-500 leading-snug">{completed ? 'Решено ✔' : t.teaser}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /* ─── SCREEN: SOLVE ─── */
   if (screen === "solve") return (
@@ -585,19 +620,17 @@ export default function App() {
     </div>
   );
 
-  /* ─── SCREEN: RESULT (ОТЧЁТ ДЛЯ РОДИТЕЛЯ) ─── */
+  /* ─── SCREEN: RESULT ─── */
   const currentTaskStats = taskStats[task?.id];
   const currentTaskTimeMs = currentTaskStats?.timeMs || 0;
   const timeStr = formatTime(currentTaskTimeMs);
 
   const getTeacherComment = (foundCount, totalCount) => {
-    if (foundCount === totalCount) return `Ваш ребёнок нашёл все ${totalCount} решений. Это говорит о гибком нестандартном мышлении: он не остановился на первой идее и искал разные пути. Именно это и есть база для изобретательского мышления.`;
-    if (foundCount >= 2) return `Найдено ${foundCount} из ${totalCount} решений — отличный результат! Ребёнок быстро уловил логику и нашёл несколько подходов к задаче. Это показывает способность мыслить в разных направлениях.`;
-    if (foundCount === 1) return `Первый шаг сделан! Найти хотя бы одно решение открытой задачи — это уже навык, который не тренируется в обычной школе. У ребёнка есть хорошая база для развития сильного мышления.`;
-    return `Открытые задачи непривычны: в них нет единственно верного ответа. Это нормально, если с первого раза трудно. Главное — ребёнок попробовал думать нестандартно, а это уже ценный опыт.`;
+    if (foundCount === totalCount) return `Ваш ребёнок нашёл все ${totalCount} решения — это редкий результат. Он не остановился на первой идее, а последовательно искал разные подходы. Именно так работает изобретательское мышление: не одно «правильное» решение, а несколько рабочих.`;
+    if (foundCount >= 2) return `${foundCount} из ${totalCount} решений — сильный результат. Ребёнок смог переключаться между разными подходами к одной задаче. Это ключевой навык ТРИЗ: видеть задачу с нескольких сторон.`;
+    if (foundCount === 1) return `Первое решение найдено. Для открытой задачи — это уже хороший старт: нет единственно верного ответа, и ребёнок это понял. Остальные решения можно разобрать вместе, нажав «Показать».`;
+    return `Открытые задачи непривычны — в них нет «правильного» ответа в учебнике. Попробуйте разобрать решения вместе: нажмите «Показать» рядом с каждым и обсудите, почему это работает.`;
   };
-
-
 
   const finalCtaUrl = `https://t.me/${CONFIG.cta_telegram}?text=${encodeURIComponent(CONFIG.cta_message)}`;
 
@@ -605,151 +638,147 @@ export default function App() {
     <div className={`min-h-[100dvh] px-4 py-5 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#1a1a2e] text-[#E0E0E0]' : 'bg-[#FAF9F6]'}`}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;700&display=swap');`}</style>
       <div className="max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto">
-        <h1 className={`font-['Playfair_Display',Georgia,serif] text-2xl md:text-3xl mb-5 text-center ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
-          Как ваш ребёнок мыслит 🧠
-        </h1>
 
-        {/* Аналитика */}
-        <div className="bg-white rounded-[16px] p-5 shadow-sm border border-gray-100 mb-4">
-          <div className="grid grid-cols-3 gap-3 text-center mb-5">
-            <div className="bg-[#2D6A4F]/5 rounded-xl p-3">
-              <div className="text-[20px] font-bold text-[#2D6A4F] mb-1">{found.length}/{total}</div>
-              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Решений</div>
-            </div>
-            <div className="bg-[#2D6A4F]/5 rounded-xl p-3">
-              <div className="text-[16px] font-bold text-[#2D6A4F] mb-1 mt-[2px]">{timeStr}</div>
-              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mt-[2px]">Время</div>
-            </div>
-            <div className="bg-[#2D6A4F]/5 rounded-xl p-3">
-              <div className="text-[20px] font-bold text-[#2D6A4F] mb-1">{totalMessages}</div>
-              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Попыток</div>
-            </div>
+        {/* ── ДЛЯ РЕБЁНКА ── */}
+        <div className="mb-8">
+          <div className="text-center mb-5">
+            <div className="text-[48px] mb-2">{found.length === total ? "🏆" : found.length >= 2 ? "🌟" : "👍"}</div>
+            <h1 className={`font-['Playfair_Display',Georgia,serif] text-[24px] md:text-[28px] leading-tight mb-1 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
+              {found.length === total ? "Все решения найдены!" : found.length >= 2 ? `Найдено ${found.length} решения!` : found.length === 1 ? "Одно решение найдено!" : "Задача пройдена!"}
+            </h1>
+            <p className={`text-[14px] ${dm ? 'text-[#B0B0C0]' : 'text-gray-500'}`}>Задача «{task.title}»</p>
           </div>
 
-          <h3 className="font-bold text-[#1B1B1B] text-[16px] mb-2 flex items-center gap-2">
-            <span className="text-xl">👩‍🏫</span> Комментарий педагога:
-          </h3>
-          <p className="text-[14px] leading-relaxed text-[#4A4A4A] italic bg-gray-50 p-4 rounded-xl border border-gray-100">
-            «{getTeacherComment(found.length, total)}»
-          </p>
-        </div>
-
-        {/* CTA — right after analytics */}
-        <a href={finalCtaUrl} className="block no-underline mb-2" onClick={() => trackEvent('cta_clicked', { task_id: task.id, source: 'result_screen' })}>
-          <button className="w-full bg-[#E57A44] text-white border-none rounded-[14px] py-4 px-6 text-[17px] font-bold cursor-pointer font-inherit hover:bg-[#d66a36] transition-colors shadow-md">
-            ✈️ {CONFIG.cta_text}
-          </button>
-        </a>
-        <p className="text-center text-[12px] text-gray-500 mt-0 mb-8">{CONFIG.cta_subtitle}</p>
-
-        {/* Compact navigation buttons */}
-        <div className="flex gap-2 mb-5">
-          {found.length < total && (
-            <button onClick={() => { setTaskStartTime(Date.now()); setScreen("solve"); }}
-              className="flex-1 bg-white border border-gray-300 text-gray-600 rounded-xl py-2 px-3 text-[13px] font-medium cursor-pointer hover:bg-gray-50 transition-colors">
-              ⬅️ Дорешать
+          {/* Навигация */}
+          <div className="flex gap-2 mb-5">
+            {found.length < total && (
+              <button onClick={() => { setTaskStartTime(Date.now()); setScreen("solve"); }}
+                className={`flex-1 border rounded-xl py-2.5 px-3 text-[14px] font-medium cursor-pointer transition-colors ${dm ? 'bg-[#16213e] border-white/10 text-[#E0E0E0] hover:bg-white/5' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+                ⬅️ Дорешать
+              </button>
+            )}
+            <button onClick={() => { setScreen("select"); setTask(null); }}
+              className={`${found.length < total ? "flex-1" : "w-full"} rounded-xl py-2.5 px-3 text-[14px] font-medium cursor-pointer transition-colors border ${dm ? 'bg-[#2D6A4F]/20 border-[#2D6A4F]/30 text-[#52a880] hover:bg-[#2D6A4F]/30' : 'bg-white border-[#2D6A4F]/30 text-[#2D6A4F] hover:bg-[#2D6A4F]/5'}`}>
+              🔄 Другая задача
             </button>
-          )}
-          <button onClick={() => { setScreen("select"); setTask(null); }}
-            className={`${found.length < total ? "flex-1" : "w-full"} bg-white border border-[#2D6A4F]/30 text-[#2D6A4F] rounded-xl py-2 px-3 text-[13px] font-medium cursor-pointer hover:bg-[#2D6A4F]/5 transition-colors`}>
-            🔄 Другая задача
-          </button>
-        </div>
-
-        {/* Статистика сессии — накопительная */}
-        {Object.keys(taskStats).length > 0 && (
-          <div className="bg-white rounded-[16px] p-4 shadow-sm border border-gray-100 mb-4">
-            <h3 className="font-bold text-[#1B1B1B] text-[15px] mb-3 flex items-center gap-2">
-              <span className="text-lg">📊</span> Статистика сессии
-            </h3>
-            {(() => {
-              const entries = Object.entries(taskStats);
-              const totalTimeAll = entries.reduce((s, [, v]) => s + v.timeMs, 0);
-              const avgTime = entries.length > 0 ? totalTimeAll / entries.length : 0;
-              return (
-                <>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="bg-[#2D6A4F]/5 rounded-lg p-2.5 text-center">
-                      <div className="text-[15px] font-bold text-[#2D6A4F]">{formatTime(totalTimeAll)}</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Всего времени</div>
-                    </div>
-                    <div className="bg-[#2D6A4F]/5 rounded-lg p-2.5 text-center">
-                      <div className="text-[15px] font-bold text-[#2D6A4F]">{formatTime(Math.round(avgTime))}</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Среднее / задачу</div>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    {entries.map(([id, s]) => (
-                      <div key={id} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] ${id === task?.id ? 'bg-[#2D6A4F]/10 border border-[#2D6A4F]/20' : 'bg-gray-50'}`}>
-                        <span className="text-base">{s.icon}</span>
-                        <span className={`flex-1 font-medium truncate ${id === task?.id ? 'text-[#2D6A4F]' : 'text-[#1B1B1B]'}`}>{s.title}</span>
-                        <span className="text-[12px] text-gray-500 shrink-0">{s.found}/{s.total}</span>
-                        <span className="text-[12px] text-gray-400 shrink-0 min-w-[60px] text-right">{formatTime(s.timeMs)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              );
-            })()}
           </div>
-        )}
 
-        {/* Какие навыки тренировались (Educational Block) */}
-        <div className="bg-[#2D6A4F]/5 border border-[#2D6A4F]/20 rounded-[16px] p-4 shadow-sm mb-4">
-          <h3 className="font-bold text-[#1B1B1B] text-[16px] mb-2 text-center">🔬 Чему учился ребёнок:</h3>
-          <ul className="text-[13px] leading-snug text-[#4A4A4A] space-y-2 m-0 p-0 list-none">
-            <li className="flex gap-2"><span>🌐</span> <strong>Находить несколько решений</strong> там, где кажется, что ответ один.</li>
-            <li className="flex gap-2"><span>⚡</span> <strong>Видеть главную проблему</strong> — не симптомы, а корень.</li>
-            <li className="flex gap-2"><span>💎</span> <strong>Придумывать решения без ресурсов</strong> — когда всё работает само.</li>
-          </ul>
-        </div>
-
-        {/* Поделиться результатом */}
-        <button onClick={() => {
-          trackEvent('share_clicked', { task_id: task.id });
-          const shareText = `Мой ребёнок прошёл ТРИЗ-тренажёр и нашёл ${found.length}/${total} решений задачи «${task.title}»! Попробуйте: https://formula-intellect.vercel.app`;
-          if (navigator.share) {
-            navigator.share({ title: 'Формула Интеллекта', text: shareText }).catch(() => { });
-          } else if (navigator.clipboard) {
-            navigator.clipboard.writeText(shareText).then(() => alert('Скопировано! Отправьте друзьям 💌'));
-          }
-        }}
-          className="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-[13px] text-gray-600 font-medium cursor-pointer hover:bg-gray-50 transition-colors mb-4 flex items-center justify-center gap-2">
-          📤 Поделиться результатом
-        </button>
-
-        {/* Что мы решали — solutions list - Compacted */}
-        <div className="mb-6">
-          <h3 className="font-bold text-[#1B1B1B] text-[15px] mb-2 text-center text-gray-500 uppercase tracking-wider">Что мы решали:</h3>
-          <p className="text-center text-[13px] text-[#2D6A4F] italic mb-4 px-2">{task.final_phrase}</p>
-
-          <div className="grid grid-cols-1 gap-2 opacity-90">
+          {/* Что было решено */}
+          <p className={`text-center text-[13px] italic mb-3 px-2 ${dm ? 'text-[#52a880]' : 'text-[#2D6A4F]'}`}>{task.final_phrase}</p>
+          <div className="grid grid-cols-1 gap-2">
             {Object.entries(task.branches).map(([id, b]) => {
               const isFound = found.includes(id);
               const isRevealed = revealed[id];
               return (
-                <div key={id} className={`bg-white rounded-xl px-4 py-3 border ${isFound ? "border-[#2D6A4F] bg-[#2D6A4F]/5" : "border-gray-200"}`}>
+                <div key={id} className={`rounded-xl px-4 py-3 border ${isFound
+                  ? dm ? "border-[#2D6A4F]/50 bg-[#2D6A4F]/10" : "border-[#2D6A4F] bg-[#2D6A4F]/5"
+                  : dm ? "border-white/10 bg-[#16213e]" : "border-gray-200 bg-white"}`}>
                   <div className="flex justify-between items-center gap-2">
-                    <span className={`font-bold text-[13px] ${isFound ? "text-[#2D6A4F]" : "text-gray-400"}`}>
+                    <span className={`font-bold text-[13px] ${isFound ? "text-[#2D6A4F]" : dm ? "text-gray-500" : "text-gray-400"}`}>
                       {isFound ? "✓ " : ""}{b.principle_child}
                     </span>
                     {!isFound && !isRevealed && (
                       <button onClick={() => setRevealed((p) => ({ ...p, [id]: true }))}
-                        className="bg-transparent border border-gray-300 rounded px-2 py-0.5 text-[11px] text-gray-500 cursor-pointer hover:bg-gray-50">
+                        className={`bg-transparent border rounded px-2 py-0.5 text-[11px] cursor-pointer ${dm ? 'border-white/20 text-gray-400 hover:bg-white/5' : 'border-gray-300 text-gray-500 hover:bg-gray-50'}`}>
                         Показать
                       </button>
                     )}
                   </div>
                   {(isFound || isRevealed) && (
-                    <div className="mt-1 text-gray-600">
-                      <p className="text-[12px] leading-tight m-0">{b.reactions_found[0]}</p>
-                    </div>
+                    <p className={`text-[12px] leading-snug mt-1 m-0 ${dm ? 'text-[#B0B0C0]' : 'text-gray-600'}`}>
+                      {b.reaction_found_detailed || b.echo_word}
+                    </p>
                   )}
                 </div>
               );
             })}
           </div>
         </div>
+
+        {/* ── РАЗДЕЛИТЕЛЬ ── */}
+        <div className={`flex items-center gap-3 mb-6 ${dm ? 'text-gray-600' : 'text-gray-300'}`}>
+          <div className="flex-1 h-px bg-current opacity-30" />
+          <span className={`text-[11px] uppercase tracking-widest font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`}>Для родителя</span>
+          <div className="flex-1 h-px bg-current opacity-30" />
+        </div>
+
+        {/* ── ДЛЯ РОДИТЕЛЯ ── */}
+
+        {/* Аналитика */}
+        <div className={`rounded-[16px] p-5 shadow-sm border mb-4 ${dm ? 'bg-[#16213e] border-white/10' : 'bg-white border-gray-100'}`}>
+          <div className="grid grid-cols-3 gap-3 text-center mb-4">
+            <div className={`rounded-xl p-3 ${dm ? 'bg-[#2D6A4F]/20' : 'bg-[#2D6A4F]/5'}`}>
+              <div className="text-[20px] font-bold text-[#2D6A4F] mb-1">{found.length}/{total}</div>
+              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Решений</div>
+            </div>
+            <div className={`rounded-xl p-3 ${dm ? 'bg-[#2D6A4F]/20' : 'bg-[#2D6A4F]/5'}`}>
+              <div className="text-[16px] font-bold text-[#2D6A4F] mb-1 mt-[2px]">{timeStr}</div>
+              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mt-[2px]">Время</div>
+            </div>
+            <div className={`rounded-xl p-3 ${dm ? 'bg-[#2D6A4F]/20' : 'bg-[#2D6A4F]/5'}`}>
+              <div className="text-[20px] font-bold text-[#2D6A4F] mb-1">{totalMessages}</div>
+              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Попыток</div>
+            </div>
+          </div>
+          <h3 className={`font-bold text-[16px] mb-2 flex items-center gap-2 ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>
+            <span className="text-xl">👩‍🏫</span> Комментарий педагога:
+          </h3>
+          <p className={`text-[14px] leading-relaxed italic rounded-xl p-4 border ${dm ? 'text-[#B0B0C0] bg-white/5 border-white/10' : 'text-[#4A4A4A] bg-gray-50 border-gray-100'}`}>
+            «{getTeacherComment(found.length, total)}»
+          </p>
+        </div>
+
+        {/* Статистика сессии */}
+        {Object.keys(taskStats).length > 1 && (
+          <div className={`rounded-[16px] p-4 shadow-sm border mb-4 ${dm ? 'bg-[#16213e] border-white/10' : 'bg-white border-gray-100'}`}>
+            <h3 className={`font-bold text-[15px] mb-3 flex items-center gap-2 ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>
+              <span className="text-lg">📊</span> Статистика сессии
+            </h3>
+            {(() => {
+              const entries = Object.entries(taskStats);
+              const totalTimeAll = entries.reduce((s, [, v]) => s + v.timeMs, 0);
+              return (
+                <div className="space-y-1.5">
+                  {entries.map(([id, s]) => (
+                    <div key={id} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] ${id === task?.id
+                      ? dm ? 'bg-[#2D6A4F]/20 border border-[#2D6A4F]/30' : 'bg-[#2D6A4F]/10 border border-[#2D6A4F]/20'
+                      : dm ? 'bg-white/5' : 'bg-gray-50'}`}>
+                      <span className="text-base">{s.icon}</span>
+                      <span className={`flex-1 font-medium truncate ${id === task?.id ? 'text-[#2D6A4F]' : dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>{s.title}</span>
+                      <span className="text-[12px] text-gray-500 shrink-0">{s.found}/{s.total}</span>
+                      <span className="text-[12px] text-gray-400 shrink-0 min-w-[60px] text-right">{formatTime(s.timeMs)}</span>
+                    </div>
+                  ))}
+                  <div className={`text-[12px] text-right pt-1 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
+                    Всего: {formatTime(totalTimeAll)}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* CTA */}
+        <a href={finalCtaUrl} className="block no-underline mb-2" onClick={() => trackEvent('cta_clicked', { task_id: task.id, source: 'result_screen' })}>
+          <button className="w-full bg-[#E57A44] text-white border-none rounded-[14px] py-4 px-6 text-[17px] font-bold cursor-pointer font-inherit hover:bg-[#d66a36] transition-colors shadow-md">
+            ✈️ {CONFIG.cta_text}
+          </button>
+        </a>
+        <p className="text-center text-[12px] text-gray-400 mt-1 mb-6">{CONFIG.cta_subtitle}</p>
+
+        {/* Поделиться */}
+        <button onClick={() => {
+          trackEvent('share_clicked', { task_id: task.id });
+          const shareText = `Прошли ТРИЗ-тренажёр «Формула Интеллекта» — задача «${task.title}», найдено ${found.length}/${total} решений. Попробуйте: https://formula-intellect.vercel.app`;
+          if (navigator.share) {
+            navigator.share({ title: 'Формула Интеллекта', text: shareText }).catch(() => { });
+          } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(shareText).then(() => alert('Скопировано! Отправьте друзьям 💌'));
+          }
+        }}
+          className={`w-full border rounded-xl py-2.5 px-4 text-[13px] font-medium cursor-pointer transition-colors mb-8 flex items-center justify-center gap-2 ${dm ? 'bg-transparent border-white/10 text-gray-400 hover:bg-white/5' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+          📤 Поделиться результатом
+        </button>
       </div>
     </div>
   );

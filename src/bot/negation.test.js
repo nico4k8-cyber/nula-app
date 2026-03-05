@@ -29,9 +29,9 @@ describe('Phase 1: Негация — не давать БИНГО на опис
     TASKS.forEach(task => {
         const cases = problemDescriptions[task.id] || [];
         cases.forEach(text => {
-            it(`[${task.id}] "${text.substring(0, 50)}..." → НЕ БИНГО`, () => {
+            it(`[${task.id}] "${text.substring(0, 50)}..." → НЕ БИНГО`, async () => {
                 const state = { ikrPhase: 1, found: [], streak: 0, ikrResources: [] };
-                const { reply, newState, resultType } = processUserMessage(text, task, state);
+                const { reply, newState, resultType } = await processUserMessage(text, task, state);
 
                 expect(reply).not.toContain('БИНГО');
                 expect(newState.ikrPhase).toBe(1.5);
