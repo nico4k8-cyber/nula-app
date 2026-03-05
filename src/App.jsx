@@ -377,8 +377,8 @@ export default function App() {
           <div>
             <div className="text-[12px] font-bold text-amber-600 mb-0.5 uppercase tracking-wider">{CONFIG.character.name}</div>
             <div className="text-[16px] text-gray-800 leading-snug"
-              dangerouslySetInnerHTML={{ __html: 'Привет! Хочешь выдумать то, чего ещё не существует? В этих задачах нет «правильных» ответов — только твои идеи. Выбирай любое испытание, и давай <b>подумаем</b> над решением! 🌟' }} />
-            <p className="text-[13px] text-gray-500 mt-2 italic">Попробуем найти выход?</p>
+              dangerouslySetInnerHTML={{ __html: 'Привет! В каждой задаче спрятана идея. Ты найдёшь её, если внимательно посмотришь на предметы вокруг. В этих задачах нет «правильных» ответов — только твои <b>находки</b>. Выбирай любое испытание и давай <b>разберёмся</b> вместе! 🌟' }} />
+            <p className="text-[13px] text-gray-500 mt-2 italic">Что ты заметишь первым?</p>
           </div>
         </div>
 
