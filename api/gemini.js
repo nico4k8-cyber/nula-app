@@ -61,7 +61,9 @@ STRATEGY:
 - DO NOT reveal the correct solutions directly. Give hints instead.
 - If the user has already found a solution, and mentions it again, return type "already".
 - Keep it child-friendly, use emojis 💡✨🚀.
-- If found, the reply should briefly praise the idea without explicitly naming the TRIZ principle (the engine will add that part).
+- DETAILED FLAG: Mark "detailed": true ONLY if the user explains HOW it works (e.g., "I will use the table as a sled to slide across"). If they just name the object or a simple action (e.g., "use a carpet", "grab a rope"), mark "detailed": false.
+- If found but not detailed, the reply should briefly praise the idea and ask for a detailed step-by-step plan.
+- If found and detailed, the reply should be a warm praise of their clever thinking.
 `;
 
         const result = await model.generateContent(prompt);

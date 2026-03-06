@@ -655,7 +655,9 @@ export async function processUserMessage(txt, task, state) {
     const hasAction = /[а-яА-Я]+(ть|ти|ул|ла|ли|ет|ют|ут|ят|еть|ить|ять)\b/i.test(txt);
     const isStrongSolution = (wordsCount >= 3 && hasAction) || (wordsCount >= 5);
 
-    if (result.type === "found" && !isList && (!result.short || result.detailed)) {
+    const isFullFound = result.type === "found" && (result.detailed || (result.short === false));
+
+    if (isFullFound && !isList) {
       const b = task.branches[result.id];
       const foundCount = state.found.length + 1;
       reply = buildBingoReply(b, foundCount, total, true, state.ikrResources || [], result.reply);
@@ -723,7 +725,7 @@ export async function processUserMessage(txt, task, state) {
       newState.ikrPhase = 1.5;
       newState.streak = 0;
       finalResultType = "problem";
-    } else if (result.type === "found" && (!result.short || result.detailed)) {
+    } else if (result.type === "found" && (result.detailed || result.short === false)) {
       const b = task.branches[result.id];
       const foundCount = state.found.length + 1;
       reply = buildBingoReply(b, foundCount, total, false, state.ikrResources || [], result.reply);
@@ -751,7 +753,7 @@ export async function processUserMessage(txt, task, state) {
     if (result.type === "found") {
       const b = task.branches[result.id];
       const foundCount = state.found.length + 1;
-      if (!result.short || result.detailed) {
+      if (result.detailed || result.short === false) {
         reply = buildBingoReply(b, foundCount, total, false, state.ikrResources || [], result.reply);
         newBranch = result.id;
         newState.ikrPhase = 0;
@@ -876,12 +878,13 @@ export async function processUserMessage(txt, task, state) {
       newState.streak = 0;
 
     } else if (result.type === "found") {
-      if (result.short) {
+      const isDetailed = result.detailed || result.short === false;
+      if (!isDetailed) {
         const isQuestion = txt.includes("?") || /^(почему|как|что|зачем|где|когда|кто)\s/i.test(txt);
         if (isQuestion) {
           reply = `Хороший вопрос! Попробуй сам на него ответить — и это станет твоим решением. Как бы это выглядело?`;
         } else {
-          reply = PICK([
+          reply = result.reply || PICK([
             `${txt.trim()} — отличная идея!\n\nА как именно ты хочешь это применить? Расскажи подробнее.`,
             `О, ${txt.trim()}! Интересно!\n\nРасскажи: что произойдёт, если так сделать?`,
             `${txt.trim()} — хорошее начало!\n\nА что будет дальше? Опиши по шагам.`,
