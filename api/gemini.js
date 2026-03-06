@@ -1,0 +1,82 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+export default async function handler(req, res) {
+    // CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const { text, task, state } = req.body;
+
+    if (!text || !task) {
+        return res.status(400).json({ error: 'text and task are required' });
+    }
+
+    try {
+        const prompt = `
+You are "Идейка", a friendly and encouraging AI assistant for children aged 8-12, teaching them TRIZ (Theory of Inventive Problem Solving) principles.
+
+TASK CONTEXT:
+Title: ${task.title}
+Condition: ${task.condition}
+Branches (Correct Solutions):
+${Object.entries(task.branches).map(([id, b]) => `- ${id}: ${b.name} ("${b.principle_child}"). Hint: ${b.near_miss_hint || ''}`).join('\n')}
+Trap (Common but incorrect/forbidden path): ${task.trap ? task.trap.reaction : 'None'}
+
+CURRENT STATE:
+Already found branches: ${state.found.join(', ') || 'none'}
+Current Phase: ${state.ikrPhase} (0: normal, 1: identifying problem/contradiction, 2: identifying resources, 3: looking for "magic" solution)
+
+USER INPUT:
+"${text}"
+
+Your goal is to classify the user's input and provide a SHORT, ENCOURAGING response in Russian.
+
+OUTPUT FORMAT (JSON):
+{
+  "type": "found" | "near_miss" | "trap" | "give_up" | "fallback" | "problem",
+  "id": "branchId" (if found or near_miss),
+  "reply": "Your response as Идейка in Russian (1-3 sentences)",
+  "detailed": true | false (true if the explanation is sufficiently detailed)
+}
+
+GUIDELINES:
+1. If the user finds a new solution branch, return "found". If it's too short (1-2 words), mark "detailed": false.
+2. If the user mentions something very close to a branch but not quite there, return "near_miss".
+3. if the user hits the trap, return "trap".
+4. If the user says "I don't know" or asks for help, return "give_up".
+5. If the user is describing the problem/contradiction (e.g. "I can't go because it's slippery"), return "problem".
+6. Otherwise, return "fallback".
+7. ALWAYS be extremely friendly, use emojis 💡✨🚀, and keep it child-friendly.
+8. Do NOT use complex TRIZ terms unless they are the "principle_child" names.
+9. If found, the reply should briefly praise the idea.
+`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const responseText = response.text();
+
+        // Extract JSON from the response (sometimes Gemini wraps it in markdown)
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error("Failed to parse Gemini response as JSON");
+        }
+
+        const classification = JSON.parse(jsonMatch[0]);
+        return res.status(200).json(classification);
+    } catch (err) {
+        console.error('Gemini error:', err);
+        return res.status(500).json({ error: 'Gemini classification failed' });
+    }
+}

@@ -10,6 +10,7 @@
         "test": "vitest run"
     },
     "dependencies": {
+        "@google/generative-ai": "^0.24.1",
         "js-confetti": "^0.13.1",
         "react": "^18.2.0",
         "react-dom": "^18.2.0"

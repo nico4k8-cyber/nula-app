@@ -488,20 +488,21 @@ export function recognize(text, task, found = []) {
   return { type: "fallback", long: n.length > 30 };
 }
 
-function buildBingoReply(branch, foundCount, total, isEarlyFind = false, resources = []) {
-  let drawbackText = "";
-  const earlyPrefix = isEarlyFind ? `Невероятно, решение найдено с первого взгляда!\n\n` : "";
+// buildBingoReply keeps the logic for marking found count and using task names
+function buildBingoReply(branch, foundCount, total, isEarlyFind = false, resources = [], aiReply = "") {
+  let earlyPrefix = isEarlyFind ? `Невероятно, решение найдено с первого взгляда!\n\n` : "";
   let resourceLink = "";
   if (resources.length > 0 && branch.echo_word) {
     const echoLower = branch.echo_word.toLowerCase();
     const matchedResource = resources.find(r => r.toLowerCase().includes(echoLower.slice(0, 3)));
     if (matchedResource) {
       resourceLink = `\n\n🔗 Помнишь, ты нашёл **${matchedResource.toUpperCase()}** как ресурс? Именно он помог тебе решить задачу по принципу «${branch.principle_child}»! 🌟`;
-    } else {
-      resourceLink = `\n\nТут отлично сработал ресурс **${branch.echo_word.toUpperCase()}**! Это принцип «${branch.principle_child}».`;
     }
   }
-  return `БИНГО! 🎯\n${earlyPrefix}✨ Принцип: «${branch.principle_child}»!\n\n${PICK(branch.reactions_found)}${resourceLink}\n\n📚 Этот приём называется «${branch.name}». ${drawbackText}\n\nНайдено ${foundCount} из ${total}.`;
+
+  const finalReply = aiReply || PICK(branch.reactions_found);
+
+  return `БИНГО! 🎯\n${earlyPrefix}✨ Принцип: «${branch.principle_child}»!\n\n${finalReply}${resourceLink}\n\n📚 Этот приём называется «${branch.name}».\n\nНайдено ${foundCount} из ${total}.`;
 }
 
 // Map Pinecone response to recognize-compatible result
@@ -570,15 +571,14 @@ function mapPineconeToResult(matches, found) {
   return null;
 }
 
-export async function classifyWithPinecone(text, taskId, found = []) {
-  const res = await fetch('/api/classify', {
+export async function classifyWithGemini(text, task, state) {
+  const res = await fetch('/api/gemini', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, taskId, found })
+    body: JSON.stringify({ text, task, state })
   });
-  if (!res.ok) throw new Error('Pinecone unavailable');
-  const data = await res.json();
-  return mapPineconeToResult(data.matches, found);
+  if (!res.ok) throw new Error('Gemini unavailable');
+  return await res.json();
 }
 
 export async function processUserMessage(txt, task, state) {
@@ -606,23 +606,23 @@ export async function processUserMessage(txt, task, state) {
 
   let result;
   try {
-    const pineconeResult = await classifyWithPinecone(txt, task.id, state.found);
-    result = pineconeResult || recognize(txt, task, state.found);
+    result = await classifyWithGemini(txt, task, state);
   } catch (err) {
-    // Fallback to keyword matching if Pinecone is unavailable
+    console.error('Gemini error, falling back to keywords:', err);
     result = recognize(txt, task, state.found);
   }
-  let reply = "";
+  let reply = result.reply || "";
   let newState = { ...state, fbIdx: state.fbIdx || 0, streak: state.streak || 0 };
   let newBranch = null;
   let finalResultType = result.type;
   const total = Object.keys(task.branches).length;
 
+  // Handle special types immediately if Gemini provided a reply
   if (result.type === "emoji_spam") {
-    return { reply: "Напиши словами! ⌨️", newState, resultType: result.type };
+    return { reply: reply || "Напиши словами! ⌨️", newState, resultType: result.type };
   }
   if (result.type === "not_russian") {
-    return { reply: "Пожалуйста, используй русский язык 🇷🇺", newState, resultType: result.type };
+    return { reply: reply || "Пожалуйста, используй русский язык 🇷🇺", newState, resultType: result.type };
   }
 
   // Trap fires always in phase 0. In other phases, only if message doesn't look like a problem description
@@ -631,7 +631,7 @@ export async function processUserMessage(txt, task, state) {
     (task.problem_markers && countHits(normalize(txt), task.problem_markers) > 0)
   );
   if (result.type === "trap" && !isProblemLike) {
-    const trapReplies = [
+    const defaultTrapReplies = [
       `Ловушка! 🚨\n\n${task.trap.reaction}`,
       `Ой, кажется, мы попали в ловушку... 🛑\n\n${task.trap.reaction}`,
       `Хитрый момент! 🎢\n\n${task.trap.reaction}`,
@@ -641,7 +641,7 @@ export async function processUserMessage(txt, task, state) {
       `Пойман в ловушку! Но настоящий изобретатель учится на ошибках! 🧐\n\n${task.trap.reaction}`,
       `Этот путь ведёт в тупик! Давай найдём другой! 🚧\n\n${task.trap.reaction}`
     ];
-    return { reply: PICK(trapReplies), newState: { ...newState, streak: 0 }, resultType: result.type };
+    return { reply: reply || PICK(defaultTrapReplies), newState: { ...newState, streak: 0 }, resultType: result.type };
   }
 
   if (state.ikrPhase === 2) {
@@ -658,7 +658,7 @@ export async function processUserMessage(txt, task, state) {
     if (result.type === "found" && !isList && (!result.short || result.detailed)) {
       const b = task.branches[result.id];
       const foundCount = state.found.length + 1;
-      reply = buildBingoReply(b, foundCount, total, true, state.ikrResources || []);
+      reply = buildBingoReply(b, foundCount, total, true, state.ikrResources || [], result.reply);
       newBranch = result.id;
       newState.ikrPhase = 0;
       newState.streak = 0;
@@ -719,20 +719,20 @@ export async function processUserMessage(txt, task, state) {
     const isProblemDescription = (hasProblemUnderstanding && hasNegation) || (problemHits >= 2 && !hasConstructiveAction);
 
     if (isProblemDescription || isProblemOnly) {
-      reply = `Точно! 🎯\n\nГлавная загвоздка в том, что ${task.ikr_summary}.\n\nА теперь попробуй соединить это в одно предложение: я ХОЧУ... но МНЕ МЕШАЕТ...\n\nКак это звучит для этой задачи?`;
+      reply = reply || `Точно! 🎯\n\nГлавная загвоздка в том, что ${task.ikr_summary}.\n\nА теперь попробуй соединить это в одно предложение: я ХОЧУ... но МНЕ МЕШАЕТ...\n\nКак это звучит для этой задачи?`;
       newState.ikrPhase = 1.5;
       newState.streak = 0;
       finalResultType = "problem";
     } else if (result.type === "found" && (!result.short || result.detailed)) {
       const b = task.branches[result.id];
       const foundCount = state.found.length + 1;
-      reply = buildBingoReply(b, foundCount, total, false, state.ikrResources || []);
+      reply = buildBingoReply(b, foundCount, total, false, state.ikrResources || [], result.reply);
       newBranch = result.id;
       newState.ikrPhase = 0;
       newState.streak = 0;
     }
     else if (result.type === "near_miss") {
-      reply = PICK([`Горячо! 🔥`, `Ух! 🧗‍♂️`, `Очень близко! ✨`]) + `\n${task.branches[result.id].near_miss_hint}`;
+      reply = reply || (PICK([`Горячо! 🔥`, `Ух! 🧗‍♂️`, `Очень близко! ✨`]) + `\n${task.branches[result.id].near_miss_hint}`);
     } else if (result.type === "already") {
       reply = `Так и есть! Принцип «${task.branches[result.id].principle_child}» уже найден. Давай искать другие пути! 🚀`;
     } else {
@@ -752,20 +752,20 @@ export async function processUserMessage(txt, task, state) {
       const b = task.branches[result.id];
       const foundCount = state.found.length + 1;
       if (!result.short || result.detailed) {
-        reply = buildBingoReply(b, foundCount, total, false, state.ikrResources || []);
+        reply = buildBingoReply(b, foundCount, total, false, state.ikrResources || [], result.reply);
         newBranch = result.id;
         newState.ikrPhase = 0;
         newState.streak = 0;
       } else {
-        reply = `✨ Это звучит как начало отличного плана! А как именно ты хочешь это использовать? Опиши чуть подробнее!`;
+        reply = reply || `✨ Это звучит как начало отличного плана! А как именно ты хочешь это использовать? Опиши чуть подробнее!`;
         newState.pendingBranch = result.id;
         newState.ikrPhase = 0;
         newState.streak = 0;
       }
     } else if (result.type === "near_miss") {
-      reply = `Горячо! 🔥 ${task.branches[result.id].near_miss_hint}`;
+      reply = reply || `Горячо! 🔥 ${task.branches[result.id].near_miss_hint}`;
     } else if (result.type === "trap") {
-      reply = task.trap.reaction;
+      reply = reply || task.trap.reaction;
     } else {
       const hints = task.fallbacks(state.found);
       reply = `Интересно! Но вспомни про **наше волшебство**: когда предмет САМ решает проблему, без лишних усилий.\n\n${hints[0]}`;
@@ -835,7 +835,7 @@ export async function processUserMessage(txt, task, state) {
       } else if (result.type === "found" && result.id === pendingId) {
         // Ребёнок уточнил ту же ветку → БИНГО
         const b = task.branches[pendingId];
-        reply = buildBingoReply(b, state.found.length + 1, total, false, state.ikrResources || []);
+        reply = buildBingoReply(b, state.found.length + 1, total, false, state.ikrResources || [], result.reply);
         newBranch = pendingId;
         newState.pendingBranch = null;
         newState.lastNearMissBranch = null;
@@ -887,7 +887,7 @@ export async function processUserMessage(txt, task, state) {
         newState.lastNearMissBranch = null;
       } else {
         const b = task.branches[result.id];
-        reply = buildBingoReply(b, state.found.length + 1, total, false, state.ikrResources || []);
+        reply = buildBingoReply(b, state.found.length + 1, total, false, state.ikrResources || [], result.reply);
         newBranch = result.id;
         newState.streak = 0;
         newState.fbIdx = 0;
@@ -895,59 +895,64 @@ export async function processUserMessage(txt, task, state) {
       }
 
     } else if (result.type === "near_miss") {
-      reply = `${PICK([`Горячо!`, `Близко!`, `Тепло!`, `Почти!`, `В нужном направлении!`, `Ты на верном пути!`])} 🔥\n${task.branches[result.id].near_miss_hint}`;
+      reply = reply || (`${PICK([`Горячо!`, `Близко!`, `Тепло!`, `Почти!`, `В нужном направлении!`, `Ты на верном пути!`])} 🔥\n${task.branches[result.id].near_miss_hint}`);
       newState.lastNearMissBranch = result.id; // запоминаем контекст
       newState.streak = 0;
 
     } else {
-      // Ничего не распознано — смотрим на контекст
-      const ns = state.streak + 1;
-      newState.streak = ns;
-
-      if (isShortAnswer && lastBranch) {
-        // Ребёнок отвечает одним словом на вопрос бота — просим продолжить мысль
-        const b = task.branches[lastBranch];
-        reply = PICK([
-          `Понял! Теперь скажи полностью: как ты используешь ${b.echo_word}?`,
-          `Хорошо! А теперь расскажи это как план — что делаешь шаг за шагом?`,
-          `Да! Теперь объясни всё предложением: что происходит с ${b.echo_word}?`,
-        ]);
-        // Не сбрасываем lastNearMissBranch — контекст остаётся
-
-      } else if (ns >= 3) {
-        const hints = task.fallbacks(state.found);
-        reply = hints[state.fbIdx];
+      // Ничего не распознано — смотрим на контекст (или используем реплику от Gemini если она есть)
+      if (reply) {
+        // If Gemini gave a reply for fallback/not found, use it
         newState.streak = 0;
-        newState.lastNearMissBranch = null;
-
-      } else if (txt.includes("?")) {
-        reply = PICK([
-          "Хороший вопрос — попробуй сам на него ответить. Это и будет твоя идея!",
-          "Интересно! Преврати этот вопрос в план: что нужно сделать?",
-          "А что если ответить на свой вопрос — и это станет решением?",
-          "Ты задаёшь правильные вопросы! Теперь попробуй ответить — и получишь решение.",
-          "Отличный вопрос! А теперь представь: ты уже знаешь ответ. Какой он?",
-        ]);
-      } else if (ns === 1) {
-        reply = PICK([
-          "Расскажи подробнее — что именно произойдёт, если так сделать?",
-          "Как это связано с задачей? Объясни цепочку.",
-          "А это решает всю проблему или только часть?",
-          "Хм. Как это сработает — что → что → результат?",
-          "Опиши шаги: что делаешь сначала, что потом?",
-          "Попробуй объяснить иначе — что конкретно изменится в ситуации?",
-          "А можешь описать это как план действий? Шаг первый, шаг второй...",
-        ]);
       } else {
-        reply = PICK([
-          "Посмотри на предметы в задаче — каждый что-то умеет. Что из этого поможет?",
-          "Попробуй зайти иначе: не борись с проблемой, а обойди её.",
-          "Что именно мешает прямо сейчас? Что могло бы убрать именно это?",
-          "А если подумать про само свойство предмета — чем оно необычно?",
-          "Подумай: что в задаче можно изменить, убрать или добавить?",
-          "А если представить идеальный результат — что должно произойти само?",
-          "Попробуй посмотреть на задачу глазами каждого участника — кто что видит?",
-        ]);
+        const ns = state.streak + 1;
+        newState.streak = ns;
+
+        if (isShortAnswer && lastBranch) {
+          // Ребёнок отвечает одним словом на вопрос бота — просим продолжить мысль
+          const b = task.branches[lastBranch];
+          reply = PICK([
+            `Понял! Теперь скажи полностью: как ты используешь ${b.echo_word}?`,
+            `Хорошо! А теперь расскажи это как план — что делаешь шаг за шагом?`,
+            `Да! Теперь объясни всё предложением: что происходит с ${b.echo_word}?`,
+          ]);
+          // Не сбрасываем lastNearMissBranch — контекст остаётся
+
+        } else if (ns >= 3) {
+          const hints = task.fallbacks(state.found);
+          reply = hints[state.fbIdx];
+          newState.streak = 0;
+          newState.lastNearMissBranch = null;
+
+        } else if (txt.includes("?")) {
+          reply = PICK([
+            "Хороший вопрос — попробуй сам на него ответить. Это и будет твоя идея!",
+            "Интересно! Преврати этот вопрос в план: что нужно сделать?",
+            "А что если ответить на свой вопрос — и это станет решением?",
+            "Ты задаёшь правильные вопросы! Теперь попробуй ответить — и получишь решение.",
+            "Отличный вопрос! А теперь представь: ты уже знаешь ответ. Какой он?",
+          ]);
+        } else if (ns === 1) {
+          reply = PICK([
+            "Расскажи подробнее — что именно произойдёт, если так сделать?",
+            "Как это связано с задачей? Объясни цепочку.",
+            "А это решает всю проблему или только часть?",
+            "Хм. Как это сработает — что → что → результат?",
+            "Опиши шаги: что делаешь сначала, что потом?",
+            "Попробуй объяснить иначе — что конкретно изменится в ситуации?",
+            "А можешь описать это как план действий? Шаг первый, шаг второй...",
+          ]);
+        } else {
+          reply = PICK([
+            "Посмотри на предметы в задаче — каждый что-то умеет. Что из этого поможет?",
+            "Попробуй зайти иначе: не борись с проблемой, а обойди её.",
+            "Что именно мешает прямо сейчас? Что могло бы убрать именно это?",
+            "А если подумать про само свойство предмета — чем оно необычно?",
+            "Подумай: что в задаче можно изменить, убрать или добавить?",
+            "А если представить идеальный результат — что должно произойти само?",
+            "Попробуй посмотреть на задачу глазами каждого участника — кто что видит?",
+          ]);
+        }
       }
     }
   }
