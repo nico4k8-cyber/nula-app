@@ -36,7 +36,11 @@ Trap (Common but incorrect/forbidden path): ${task.trap ? task.trap.reaction : '
 
 CURRENT STATE:
 Already found branches: ${state.found.join(', ') || 'none'}
-Current Phase: ${state.ikrPhase} (0: normal, 1: identifying problem/contradiction, 2: identifying resources, 3: looking for "magic" solution)
+Current Phase: ${state.ikrPhase}
+- 0: Free exploration.
+- 1: Identifying the problem/contradiction (e.g., "I want X, but Y prevents me").
+- 2: Identifying resources (listing objects in the picture).
+- 3: Looking for the "Ideal Final Result" (magic solution).
 
 USER INPUT:
 "${text}"
@@ -45,22 +49,19 @@ Your goal is to classify the user's input and provide a SHORT, ENCOURAGING respo
 
 OUTPUT FORMAT (JSON):
 {
-  "type": "found" | "near_miss" | "trap" | "give_up" | "fallback" | "problem",
-  "id": "branchId" (if found or near_miss),
-  "reply": "Your response as Идейка in Russian (1-3 sentences)",
+  "type": "found" | "near_miss" | "trap" | "already" | "give_up" | "fallback" | "problem",
+  "id": "branchId" (if found, already or near_miss),
+  "reply": "Your response as Идейка in Russian (1-2 sentences)",
   "detailed": true | false (true if the explanation is sufficiently detailed)
 }
 
-GUIDELINES:
-1. If the user finds a new solution branch, return "found". If it's too short (1-2 words), mark "detailed": false.
-2. If the user mentions something very close to a branch but not quite there, return "near_miss".
-3. if the user hits the trap, return "trap".
-4. If the user says "I don't know" or asks for help, return "give_up".
-5. If the user is describing the problem/contradiction (e.g. "I can't go because it's slippery"), return "problem".
-6. Otherwise, return "fallback".
-7. ALWAYS be extremely friendly, use emojis 💡✨🚀, and keep it child-friendly.
-8. Do NOT use complex TRIZ terms unless they are the "principle_child" names.
-9. If found, the reply should briefly praise the idea.
+STRATEGY:
+- If Phase is 2: The goal is to get the child to name objects. If they name objects, praise them. If they give up, encourage them to "look at the picture".
+- If Phase is 1 or 3: The goal is to find the contradiction or the "magic" solution.
+- DO NOT reveal the correct solutions directly. Give hints instead.
+- If the user has already found a solution, and mentions it again, return type "already".
+- Keep it child-friendly, use emojis 💡✨🚀.
+- If found, the reply should briefly praise the idea without explicitly naming the TRIZ principle (the engine will add that part).
 `;
 
         const result = await model.generateContent(prompt);

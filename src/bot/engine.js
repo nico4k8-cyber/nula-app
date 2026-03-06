@@ -10,7 +10,7 @@ export const TASKS = [
     thumb: "./img/webp/solomon-hall_thumb.webp",
     condition: "Во дворце царя Соломона юный ученик оказался в зале, где после землетрясения по полу разлилось **скользкое масло**. Идти по полу **нельзя — упадёт**. Как выбраться из зала?",
     ikr_steps: [
-      "Идти по маслу — невозможно. Но что если не надо **идти по маслу**? Посмотри на зал: стол, ковры, верёвки, копья. У каждого предмета есть свойство. Какое свойство помогло бы тебе выбраться?",
+      "Во дворце переполох: пол залит **скользким маслом**, и по нему невозможно пройти к выходу. Как же нам выбраться из зала, не поскользнувшись? 🏰",
       (attempt, rawText = "") => {
         const attemptStr = String(attempt || "").trim();
         // Если ребёнок сказал "не знаю" или "помощь", помогаем
@@ -101,7 +101,7 @@ export const TASKS = [
     thumb: "./img/webp/monkeys_thumb.webp",
     condition: "Индийские фермеры выращивают апельсины, но обезьяны разоряют плантации. **Убивать животных нельзя**. **Заборы не помогают** — обезьяны слишком ловкие. Как защитить урожай?",
     ikr_steps: [
-      "Обезьяны умные и ловкие. Силой их не остановить. Но ведь они сами **решают** — приходить или нет. Что могло бы заставить их самих передумать?",
+      "Обезьяны очень хитрые! Заборы их не пугают, а вредить им нельзя. Как же нам сделать так, чтобы они **сами** больше не хотели приходить на наши плантации? 🐵",
       (attempt, rawText = "") => {
         const attemptStr = String(attempt || "").trim();
         if (!attemptStr || attemptStr.includes("не знаю") || attemptStr.includes("помощь") || attemptStr.includes("сложно")) {
@@ -177,7 +177,7 @@ export const TASKS = [
     thumb: "./img/webp/flowers_thumb.webp",
     condition: "Царица Савская испытывает мудрость царя Соломона. Два ряда цветов: живые и **тканевые**, выглядят одинаково. **Подходить, трогать и нюхать нельзя**. Как определить, где настоящие?",
     ikr_steps: [
-      "Они выглядят одинаково... но живой цветок — это **живой**! У него есть то, чего нет у тканевого. Как заставить его самого показать разницу?",
+      "Перед нами два ряда цветов, и они выглядят абсолютно одинаково! Но мы знаем, что одни из них — живые. Как нам узнать правду, если **подходить и трогать их нельзя**? 🌸",
       (attempt, rawText = "") => {
         const attemptStr = String(attempt || "").trim();
         if (!attemptStr || attemptStr.includes("не знаю") || attemptStr.includes("помощь") || attemptStr.includes("сложно")) {
@@ -238,7 +238,7 @@ export const TASKS = [
     thumb: "./img/webp/bags_thumb.webp",
     condition: "В китайских городах воришки на мотоциклах срывают сумки с плеч прохожих и уезжают. **Поймать их почти невозможно** — слишком быстрые. Как решить проблему?",
     ikr_steps: [
-      "Воришке нужно три вещи: **подъехать близко**, **схватить сумку**, **быстро уехать**. Что если убрать хотя бы одно из трёх — кража не сработает. Что можно убрать?",
+      "Воришки действуют очень быстро: подъехали на мотоцикле, сорвали сумку и скрылись. Как нам защитить прохожих, если поймать этих гонщиков почти невозможно? 🏍️",
       (attempt, rawText = "") => {
         const attemptStr = String(attempt || "").trim();
         if (!attemptStr || attemptStr.includes("не знаю") || attemptStr.includes("помощь") || attemptStr.includes("сложно")) {
@@ -850,17 +850,24 @@ export async function processUserMessage(txt, task, state) {
         newState.lastNearMissBranch = null;
         newState.streak = 0;
       }
-
     } else if (isWantHint || result.type === "give_up") {
-      // "давай", "да", "покажи" или явная сдача — сразу даём подсказку
-      const hints = task.fallbacks(state.found);
-      const nfb = Math.min(state.fbIdx, hints.length - 1);
-      reply = hints[nfb];
-      newState.fbIdx = Math.min(state.fbIdx + 1, hints.length - 1);
-      newState.lastNearMissBranch = null;
+      // Если это первый раз - переходим к сбору ресурсов (Phase 2), а не даем готовую подсказку
+      if (state.ikrPhase === 0) {
+        newState.ikrPhase = 2;
+        newState.ikrResources = [];
+        reply = reply || "Не переживай, я помогу! 😉 Давай сначала осмотримся. Посмотри на картинку: какие предметы ты видишь в этом зале? Назови 2-3 штуки.";
+      } else {
+        const hints = task.fallbacks(state.found);
+        reply = reply || hints[state.fbIdx];
+        newState.fbIdx = (state.fbIdx + 1) % hints.length;
+        newState.streak = 0;
+        newState.lastNearMissBranch = null;
+      }
+    } else {
       newState.streak = 0;
+    }
 
-    } else if (result.type === "already") {
+    if (result.type === "already") {
       reply = PICK([
         `Принцип «${task.branches[result.id].principle_child}» уже найден. Попробуй найти другой подход! 🚀`,
         `Это мы уже нашли! Помнишь — «${task.branches[result.id].principle_child}»? Давай искать новое! 🔍`,
