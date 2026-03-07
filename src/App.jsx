@@ -773,7 +773,7 @@ export default function App() {
         </div>
 
         {/* Task Image — Always visible, toggles size */}
-        <div className={`relative rounded-xl overflow-hidden border ${dm ? 'border-white/10' : 'border-gray-100'} mb-2 cursor-zoom-in group transition-all duration-300 ${showCondition ? 'aspect-[4/3]' : 'aspect-[16/9]'}`}
+        <div className={`relative rounded-xl overflow-hidden border ${dm ? 'border-white/10' : 'border-gray-100'} mb-2 cursor-zoom-in group transition-all duration-300 ${showCondition ? 'aspect-[4/3] max-h-[280px]' : 'aspect-[16/9] max-h-[180px]'}`}
           onClick={() => setImageExpanded(true)}>
           <img src={task.image} alt={task.title} className={`w-full h-full object-contain ${dm ? 'bg-gray-900' : 'bg-gray-50'}`} />
           <div className={`absolute inset-0 bg-black/5 flex items-center justify-center transition-opacity ${showCondition ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
