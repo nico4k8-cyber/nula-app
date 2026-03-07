@@ -399,7 +399,7 @@ export default function App() {
       body: JSON.stringify({ task: t })
     })
       .then(r => r.json())
-      .then(d => setMessages([{ role: "system", text: (d.hook || FALLBACK_HOOK) + "\n\nРасскажи мне её своими словами, как будто я только что появился!" }]))
+      .then(d => setMessages([{ role: "system", text: d.hook || FALLBACK_HOOK }]))
       .catch(() => setMessages([{ role: "system", text: FALLBACK_HOOK }]));
   };
 
