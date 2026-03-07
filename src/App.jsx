@@ -1028,6 +1028,11 @@ export default function App() {
 
   const finalCtaUrl = `https://t.me/${CONFIG.cta_telegram}?text=${encodeURIComponent(CONFIG.cta_message)}`;
 
+  /* Stars display helper */
+  const starsDisplay = score > 0
+    ? Array.from({ length: Math.min(score, 15) }, () => "⭐").join("")
+    : "";
+
   return (
     <div className={`min-h-[100dvh] font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
       style={dm ? { background: 'radial-gradient(circle at top, #1E293B 0%, #0F172A 100%)' } : {}}>
@@ -1044,110 +1049,72 @@ export default function App() {
         </button>
       </div>
 
-      <div className="px-4 py-5">
-      <div className="max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto">
+      <div className="px-4 py-6">
+      <div className="max-w-[480px] md:max-w-[600px] mx-auto">
 
-        {/* ── ДЛЯ ПОЛЬЗОВАТЕЛЯ ── */}
-        <div className="mb-10 text-center">
-          <div className="text-[64px] mb-4 animate-bounce">🏆</div>
-          <h1 className={`font-['Playfair_Display',Georgia,serif] text-[28px] md:text-[34px] leading-tight mb-2 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
-            УРОВЕНЬ: ИЗОБРЕТАТЕЛЬ!
+        {/* ── Заголовок — Победа ── */}
+        <div className="text-center mb-6">
+          <div className="text-[72px] mb-3 animate-bounce">🏆</div>
+          <h1 className={`font-['Playfair_Display',Georgia,serif] text-[26px] md:text-[32px] leading-tight mb-2 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
+            Уровень: Изобретатель!
           </h1>
-          <p className={`text-[16px] mb-6 ${dm ? 'text-[#B0B0C0]' : 'text-gray-500'}`}>{prizStep >= 4 ? "Задача полностью решена!" : `Пройдено ${prizStep} из 4 этапов`} — «{task.title}»</p>
-
-          <div className={`rounded-3xl p-6 mb-6 ${dm ? 'bg-slate-800/40 border-slate-700/50' : 'bg-[#E7F3EF] border-[#2D6A4F]/20'} border-2`}>
-            <h3 className={`font-bold text-[18px] mb-2 ${dm ? 'text-[#00A86B]' : 'text-[#2D6A4F]'}`}>🎓 ТРИЗ-занятия в онлайн-клубе</h3>
-            <p className={`text-[14px] mb-5 ${dm ? 'text-slate-400' : 'text-gray-600'}`}>
-              В нашем клубе разбираются сотни таких задач, дети учатся спорить, доказывать и изобретать. Присоединяйтесь к сообществу!
-            </p>
-            <a href={`https://t.me/${CONFIG.cta_telegram}`} target="_blank" rel="noreferrer" className="inline-block w-full bg-[#2D6A4F] text-white py-3.5 rounded-2xl font-bold no-underline shadow-lg active:scale-95 transition-transform text-center">
-              Запись на пробный урок 🚀
-            </a>
-          </div>
-        </div>
-
-        {/* ── ДЛЯ РОДИТЕЛЯ ── */}
-        <div className={`rounded-[24px] p-6 shadow-xl border mb-6 ${dm ? 'bg-slate-800 border-slate-700/50' : 'bg-white border-gray-100'}`}>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">📊</span>
-            <h3 className={`font-bold text-[18px] ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>Аналитика для родителя</h3>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="text-center">
-              <div className="text-[22px] font-bold text-[#2D6A4F]">{prizStep}/4</div>
-              <div className="text-[10px] text-gray-400 uppercase font-bold">Этапы</div>
-            </div>
-            <div className="text-center">
-              <div className="text-[22px] font-bold text-[#2D6A4F]">{timeStr}</div>
-              <div className="text-[10px] text-gray-400 uppercase font-bold">Время</div>
-            </div>
-            <div className="text-center">
-              <div className="text-[22px] font-bold text-[#2D6A4F]">{messages.filter(m => m.role === "user").length}</div>
-              <div className="text-[10px] text-gray-400 uppercase font-bold">Реплик</div>
-            </div>
-          </div>
-
-          <div className={`p-4 rounded-2xl border mb-4 ${dm ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
-            {aiReport ? (
-              <p className={`text-[14px] leading-relaxed ${dm ? 'text-white/80' : 'text-gray-700'}`}>{aiReport}</p>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full border-2 border-[#2D6A4F]/40 border-t-[#2D6A4F] animate-spin" />
-                <p className={`text-[13px] italic ${dm ? 'text-white/40' : 'text-gray-400'}`}>Составляем отчёт педагога...</p>
-              </div>
-            )}
-          </div>
-
-          {/* Child's ideas from the session */}
-          {messages.filter(m => m.role === "user").length > 0 && (
-            <div className="mb-6">
-              <h4 className={`text-[13px] font-bold uppercase tracking-wider mb-2 ${dm ? 'text-slate-500' : 'text-gray-400'}`}>Что говорил ребёнок:</h4>
-              <div className="space-y-1.5">
-                {messages.filter(m => m.role === "user").slice(-5).map((m, i) => (
-                  <div key={i} className={`text-[13px] px-3 py-2 rounded-xl border-l-2 border-[#2D6A4F]/40 ${dm ? 'bg-white/5 text-slate-300' : 'bg-emerald-50/60 text-gray-700'}`}>
-                    {m.text.slice(0, 120)}{m.text.length > 120 ? '…' : ''}
-                  </div>
-                ))}
-              </div>
+          <p className={`text-[15px] mb-3 ${dm ? 'text-slate-400' : 'text-gray-500'}`}>«{task.title}» — задача решена!</p>
+          {score > 0 && (
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${dm ? 'bg-amber-900/30 border-amber-800/40' : 'bg-yellow-50 border-yellow-200'}`}>
+              <span className="text-[15px] tracking-wide">{starsDisplay}</span>
+              <span className={`text-[13px] font-bold ${dm ? 'text-amber-300' : 'text-yellow-700'}`}>{score} {score === 1 ? "звезда" : score < 5 ? "звезды" : "звёзд"}</span>
             </div>
           )}
-
-          <div className="space-y-3">
-            <h4 className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Полезные материалы:</h4>
-            <a href={`https://t.me/${CONFIG.cta_telegram}?start=pdf`} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 no-underline text-[#1B1B1B] transition-colors">
-              <span className="text-xl">📄</span>
-              <div className="text-left">
-                <div className="text-[14px] font-bold">PDF-сборник ТРИЗ-задач</div>
-                <div className="text-[12px] text-gray-400">Для обсуждения с ребёнком в машине</div>
-              </div>
-            </a>
-          </div>
         </div>
 
-        {/* CTA & Sharing */}
-        <div className="space-y-3 mb-10">
-          <button onClick={() => window.open(`https://t.me/${CONFIG.cta_telegram}`, '_blank')}
-            className="w-full bg-[#E57A44] text-white py-4 rounded-2xl text-[18px] font-bold shadow-lg hover:bg-[#d66a36] transition-colors">
-            ✨ Узнать больше о занятиях
-          </button>
+        {/* ── Комментарий педагога ── */}
+        <div className={`rounded-[20px] p-5 border mb-5 ${dm ? 'bg-slate-800 border-slate-700/50' : 'bg-white border-gray-100'} shadow-md`}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">🧠</span>
+            <h3 className={`font-bold text-[16px] ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>Что освоил ребёнок</h3>
+            <span className={`ml-auto text-[12px] font-medium ${dm ? 'text-slate-500' : 'text-gray-400'}`}>{timeStr}</span>
+          </div>
+          {aiReport ? (
+            <p className={`text-[14px] leading-relaxed ${dm ? 'text-slate-300' : 'text-gray-700'}`}>{aiReport}</p>
+          ) : (
+            <div className="flex items-center gap-2.5 py-2">
+              <div className="w-4 h-4 rounded-full border-2 border-[#2D6A4F]/40 border-t-[#2D6A4F] animate-spin flex-shrink-0" />
+              <p className={`text-[13px] italic ${dm ? 'text-slate-500' : 'text-gray-400'}`}>Составляем комментарий педагога…</p>
+            </div>
+          )}
+        </div>
 
+        {/* ── Главный CTA ── */}
+        <div className={`rounded-[20px] p-5 border-2 mb-5 ${dm ? 'bg-slate-800/40 border-slate-700/50' : 'bg-[#E7F3EF] border-[#2D6A4F]/20'}`}>
+          <h3 className={`font-bold text-[17px] mb-1.5 ${dm ? 'text-emerald-400' : 'text-[#2D6A4F]'}`}>🎓 ТРИЗ-занятия в онлайн-клубе</h3>
+          <p className={`text-[13px] mb-4 ${dm ? 'text-slate-400' : 'text-gray-600'}`}>
+            В нашем клубе разбираются сотни таких задач — дети учатся спорить, доказывать и изобретать вместе.
+          </p>
+          <a href={finalCtaUrl} target="_blank" rel="noreferrer"
+            className="block w-full bg-[#2D6A4F] text-white py-4 rounded-2xl font-bold text-[17px] no-underline shadow-lg active:scale-95 transition-transform text-center">
+            Записаться на пробный урок 🚀
+          </a>
+          <p className={`text-center text-[11px] mt-2 ${dm ? 'text-slate-500' : 'text-gray-400'}`}>{CONFIG.cta_subtitle}</p>
+        </div>
+
+        {/* ── Вторичные действия ── */}
+        <div className="space-y-3 mb-8">
           <button onClick={() => {
-            const shareText = `Настоящий изобретательский подход! Пройдено ${prizStep} из 4 этапов задачи «${task.title}». Попробуйте тоже: ${window.location.href}`;
-            if (navigator.share) navigator.share({ title: 'Результаты тренажера', text: shareText });
+            const shareText = `Настоящий изобретательский подход! Задача «${task.title}» — решена! Попробуй тоже: ${window.location.href}`;
+            if (navigator.share) navigator.share({ title: 'Результаты тренажёра', text: shareText });
             else { navigator.clipboard.writeText(shareText); alert('Ссылка скопирована!'); }
           }}
-            className="w-full bg-white border-2 border-gray-200 text-gray-600 py-3 rounded-2xl text-[15px] font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+            className={`w-full py-3.5 rounded-2xl text-[15px] font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${dm ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
             📤 Поделиться результатом
           </button>
 
           <button onClick={continueSolving}
-            className={`w-full py-4 rounded-2xl text-[16px] font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${dm ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-[#2D6A4F]/8 border-[#2D6A4F]/25 text-[#2D6A4F] hover:bg-[#2D6A4F]/15'}`}>
+            className={`w-full py-3.5 rounded-2xl text-[15px] font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${dm ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
             🔄 Поискать другие решения
           </button>
 
           <button onClick={() => { setScreen("select"); setTask(null); }}
-            className={`w-full text-[14px] font-medium transition-colors py-2 border-none bg-transparent cursor-pointer ${dm ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+            className={`w-full text-[13px] font-medium transition-colors py-2 border-none bg-transparent cursor-pointer ${dm ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}>
             ↩ Вернуться к выбору задач
           </button>
         </div>
