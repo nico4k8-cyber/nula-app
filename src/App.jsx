@@ -1086,6 +1086,25 @@ export default function App() {
           )}
         </div>
 
+        {/* ── Зачем это всё? ── */}
+        <div className={`rounded-[20px] p-5 border mb-5 ${dm ? 'bg-amber-900/10 border-amber-900/30' : 'bg-amber-50 border-amber-100'}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">💡</span>
+            <h3 className={`font-bold text-[16px] ${dm ? 'text-amber-300' : 'text-amber-800'}`}>Зачем это всё?</h3>
+          </div>
+          <p className={`text-[13px] leading-relaxed mb-2 ${dm ? 'text-slate-300' : 'text-gray-700'}`}>
+            Открытые задачи — где нет одного правильного ответа — это сложно. По-настоящему. Большинство взрослых зависают на них точно так же, как дети.
+          </p>
+          <p className={`text-[13px] leading-relaxed ${dm ? 'text-slate-400' : 'text-gray-600'}`}>
+            {task.ageRange === "6-9"
+              ? "Тот, кто учится думать «а что если...» в детстве — потом придумывает решения, которые другие просто не видят. Это не способность от рождения — это тренировка."
+              : task.ageRange === "10-11"
+                ? "Умение найти выход там, где кажется его нет — пригодится в любой профессии и в любой жизненной ситуации. Именно этим занятиям, а не зубрёжке, стоит уделять время."
+                : "Умение формулировать противоречие и искать нестандартный выход — это навык, которому не учат в школе. Но именно он отличает тех, кто решает задачи, от тех, кто их избегает."
+            }
+          </p>
+        </div>
+
         {/* ── Главный CTA ── */}
         <div className={`rounded-[20px] p-5 border-2 mb-5 ${dm ? 'bg-slate-800/40 border-slate-700/50' : 'bg-[#E7F3EF] border-[#2D6A4F]/20'}`}>
           <h3 className={`font-bold text-[17px] mb-1.5 ${dm ? 'text-emerald-400' : 'text-[#2D6A4F]'}`}>🎓 ТРИЗ-занятия в онлайн-клубе</h3>
@@ -1110,10 +1129,15 @@ export default function App() {
             📤 Поделиться результатом
           </button>
 
-          <button onClick={continueSolving}
-            className={`w-full py-3.5 rounded-2xl text-[15px] font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${dm ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-            🔄 Поискать другие решения
-          </button>
+          <div>
+            <button onClick={continueSolving}
+              className={`w-full py-3.5 rounded-2xl text-[15px] font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${dm ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+              🔄 Поискать другие решения
+            </button>
+            <p className={`text-center text-[11px] mt-1.5 ${dm ? 'text-slate-600' : 'text-gray-400'}`}>
+              Сейчас {score} {score === 1 ? "звезда" : score < 5 ? "звезды" : "звёзд"} — найди другой способ и заработай ещё
+            </p>
+          </div>
 
           <button onClick={() => { setScreen("select"); setTask(null); }}
             className={`w-full text-[13px] font-medium transition-colors py-2 border-none bg-transparent cursor-pointer ${dm ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}>
