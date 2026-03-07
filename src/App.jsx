@@ -206,7 +206,7 @@ export default function App() {
     return mins > 0 ? `${mins} мин ${secs} сек` : `${secs} сек`;
   };
 
-  const sendLogsToTelegramBot = useCallback(async (currentTask, currentMessages, currentFound, currentTotal, taskTimeMs) => {
+  const sendLogsToTelegramBot = useCallback(async (currentTask, currentMessages, currentPrizStep, taskTimeMs) => {
     const { botToken, chatId } = CONFIG.logging;
     if (!botToken || botToken.includes("ВАШ_") || !chatId) {
       console.log("Telegram Bot logging skipped: No credentials.");
@@ -215,7 +215,9 @@ export default function App() {
 
     try {
       const timeStr = formatTime(taskTimeMs || 0);
-      const logHeader = `🤖 <b>ОТЧЁТ О СЕССИИ ТРИЗ</b>\n<b>Задача:</b> ${currentTask.title}\n<b>Этапы:</b> ${currentFound.length}/${currentTotal}\n<b>Время:</b> ${timeStr}\n\n`;
+      const stageNames = ["—", "Разведка", "Идеи", "Зачёт", "✨ Инсайт"];
+      const stageLabel = stageNames[currentPrizStep] || `${currentPrizStep}`;
+      const logHeader = `🤖 <b>ОТЧЁТ О СЕССИИ ТРИЗ</b>\n<b>Задача:</b> ${currentTask.title}\n<b>ПРИЗ:</b> ${currentPrizStep}/4 (${stageLabel})\n<b>Время:</b> ${timeStr}\n\n`;
       const logBody = currentMessages
         .filter(m => m.text && !m.loading)
         .map(m => `<b>${m.role === "user" ? "👤 Ребенок" : "🤖 Бот"}:</b> ${m.text}`)
@@ -302,11 +304,11 @@ export default function App() {
       task_id: task?.id,
       task_title: task?.title,
       dialogue: messages, // Full array of {role, text}
-      found_count: found.length
+      priz_step: prizStep
     });
     if (logs.length > 500) logs.shift(); // Limit to 500 sessions
     localStorage.setItem(key, JSON.stringify(logs));
-  }, [messages, task, found.length]);
+  }, [messages, task, prizStep]);
 
   const handleAdminClick = useCallback(() => {
     const next = adminClicks + 1;
@@ -343,10 +345,10 @@ export default function App() {
     });
     // Trigger background upload & backup
     if (task) {
-      sendLogsToTelegramBot(task, messages, found, total, taskTimeMs);
+      sendLogsToTelegramBot(task, messages, prizStep, taskTimeMs);
       saveLogsToServer();
     }
-  }, [task, messages, found, total, sendLogsToTelegramBot, saveLogsToServer]);
+  }, [task, messages, prizStep, sendLogsToTelegramBot, saveLogsToServer]);
 
   /* ─ Finalize current task: save timing + stats ─ */
   const finalizeCurrentTask = useCallback(() => {
@@ -358,18 +360,17 @@ export default function App() {
         ...prev,
         [task.id]: {
           timeMs: existing.timeMs + elapsed,
-          found: found.length,
+          priz_step: prizStep,
           attempts: attempts,
           messages: totalMessages,
           title: task.title,
           icon: task.icon,
-          total: 3,
         }
       };
     });
     setTaskStartTime(null);
     return elapsed;
-  }, [task, taskStartTime, found.length, attempts, totalMessages]);
+  }, [task, taskStartTime, prizStep, attempts, totalMessages]);
 
   const getIconGradient = (id) => {
     const gradients = {
@@ -573,8 +574,8 @@ export default function App() {
             countdownRef.current = null;
             setCountdown(null);
             const finalElapsed = finalizeCurrentTask();
-            sendLogsToTelegramBot(task, msgsCopy, found, total, finalElapsed);
-            trackEvent('result_screen_opened', { task_id: task.id, found: found.length });
+            sendLogsToTelegramBot(task, msgsCopy, 4, finalElapsed);
+            trackEvent('result_screen_opened', { task_id: task.id, priz_step: 4 });
             setScreen("result");
           };
 
@@ -904,8 +905,8 @@ export default function App() {
             <button onClick={() => {
               setShowChoice(false);
               const elapsed = finalizeCurrentTask();
-              trackEvent('result_screen_opened', { task_id: task.id, found: found.length });
-              sendLogsToTelegramBot(task, messages, found, total, elapsed);
+              trackEvent('result_screen_opened', { task_id: task.id, priz_step: prizStep });
+              sendLogsToTelegramBot(task, messages, prizStep, elapsed);
               setScreen("result");
             }}
               className={`w-full border-2 rounded-2xl py-4 px-4 text-[16px] font-bold cursor-pointer transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${dm ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-gray-50 border-gray-100 text-[#1B1B1B] hover:bg-gray-100'}`}>
