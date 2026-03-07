@@ -36,7 +36,7 @@ function Condition({ text, dm }) {
   const parts = text.split(/(\*\*.*?\*\*)/g);
   return <p className={`text-[17px] md:text-[18px] leading-relaxed mb-3 ${dm ? 'text-white/90' : 'text-[#1B1B1B]'}`}>
     {parts.map((part, i) =>
-      part.startsWith("**") ? <strong key={i} className={`${dm ? 'text-amber-400' : 'text-[#E57A44]'} font-bold`}>{part.slice(2, -2)}</strong> : part
+      part.startsWith("**") ? <strong key={i} className={`${dm ? 'text-amber-300' : 'text-[#E57A44]'} font-bold`}>{part.slice(2, -2)}</strong> : part
     )}
   </p>;
 }
@@ -53,7 +53,7 @@ function TaskImage({ task, size = "large", dm }) {
         className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${dm ? 'brightness-[0.7] contrast-[1.1]' : ''}`}
         onError={(e) => { e.target.style.display = 'none'; }}
       />
-      <div className={`absolute inset-0 bg-gradient-to-t ${dm ? 'from-[#1a1a2e]/80' : 'from-black/30'} to-transparent pointer-events-none`}></div>
+      <div className={`absolute inset-0 bg-gradient-to-t ${dm ? 'from-slate-900/80' : 'from-black/30'} to-transparent pointer-events-none`}></div>
     </div>
   );
 }
@@ -73,7 +73,7 @@ function PhaseTracker({ step, dm }) {
       {steps.map((s, idx) => (
         <div key={s.id} className="flex items-center gap-1 flex-1 last:flex-none">
           <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] md:text-[11px] font-bold transition-all border ${step === s.id
-            ? 'bg-amber-500 text-white shadow-lg border-amber-600'
+            ? (dm ? 'bg-amber-700 text-amber-100 shadow-lg border-amber-800' : 'bg-amber-500 text-white shadow-lg border-amber-600')
             : step > s.id
               ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
               : dm ? 'bg-white/5 text-gray-500 border-white/5' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
@@ -705,7 +705,7 @@ export default function App() {
               return (
                 <div key={t.id} onClick={() => selectTask(t)}
                   role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && selectTask(t)}
-                  className={`group rounded-3xl p-4 cursor-pointer border-2 transition-all duration-300 shadow-xl hover:shadow-2xl active:scale-95 outline-none ${dm ? 'bg-[#16213e] border-white/5' : 'bg-white border-transparent hover:border-[#2D6A4F]/20'}`}>
+                  className={`group rounded-3xl p-4 cursor-pointer border-2 transition-all duration-300 shadow-xl hover:shadow-2xl active:scale-95 outline-none ${dm ? 'bg-slate-800 border-white/5' : 'bg-white border-transparent hover:border-[#2D6A4F]/20'}`}>
                   <div className="mb-4 relative rounded-2xl overflow-hidden aspect-[16/10] bg-gray-50 shadow-inner group-hover:shadow-2xl transition-all duration-500">
                     <TaskImage task={t} size="small" dm={dm} />
                     <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
@@ -740,8 +740,7 @@ export default function App() {
 
   /* ─── SCREEN: SOLVE ─── */
   if (screen === "solve") return (
-    <div className={`h-[100dvh] flex flex-col max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
-      style={dm ? { background: 'radial-gradient(circle at top, #1E293B 0%, #0F172A 100%)' } : {}}>
+    <div className={`h-[100dvh] flex flex-col max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}>
       <style>{`
         @keyframes blink{0%,80%{opacity:.2}40%{opacity:1}}
         @keyframes flyUp{
@@ -789,15 +788,15 @@ export default function App() {
       </div>
 
       {/* Task Condition block — Sticky & Compact as requested */}
-      <div className={`sticky top-0 z-20 px-3 py-1.5 border-b transition-all duration-300 ${dm ? 'bg-[#1a1a2e]/95 border-gray-700' : 'bg-white/95 border-gray-200'} backdrop-blur-md`}>
+      <div className={`sticky top-0 z-20 px-3 py-1.5 border-b transition-all duration-300 ${dm ? 'bg-[#0F172A]/95 border-slate-800' : 'bg-white/95 border-gray-200'} backdrop-blur-md`}>
         <div className="flex items-center justify-between gap-3 mb-1">
           <div className="flex items-center gap-2 overflow-hidden flex-1">
             <span className="text-sm">📜</span>
             <div className={`text-[13px] font-bold truncate ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>{task.title}</div>
           </div>
-          <div className="flex items-center gap-1.5 bg-yellow-100/80 px-2.5 py-1 rounded-full border border-yellow-200 shadow-sm">
-            <span className="text-yellow-600 text-sm animate-pulse">⭐</span>
-            <span className="text-yellow-700 font-bold text-xs">{score}</span>
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-sm ${dm ? 'bg-amber-900/30 border-amber-800/40' : 'bg-yellow-100/80 border-yellow-200'}`}>
+            <span className="text-yellow-500 text-sm animate-pulse">⭐</span>
+            <span className={`font-bold text-xs ${dm ? 'text-amber-300' : 'text-yellow-700'}`}>{score}</span>
           </div>
         </div>
 
@@ -837,7 +836,7 @@ export default function App() {
                   className="w-8 h-8 rounded-full object-cover border-2 border-amber-300/60 shadow-sm"
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
               </div>
-              <div className={`px-4 py-3 rounded-[16px_16px_16px_4px] ${dm ? 'bg-amber-900/30 border border-amber-500/30' : 'bg-amber-50 border border-amber-200/50'} shadow-sm`}>
+              <div className={`px-4 py-3 rounded-[16px_16px_16px_4px] ${dm ? 'bg-slate-800 border border-slate-700/60' : 'bg-amber-50 border border-amber-200/50'} shadow-sm`}>
                 <div className="text-[10px] font-bold text-amber-600 mb-1.5 uppercase tracking-tighter">{CONFIG.character.name}</div>
                 <div className="flex gap-1 items-center">
                   {[0, 1, 2].map(d => (
@@ -859,7 +858,7 @@ export default function App() {
               )}
               <div className={`flex flex-col gap-2 ${isBot ? "items-start" : "items-end"} max-w-[85%] md:max-w-[75%]`}>
                 {parts.map((part, partIdx) => (
-                  <div key={partIdx} className={`px-3.5 py-2 text-[16px] md:text-[18px] leading-tight whitespace-pre-wrap ${isBot ? `rounded-[16px_16px_16px_4px] ${dm ? 'bg-amber-900/30 text-white border border-amber-500/30 shadow-lg' : 'bg-amber-50 text-amber-900 border border-amber-200/50 shadow-sm'}` : `rounded-[16px_16px_4px_16px] ${dm ? 'bg-emerald-900/30 text-white border border-emerald-500/30' : 'bg-emerald-50 text-emerald-900 border border-emerald-100'}`}`}>
+                  <div key={partIdx} className={`px-3.5 py-2 text-[16px] md:text-[18px] leading-tight whitespace-pre-wrap ${isBot ? `rounded-[16px_16px_16px_4px] ${dm ? 'bg-slate-800 text-slate-100 border border-slate-700/60 shadow-lg' : 'bg-amber-50 text-amber-900 border border-amber-200/50 shadow-sm'}` : `rounded-[16px_16px_4px_16px] ${dm ? 'bg-emerald-950/60 text-emerald-100 border border-emerald-900/50' : 'bg-emerald-50 text-emerald-900 border border-emerald-100'}`}`}>
                     {isBot && partIdx === 0 && <div className="text-[10px] font-bold text-amber-600 mb-0.5 uppercase tracking-tighter">{CONFIG.character.name}</div>}
                     {isBot
                       ? <span dangerouslySetInnerHTML={{ __html: part
@@ -933,7 +932,7 @@ export default function App() {
 
       {/* Input — hidden when choice card is shown */}
       {!showChoice && (
-        <div className={`px-3 py-3 border-t flex gap-3 items-center transition-all duration-300 ${dm ? 'border-gray-800 bg-[#1a1a2e]' : 'border-gray-100 bg-white'} ${isFocused ? 'pb-3' : 'pb-8'}`}>
+        <div className={`px-3 py-3 border-t flex gap-3 items-center transition-all duration-300 ${dm ? 'border-slate-800 bg-[#0F172A]' : 'border-gray-100 bg-white'} ${isFocused ? 'pb-3' : 'pb-8'}`}>
           <button onClick={startSpeech} title="Голосовой ввод" className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all shadow-xl active:scale-90 ${isRecording ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-[#2D6A4F] text-white hover:bg-[#24533e]'}`}>
             {isRecording ? "🔴" : <span className="text-2xl">🎤</span>}
           </button>
@@ -946,7 +945,7 @@ export default function App() {
               setInput(msg);
             }}
             title={`Подсказка (использовано: ${hintCount})`}
-            className={`w-12 h-12 flex items-center justify-center rounded-2xl border transition-all font-bold text-xl shadow-md active:scale-90 ${hintCount >= 3 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200'}`}
+            className={`w-12 h-12 flex items-center justify-center rounded-2xl border transition-all font-bold text-xl shadow-md active:scale-90 ${hintCount >= 3 ? (dm ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed') : (dm ? 'bg-amber-900/40 text-amber-300 border-amber-800/50 hover:bg-amber-900/60' : 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200')}`}
             disabled={hintCount >= 3}>
             ?
           </button>
@@ -958,7 +957,7 @@ export default function App() {
               onBlur={() => setTimeout(() => setIsFocused(false), 50)}
               onKeyDown={(e) => e.key === "Enter" && send()}
               placeholder={prizStep === 1 ? "Что видишь в зале?" : "Твоя идея..."}
-              className={`w-full border-2 rounded-2xl px-4 py-3.5 text-base outline-none font-inherit transition-all ${dm ? 'bg-[#16213e] border-gray-700 text-white focus:border-[#2D6A4F] placeholder:text-gray-500' : 'bg-gray-50 border-gray-100 focus:border-[#2D6A4F] focus:bg-white shadow-inner'}`} />
+              className={`w-full border-2 rounded-2xl px-4 py-3.5 text-base outline-none font-inherit transition-all ${dm ? 'bg-slate-800 border-slate-700 text-white focus:border-[#2D6A4F] placeholder:text-slate-500' : 'bg-gray-50 border-gray-100 focus:border-[#2D6A4F] focus:bg-white shadow-inner'}`} />
           </div>
 
           <button onClick={send} disabled={!input.trim() || sending} aria-label="Отправить сообщение" title="Отправить"
@@ -1068,7 +1067,7 @@ export default function App() {
         </div>
 
         {/* ── ДЛЯ РОДИТЕЛЯ ── */}
-        <div className={`rounded-[24px] p-6 shadow-xl border mb-6 ${dm ? 'bg-[#16213e] border-white/10' : 'bg-white border-gray-100'}`}>
+        <div className={`rounded-[24px] p-6 shadow-xl border mb-6 ${dm ? 'bg-slate-800 border-slate-700/50' : 'bg-white border-gray-100'}`}>
           <div className="flex items-center gap-3 mb-4">
             <span className="text-2xl">📊</span>
             <h3 className={`font-bold text-[18px] ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>Аналитика для родителя</h3>
