@@ -144,6 +144,7 @@ export default function App() {
   );
   const [countdown, setCountdown] = useState(null);
   const [aiReport, setAiReport] = useState(null);
+  const [resultChildMessage, setResultChildMessage] = useState(null);
   const [childMode, setChildMode] = useState(() => {
     try { return sessionStorage.getItem('fi_child') === '1'; } catch { return false; }
   });
@@ -154,10 +155,17 @@ export default function App() {
   const dialogRef = useRef(null);
   const jsConfetti = useRef(null);
   const countdownRef = useRef(null);
+  const recognitionRef = useRef(null);
   const total = 3; // Для ИИ-режима мы ориентируемся на 3 решения по умолчанию
 
   useEffect(() => {
     jsConfetti.current = new JSConfetti();
+    return () => {
+      // Освобождаем микрофон при размонтировании компонента
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -167,6 +175,14 @@ export default function App() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  // Capture last Уголёк message when result screen opens
+  useEffect(() => {
+    if (screen === 'result') {
+      const lastBot = [...messages].reverse().find(m => m.role === 'system');
+      if (lastBot?.text) setResultChildMessage(lastBot.text);
+    }
+  }, [screen]);
 
   /* ─ Analytics (Yandex Metrika ID: 106910217) ─ */
   const trackEvent = useCallback((name, params = {}) => {
@@ -434,13 +450,28 @@ export default function App() {
     else { finalizeCurrentTask(); setScreen("select"); setTask(null); setPendingBranch(null); }
   };
 
+  const stopSpeech = () => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+      recognitionRef.current = null;
+    }
+    setIsRecording(false);
+  };
+
   const startSpeech = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       alert("Голосовой ввод не поддерживается вашим браузером. Попробуй Chrome. 🎙️");
       return;
     }
+    // Остановить предыдущую сессию если была
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+      recognitionRef.current = null;
+    }
+
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new Recognition();
+    recognitionRef.current = recognition;
     recognition.lang = 'ru-RU';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -451,9 +482,11 @@ export default function App() {
       const result = event.results[0][0].transcript;
       setInput(result);
       setIsRecording(false);
+      recognitionRef.current = null;
     };
     recognition.onerror = (event) => {
       setIsRecording(false);
+      recognitionRef.current = null;
       if (event.error === 'not-allowed') {
         alert("Нет доступа к микрофону. Разреши использование микрофона в настройках браузера. 🎙️");
       } else if (event.error === 'no-speech') {
@@ -462,12 +495,16 @@ export default function App() {
         console.warn("Speech error:", event.error);
       }
     };
-    recognition.onend = () => setIsRecording(false);
+    recognition.onend = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
 
     try {
       recognition.start();
     } catch (e) {
       setIsRecording(false);
+      recognitionRef.current = null;
       console.warn("Recognition start failed:", e);
     }
   };
@@ -957,18 +994,20 @@ export default function App() {
             ➤
           </button>
 
-          {isRecording && (
-            <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300">
-              <div className="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(239,68,68,0.8)] animate-pulse mb-8">
-                <span className="text-5xl">🎤</span>
-              </div>
-              <div className="text-white text-2xl font-bold mb-2">Слушаю тебя...</div>
-              <div className="text-white/60 text-lg">Говори смело, здесь нет неправильных ответов!</div>
-              <button onClick={() => setIsRecording(false)} className="mt-12 px-8 py-3 bg-white/10 border border-white/20 text-white rounded-2xl font-bold hover:bg-white/20 transition-all">
-                Остановить
-              </button>
-            </div>
-          )}
+        </div>
+      )}
+
+      {/* Recording overlay — at top-level so fixed positioning works regardless of ancestor filters */}
+      {isRecording && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(239,68,68,0.8)] animate-pulse mb-4">
+            <span className="text-5xl">🎤</span>
+          </div>
+          <div className="text-white text-2xl font-bold mb-2">Слушаю тебя...</div>
+          <div className="text-white/60 text-lg">Говори смело, здесь нет неправильных ответов!</div>
+          <button onClick={stopSpeech} className="mt-6 px-8 py-3 bg-white/10 border border-white/20 text-white rounded-2xl font-bold hover:bg-white/20 transition-all">
+            Остановить
+          </button>
         </div>
       )}
 
@@ -1057,7 +1096,45 @@ export default function App() {
         </button>
       </div>
 
-      <div className="px-4 py-6">
+      {/* ── Зона для ребёнка ── */}
+      <div className={`px-4 py-5 border-b ${dm ? 'border-slate-800 bg-slate-900/40' : 'border-amber-100 bg-amber-50/60'}`}>
+        <div className="max-w-[480px] md:max-w-[600px] mx-auto">
+          <div className="flex items-start gap-3 mb-4">
+            <img src="./img/webp/ugolok.webp" alt="Уголёк"
+              className="w-10 h-10 rounded-full object-cover border-2 border-amber-300/60 shadow-sm flex-shrink-0 mt-0.5"
+              onError={e => { e.currentTarget.style.display = 'none'; }} />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-bold text-amber-600 mb-1 uppercase tracking-tighter">{CONFIG.character.name}</div>
+              {resultChildMessage ? (
+                <p className={`text-[15px] leading-relaxed ${dm ? 'text-slate-100' : 'text-amber-900'}`}
+                  dangerouslySetInnerHTML={{ __html: resultChildMessage
+                    .replace(/^[\s]*[🐉🦎🔥]\s*/u, '')
+                    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+                    .replace(/\*([^*]+)\*/g, '<em style="font-style:italic;opacity:0.8">$1</em>') }} />
+              ) : (
+                <div className="flex items-center gap-2 py-1">
+                  <div className="w-3 h-3 rounded-full border-2 border-amber-400/40 border-t-amber-400 animate-spin flex-shrink-0" />
+                  <span className={`text-[13px] italic ${dm ? 'text-slate-500' : 'text-amber-700/60'}`}>Уголёк думает...</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => { setResultChildMessage(null); continueSolving(); }}
+              className={`w-full py-3.5 rounded-2xl font-bold text-[15px] border-2 transition-all active:scale-[0.98] ${dm ? 'border-emerald-700/50 text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40' : 'border-[#2D6A4F]/30 text-[#2D6A4F] bg-white hover:bg-[#2D6A4F]/5'}`}>
+              🔄 Вернуться к задаче
+            </button>
+            <button
+              onClick={() => setScreen('select')}
+              className="w-full bg-[#2D6A4F] text-white py-3.5 rounded-2xl font-bold text-[15px] transition-all active:scale-[0.98] hover:bg-[#24533e]">
+              🌟 Выбрать другую задачу
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-6 overflow-auto">
       <div className="max-w-[480px] md:max-w-[600px] mx-auto">
 
         {/* ── Заголовок — Победа ── */}
@@ -1172,6 +1249,14 @@ export default function App() {
             ↩ Вернуться к выбору задач
           </button>
         </div>
+
+        {/* ── Зона для родителя ── */}
+        <div className={`mt-4 pt-4 border-t text-center ${dm ? 'border-slate-700' : 'border-gray-200'}`}>
+          <p className={`text-[13px] ${dm ? 'text-slate-500' : 'text-gray-400'}`}>
+            Можешь вернуть телефон обратно 😊
+          </p>
+        </div>
+
       </div>
       </div>
     </div>
