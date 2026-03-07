@@ -10,6 +10,7 @@ if (typeof window !== 'undefined') {
 /* ═══ CONFIG ═══ */
 const CONFIG = {
   cta_telegram: "FormulaIntelligenc",
+  subscribe_bot: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUBSCRIBE_BOT) || "ВАШ_БОТ",
   cta_message: 'Здравствуйте! Интересуюсь ТРИЗ-занятиями для развития мышления.',
   cta_text: "Записаться на встречу",
   cta_subtitle: "60 минут · Онлайн · До 8 детей в группе",
@@ -1123,6 +1124,19 @@ export default function App() {
           </a>
           <p className={`text-center text-[11px] mt-2 ${dm ? 'text-slate-500' : 'text-gray-400'}`}>{CONFIG.cta_subtitle}</p>
         </div>
+
+        {/* ── Подписка на новые задачи ── */}
+        {CONFIG.subscribe_bot !== "ВАШ_БОТ" && (
+          <a href={`https://t.me/${CONFIG.subscribe_bot}?start=result`} target="_blank" rel="noreferrer"
+            className={`flex items-center gap-3 rounded-[20px] p-4 border mb-5 no-underline transition-all active:scale-[0.98] ${dm ? 'bg-blue-900/20 border-blue-800/40 hover:bg-blue-900/30' : 'bg-blue-50 border-blue-100 hover:bg-blue-100/80'}`}>
+            <span className="text-2xl flex-shrink-0">🔔</span>
+            <div className="flex-1 min-w-0">
+              <div className={`font-bold text-[14px] ${dm ? 'text-blue-300' : 'text-blue-800'}`}>Следи за новыми задачами</div>
+              <div className={`text-[12px] ${dm ? 'text-blue-400/70' : 'text-blue-600/70'}`}>Подпишись на бота — пришлём когда появится что-то новое</div>
+            </div>
+            <span className={`text-[12px] font-bold flex-shrink-0 ${dm ? 'text-blue-400' : 'text-blue-600'}`}>→</span>
+          </a>
+        )}
 
         {/* ── Вторичные действия ── */}
         <div className="space-y-3 mb-8">
