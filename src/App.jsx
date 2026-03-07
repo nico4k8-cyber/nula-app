@@ -1,51 +1,88 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import JSConfetti from 'js-confetti';
+import posthog from 'posthog-js';
+
+if (typeof window !== 'undefined') {
+  posthog.init('phc_mock_key_for_v14', { api_host: 'https://app.posthog.com' });
+}
 
 
 /* ═══ CONFIG ═══ */
 const CONFIG = {
   cta_telegram: "FormulaIntelligenc",
-  cta_message: 'Здравствуйте! Мой ребёнок прошёл тренажёр "Формула Интеллекта". Хочу записать на бесплатный урок.',
-  cta_text: "Записать на бесплатный урок",
+  cta_message: 'Здравствуйте! Интересуюсь ТРИЗ-занятиями для развития мышления.',
+  cta_text: "Записаться на встречу",
   cta_subtitle: "60 минут · Онлайн · До 8 детей в группе",
-  character: { name: "Идейка", avatar: "💡" },
+  character: { name: "Уголёк", avatar: "🐉" },
   delay_ms: { found: 1500, other: 800 },
   parent_phrases: {
-    low: "Для первого раза — отличный результат! На пробном уроке будет 3 новых задачи",
-    mid: "Впечатляюще! Ваш ребёнок близок к максимуму",
-    all: "Все решения найдены — это редкий результат!",
+    low: "Для начала — отличный результат! На занятии мы разберем ещё 3 необычных задачи.",
+    mid: "Впечатляюще! Мышление работает нестандартно, ресурсы найдены быстро.",
+    all: "Уникальный результат! Все решения найдены — настоящий талант к изобретательству.",
   },
   logging: {
     botToken: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TG_TOKEN) || "8316651117:AAGd7FAWu4Q1vsDd0riKF-UcKYT4S7v3uF0",
     chatId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TG_CHAT) || "122107817",
-  }
+  },
+  DAILY_TOKEN_LIMIT: 1_000_000,
+  ALERT_THRESHOLD: 0.8,
 };
 
 /* ═══ TASKS ═══ */
 import { TASKS, PICK, processUserMessage } from "./bot/engine";
 
 /* ═══ RENDER CONDITION ═══ */
-function Condition({ text }) {
+function Condition({ text, dm }) {
   const parts = text.split(/(\*\*.*?\*\*)/g);
-  return <p className="text-[15px] leading-relaxed text-[#1B1B1B] mb-3">
+  return <p className={`text-[17px] md:text-[18px] leading-relaxed mb-3 ${dm ? 'text-white/90' : 'text-[#1B1B1B]'}`}>
     {parts.map((part, i) =>
-      part.startsWith("**") ? <strong key={i} className="text-[#E57A44] font-bold">{part.slice(2, -2)}</strong> : part
+      part.startsWith("**") ? <strong key={i} className={`${dm ? 'text-amber-400' : 'text-[#E57A44]'} font-bold`}>{part.slice(2, -2)}</strong> : part
     )}
   </p>;
 }
 
 /* ═══ TASK IMAGE ═══ */
-function TaskImage({ task, size = "large" }) {
+function TaskImage({ task, size = "large", dm }) {
   const isLarge = size === "large";
-  const src = isLarge ? task.image : task.thumb;
+  const src = isLarge ? task.image : (task.thumb || task.image);
   return (
-    <div className={`relative overflow-hidden ${isLarge ? "rounded-2xl bg-gray-50 border border-gray-100" : "rounded-xl w-16 h-16 shrink-0"}`}>
+    <div className={`relative overflow-hidden transition-all duration-500 ${isLarge ? "h-[220px] md:h-[300px] bg-gray-100" : "w-full aspect-[16/10] bg-gray-50 rounded-2xl"}`}>
       <img
         src={src}
         alt={task.title}
-        className={`w-full ${isLarge ? "aspect-[16/9] object-contain" : "h-full object-cover"}`}
+        className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${dm ? 'brightness-[0.7] contrast-[1.1]' : ''}`}
         onError={(e) => { e.target.style.display = 'none'; }}
       />
+      <div className={`absolute inset-0 bg-gradient-to-t ${dm ? 'from-[#1a1a2e]/80' : 'from-black/30'} to-transparent pointer-events-none`}></div>
+    </div>
+  );
+}
+
+/* ═══ PHASE TRACKER ═══ */
+function PhaseTracker({ step, dm }) {
+  const steps = [
+    { id: 0, label: "Загадка", icon: "🔥" },
+    { id: 1, label: "Анализ", icon: "🔍" },
+    { id: 2, label: "Гипотезы", icon: "🏹" },
+    { id: 3, label: "Отбор", icon: "🏆" },
+    { id: 4, label: "Проверка", icon: "🧪" }
+  ];
+
+  return (
+    <div className="flex items-center justify-between px-3 py-2 gap-1 mb-2 overflow-x-auto no-scrollbar">
+      {steps.map((s, idx) => (
+        <div key={s.id} className="flex items-center gap-1 flex-1 last:flex-none">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] md:text-[11px] font-bold transition-all border ${step === s.id
+            ? 'bg-amber-500 text-white shadow-lg border-amber-600'
+            : step > s.id
+              ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+              : dm ? 'bg-white/5 text-gray-500 border-white/5' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+            <span className="text-sm">{s.icon}</span>
+            {step === s.id && <span>{s.label}</span>}
+          </div>
+          {idx < steps.length - 1 && <div className={`flex-1 h-[2px] rounded-full mx-1 ${step > s.id ? 'bg-emerald-500/30' : dm ? 'bg-white/10' : 'bg-gray-100'}`} />}
+        </div>
+      ))}
     </div>
   );
 }
@@ -69,7 +106,9 @@ export default function App() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [found, setFound] = useState([]);
-  const [ikrPhase, setIkrPhase] = useState(0);
+  const [prizStep, setPrizStep] = useState(0);
+  const [prizStepStarted, setPrizStepStarted] = useState(false);
+  const [hypotheses, setHypotheses] = useState([]);
   const [fbIdx, setFbIdx] = useState(0);
   const [streak, setStreak] = useState(0);
   const [showCondition, setShowCondition] = useState(false);
@@ -85,11 +124,14 @@ export default function App() {
   const [flyingPrinciple, setFlyingPrinciple] = useState(null);
   const [revealed, setRevealed] = useState({});
   const [isFocused, setIsFocused] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [adminClicks, setAdminClicks] = useState(0);
   const [darkMode, setDarkMode] = useState(() => {
     try { return localStorage.getItem('fi_dark') === '1'; } catch { return false; }
   });
   const [themeClicks, setThemeClicks] = useState(0);
+  const [countdown, setCountdown] = useState(null);
+  const [aiReport, setAiReport] = useState(null);
   const [childMode, setChildMode] = useState(() => {
     try { return sessionStorage.getItem('fi_child') === '1'; } catch { return false; }
   });
@@ -98,9 +140,9 @@ export default function App() {
   });
   const inputRef = useRef(null);
   const dialogRef = useRef(null);
-  const ikrResourcesRef = useRef([]);
   const jsConfetti = useRef(null);
-  const total = task ? Object.keys(task.branches).length : 0;
+  const countdownRef = useRef(null);
+  const total = 3; // Для ИИ-режима мы ориентируемся на 3 решения по умолчанию
 
   useEffect(() => {
     jsConfetti.current = new JSConfetti();
@@ -119,19 +161,23 @@ export default function App() {
   /* ─ Dialog logging (localStorage for admin audit) ─ */
   const logInteraction = useCallback((taskId, userText, botResponse, resultType) => {
     try {
+      const logs = JSON.parse(localStorage.getItem('fi_logs') || '[]');
+      logs.push({ t: Date.now(), id: taskId, ut: userText, br: botResponse, res: resultType });
+      localStorage.setItem('fi_logs', JSON.stringify(logs.slice(-50)));
+
+      // Also track in all history for export
       const key = 'fi_all_history';
-      const logs = JSON.parse(localStorage.getItem(key) || '[]');
-      logs.push({
+      const history = JSON.parse(localStorage.getItem(key) || '[]');
+      history.push({
         ts: new Date().toISOString(),
         task: taskId,
         input: userText,
         result: resultType,
         bot: botResponse?.substring(0, 300)
       });
-      // Keep only last 1000 interactions to avoid quota issues
-      if (logs.length > 1000) logs.shift();
-      localStorage.setItem(key, JSON.stringify(logs));
-    } catch (e) { console.warn("Storage quota exceeded"); }
+      if (history.length > 500) history.shift();
+      localStorage.setItem(key, JSON.stringify(history));
+    } catch (e) { console.warn("Log error", e); }
   }, []);
 
   const formatTime = (ms) => {
@@ -150,23 +196,81 @@ export default function App() {
 
     try {
       const timeStr = formatTime(taskTimeMs || 0);
-      const logHeader = `🤖 <b>ОТЧЁТ О СЕССИИ ТРИЗ</b>\n<b>Задача:</b> ${currentTask.title}\n<b>Решений:</b> ${currentFound.length}/${currentTotal}\n<b>Время:</b> ${timeStr}\n\n`;
+      const logHeader = `🤖 <b>ОТЧЁТ О СЕССИИ ТРИЗ</b>\n<b>Задача:</b> ${currentTask.title}\n<b>Этапы:</b> ${currentFound.length}/${currentTotal}\n<b>Время:</b> ${timeStr}\n\n`;
       const logBody = currentMessages
+        .filter(m => m.text && !m.loading)
         .map(m => `<b>${m.role === "user" ? "👤 Ребенок" : "🤖 Бот"}:</b> ${m.text}`)
         .join("\n\n");
+
+      // Telegram API limit: 4096 chars. Split into chunks of 3800 to be safe.
+      const fullText = logHeader + logBody;
+      const LIMIT = 3800;
+      const chunks = [];
+      for (let i = 0; i < fullText.length; i += LIMIT) {
+        chunks.push(fullText.slice(i, i + LIMIT));
+      }
+
+      for (const chunk of chunks) {
+        const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: "HTML" })
+        });
+        if (!resp.ok) console.error("Telegram send error:", await resp.text());
+      }
+      console.log(`Logs sent to Telegram Bot (${chunks.length} part(s)).`);
+    } catch (e) {
+      console.error("Failed to send logs to Telegram Bot:", e);
+    }
+  }, []);
+
+  const sendErrorToTelegramBot = useCallback(async (errorData) => {
+    const { botToken, chatId } = CONFIG.logging;
+    if (!botToken || botToken.includes("ВАШ_") || !chatId) {
+      console.log("Telegram Bot error logging skipped: No credentials.");
+      return;
+    }
+
+    try {
+      const errorMessage = `🚨 <b>ОШИБКА В ПРИЛОЖЕНИИ</b>\n<b>Задача:</b> ${errorData.taskTitle || "N/A"}\n<b>Ошибка:</b> ${errorData.error || "Unknown"}\n<b>Время:</b> ${errorData.timestamp || new Date().toISOString()}\n\n<code>${(errorData.details || "").substring(0, 1000)}</code>`;
 
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: logHeader + logBody,
+          text: errorMessage,
           parse_mode: "HTML"
         })
       });
-      console.log("Logs sent to Telegram Bot successfully.");
+      console.log("Error sent to Telegram Bot successfully.");
     } catch (e) {
-      console.error("Failed to send logs to Telegram Bot:", e);
+      console.error("Failed to send error to Telegram Bot:", e);
+    }
+  }, []);
+
+  const trackTokenUsage = useCallback(async (tokensUsed) => {
+    if (!tokensUsed) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const stored = JSON.parse(localStorage.getItem('fi_token_usage') || '{}');
+    const prevUsed = stored.date === today ? stored.used : 0;
+    const dailyUsed = prevUsed + tokensUsed;
+    localStorage.setItem('fi_token_usage', JSON.stringify({ date: today, used: dailyUsed }));
+
+    const limit = CONFIG.DAILY_TOKEN_LIMIT;
+    const { botToken, chatId } = CONFIG.logging;
+    if (dailyUsed / limit >= CONFIG.ALERT_THRESHOLD && prevUsed / limit < CONFIG.ALERT_THRESHOLD) {
+      if (botToken && chatId) {
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: `⚠️ <b>ЛИМИТ GEMINI API — 80%</b>\nИспользовано: <b>${dailyUsed.toLocaleString()} / ${limit.toLocaleString()} токенов</b> (${Math.round(dailyUsed / limit * 100)}%)\nОсталось: ~${Math.round((limit - dailyUsed) / 40000)} задачек`,
+            parse_mode: "HTML"
+          })
+        }).catch(e => console.error("Token limit alert failed:", e));
+      }
     }
   }, []);
 
@@ -246,7 +350,7 @@ export default function App() {
           messages: totalMessages,
           title: task.title,
           icon: task.icon,
-          total: Object.keys(task.branches).length,
+          total: 3,
         }
       };
     });
@@ -254,23 +358,59 @@ export default function App() {
     return elapsed;
   }, [task, taskStartTime, found.length, attempts, totalMessages]);
 
+  const getIconGradient = (id) => {
+    const gradients = {
+      "solomon-hall": "from-amber-400 to-orange-500",
+      "monkeys": "from-green-400 to-emerald-600",
+      "flowers": "from-pink-400 to-rose-500",
+      "bags": "from-blue-400 to-indigo-600"
+    };
+    return gradients[id] || "from-gray-400 to-gray-600";
+  };
+
+  const FALLBACK_HOOK = "Интересная задача попалась нам сегодня! Расскажи мне её своими словами, как будто я только что появился!";
+
   const selectTask = (t) => {
     if (task && taskStartTime) finalizeCurrentTask();
-    trackEvent('task_selected', { task_id: t.id });
+    posthog.capture('task_started', { task_id: t.id });
     setTask(t);
     setScreen("solve");
-    setMessages([{ role: "system", text: t.ikr_steps[0] }]);
     setFound([]);
-    setIkrPhase(0);
+    setPrizStep(0);
+    setPrizStepStarted(true);
+    setHypotheses([]);
     setFbIdx(0);
     setStreak(0);
     setAttempts(0);
     setTotalMessages(0);
     setPendingBranch(null);
+    setAiReport(null);
+    setCountdown(null);
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     setShowCondition(true);
-    setImageExpanded(false); // Reset on task select
+    setImageExpanded(false);
     setTaskStartTime(Date.now());
-    ikrResourcesRef.current = [];
+
+    // Show loading placeholder, then fetch unique AI hook
+    setMessages([{ role: "system", text: "...", loading: true }]);
+    fetch("/api/hook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task: t })
+    })
+      .then(r => r.json())
+      .then(d => setMessages([{ role: "system", text: (d.hook || FALLBACK_HOOK) + "\n\nРасскажи мне её своими словами, как будто я только что появился!" }]))
+      .catch(() => setMessages([{ role: "system", text: FALLBACK_HOOK }]));
+  };
+
+  const continueSolving = () => {
+    setScreen("solve");
+    setPrizStep(2);
+    setCountdown(null);
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setTaskStartTime(Date.now());
+    setMessages(prev => [...prev, { role: "system", text: "🔄 Давай попробуем найти ещё одно решение! Может, есть совершенно другой подход, который мы ещё не рассматривали?" }]);
+    setTimeout(() => inputRef.current?.focus(), 200);
   };
 
   const goBack = () => {
@@ -278,70 +418,171 @@ export default function App() {
     else { finalizeCurrentTask(); setScreen("select"); setTask(null); setPendingBranch(null); }
   };
 
+  const startSpeech = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Голосовой ввод не поддерживается вашим браузером. Попробуй Chrome. 🎙️");
+      return;
+    }
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new Recognition();
+    recognition.lang = 'ru-RU';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    setIsRecording(true);
+
+    recognition.onresult = (event) => {
+      const result = event.results[0][0].transcript;
+      setInput(result);
+      setIsRecording(false);
+    };
+    recognition.onerror = (event) => {
+      setIsRecording(false);
+      if (event.error === 'not-allowed') {
+        alert("Нет доступа к микрофону. Разреши использование микрофона в настройках браузера. 🎙️");
+      } else if (event.error === 'no-speech') {
+        // тихо — просто закрываем
+      } else {
+        console.warn("Speech error:", event.error);
+      }
+    };
+    recognition.onend = () => setIsRecording(false);
+
+    try {
+      recognition.start();
+    } catch (e) {
+      setIsRecording(false);
+      console.warn("Recognition start failed:", e);
+    }
+  };
+
   const send = useCallback(async () => {
     if (sending || !input.trim()) return;
     const txt = input.trim();
     setInput(""); setSending(true);
     setTotalMessages(m => m + 1);
-    trackEvent('message_sent', { task_id: task.id, ikr_phase: ikrPhase });
+    posthog.capture('message_sent', { task_id: task.id, priz_step: prizStep });
     if (showCondition) setShowCondition(false);
-    if (ikrPhase === 0) setAttempts((a) => a + 1);
-    setMessages((p) => [...p, { role: "user", text: txt }]);
+    const newAttempts = attempts + 1;
+    setAttempts(newAttempts);
+
+    // We keep track of history for the AI
+    const newMessages = [...messages, { role: "user", text: txt }];
+    setMessages(newMessages);
     setTyping(true);
 
-    /* ─── Call the pure engine function ─── */
+    /* ─── Call the engine function with history ─── */
     const engineState = {
-      ikrPhase,
+      prizStep,
+      prizStepStarted,
       found,
-      ikrResources: [...ikrResourcesRef.current],
+      hypotheses,
       pendingBranch,
       fbIdx,
       streak,
     };
-    const { reply, newState, resultType } = await processUserMessage(txt, task, engineState);
-    const delay = resultType === "found" ? CONFIG.delay_ms.found : CONFIG.delay_ms.other;
 
-    setTimeout(() => {
-      setTyping(false);
+    try {
+      const { reply, newState, resultType, tokensUsed } = await processUserMessage(txt, task, engineState, newMessages, sendErrorToTelegramBot);
+      trackTokenUsage(tokensUsed);
+      const delay = resultType === "found" ? CONFIG.delay_ms.found : CONFIG.delay_ms.other;
 
-      /* ─── Apply engine state back to React ─── */
-      if (newState.ikrPhase !== ikrPhase) setIkrPhase(newState.ikrPhase);
-      if (newState.fbIdx !== fbIdx) setFbIdx(newState.fbIdx);
-      if (newState.streak !== streak) setStreak(newState.streak);
-      if (newState.pendingBranch !== pendingBranch) setPendingBranch(newState.pendingBranch);
-      ikrResourcesRef.current = newState.ikrResources || ikrResourcesRef.current;
+      setTimeout(() => {
+        setTyping(false);
 
-      setMessages((p) => [...p, { role: "system", text: reply }]);
-
-      if (newState.newBranch) {
-        const branchData = task.branches[newState.newBranch];
-        setScore(s => s + 5);
-        if (jsConfetti.current) {
-          jsConfetti.current.addConfetti({
-            emojis: ['⭐', '🌟', '✨', '🎉', '💡'],
-            confettiNumber: 30,
-          });
+        /* ─── Apply engine state back to React ─── */
+        if (newState.prizStep !== undefined && newState.prizStep > prizStep) {
+          setPrizStep(newState.prizStep);
+          setScore(s => s + 1); // Award ⭐ for each stage advance
+        } else if (newState.prizStep !== prizStep) {
+          setPrizStep(newState.prizStep);
         }
-        setFound((p) => {
-          const next = [...p, newState.newBranch];
-          setTimeout(() => {
-            setFlyingPrinciple({ text: branchData.principle_child, count: next.length, total });
-            setTimeout(() => setFlyingPrinciple(null), 2500);
-          }, 1200);
-          setTimeout(() => setShowChoice(true), 3200);
-          if (next.length === total) {
-            const elapsed = taskStartTime ? (Date.now() - taskStartTime) : 0;
-            markTaskCompleted(task.id, next.length, elapsed);
+        if (newState.prizStepStarted !== prizStepStarted) setPrizStepStarted(newState.prizStepStarted);
+        if (newState.fbIdx !== fbIdx) setFbIdx(newState.fbIdx);
+        if (newState.streak !== streak) setStreak(newState.streak);
+        if (newState.pendingBranch !== pendingBranch) setPendingBranch(newState.pendingBranch);
+        if (newState.hypotheses) setHypotheses(newState.hypotheses);
+
+        setMessages((p) => [...p, { role: "system", text: reply }]);
+
+        if (newState.newBranch && task.branches) {
+          const branchData = task.branches.find(b => b.id === newState.newBranch);
+          if (branchData) {
+            setScore(s => s + 5);
+            if (jsConfetti.current) {
+              jsConfetti.current.addConfetti({
+                emojis: ['⭐', '🌟', '✨', '🎉', '💡'],
+                confettiNumber: 30,
+              });
+            }
+            setFound((p) => {
+              const next = [...p, newState.newBranch];
+              setTimeout(() => {
+                setFlyingPrinciple({ text: branchData.triz_principle || "Идея найдена!", count: next.length, total });
+                setTimeout(() => setFlyingPrinciple(null), 2500);
+              }, 1200);
+
+              if (next.length === total) {
+                const elapsed = taskStartTime ? (Date.now() - taskStartTime) : 0;
+                markTaskCompleted(task.id, next.length, elapsed);
+                setTimeout(() => {
+                  const finalElapsed = finalizeCurrentTask();
+                  trackEvent('result_screen_opened', { task_id: task.id, found: next.length });
+                  setScreen("result");
+                }, 4500);
+              } else {
+                setTimeout(() => setShowChoice(true), 3200);
+              }
+              return next;
+            });
           }
-          return next;
-        });
-      }
-      /* Log the interaction */
-      logInteraction(task.id, txt, reply, resultType);
+        }
+        // AI-driven completion: переход на результаты когда AI говорит "Задача решена" (СТАДИЯ:4)
+        if (newState.prizStep === 4 && prizStep < 4) {
+          const msgsCopy = [...newMessages, { role: "system", text: reply }];
+          // Запускаем генерацию отчёта сразу — чтобы был готов к моменту перехода
+          fetch("/api/report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: msgsCopy, task })
+          }).then(r => r.json()).then(d => { if (d.report) setAiReport(d.report); }).catch(() => {});
+
+          const goToResult = () => {
+            clearInterval(countdownRef.current);
+            countdownRef.current = null;
+            setCountdown(null);
+            const finalElapsed = finalizeCurrentTask();
+            sendLogsToTelegramBot(task, msgsCopy, found, total, finalElapsed);
+            trackEvent('result_screen_opened', { task_id: task.id, found: found.length });
+            setScreen("result");
+          };
+
+          let t = 60;
+          setCountdown(t);
+          const iv = setInterval(() => {
+            t--;
+            if (t <= 0) {
+              goToResult();
+            } else {
+              setCountdown(t);
+            }
+          }, 1000);
+          countdownRef.current = iv;
+          // Expose goToResult for the manual button via ref
+          countdownRef.goToResult = goToResult;
+        }
+
+        logInteraction(task.id, txt, reply, resultType);
+        setSending(false);
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }, delay);
+    } catch (err) {
+      console.error("Critical send error:", err);
+      setTyping(false);
       setSending(false);
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }, delay);
-  }, [input, sending, task, found, fbIdx, total, ikrPhase, pendingBranch, streak]);
+      setMessages(p => [...p, { role: "system", text: "Ой, что-то пошло не так в моём драконьем механизме... Давай попробуем ещё раз?" }]);
+    }
+  }, [input, sending, task, found, fbIdx, total, prizStep, pendingBranch, streak, messages, taskStartTime, markTaskCompleted, finalizeCurrentTask, trackEvent, logInteraction, trackTokenUsage]);
 
   useEffect(() => {
     dialogRef.current?.scrollTo({ top: dialogRef.current.scrollHeight, behavior: 'smooth' });
@@ -356,45 +597,55 @@ export default function App() {
   if (screen === "select") {
     /* ── PARENT HANDOFF SCREEN ── */
     if (!childMode) return (
-      <div className={`min-h-[100dvh] flex flex-col items-center justify-center px-6 py-10 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#1a1a2e] text-[#E0E0E0]' : 'bg-[#FAF9F6]'}`}>
+      <div className={`min-h-[100dvh] transition-colors duration-300 flex flex-col items-center justify-center px-6 py-10 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
+        style={dm ? { background: 'radial-gradient(circle at center, #1E293B 0%, #0F172A 100%)' } : {}}>
         <style>{`@keyframes blink{0%,80%{opacity:.2}40%{opacity:1}}`}</style>
-        <div className="max-w-[420px] w-full">
-          <h1 className={`font-['Playfair_Display',Georgia,serif] text-[26px] md:text-[32px] leading-tight mb-3 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
-            Формула Интеллекта
-          </h1>
-          <p className={`text-[15px] leading-relaxed mb-6 ${dm ? 'text-[#B0B0C0]' : 'text-[#4A4A4A]'}`}>
-            4 нестандартные задачи на изобретательное мышление — для детей 8–12 лет. Каждая задача учит видеть противоречие и находить несколько решений с помощью того, что уже есть под рукой.
-          </p>
 
-          <div className={`rounded-2xl p-4 mb-6 ${dm ? 'bg-[#16213e]' : 'bg-white'} border ${dm ? 'border-white/10' : 'border-gray-100'} shadow-sm`}>
-            <p className="text-[13px] font-bold text-gray-500 uppercase tracking-wider mb-3">Как это работает:</p>
-            <div className="space-y-2 text-[14px] text-gray-600">
-              <div className="flex gap-2"><span>1.</span><span>Ребёнок читает задачу и предлагает решения в чате</span></div>
-              <div className="flex gap-2"><span>2.</span><span>Бот задаёт наводящие вопросы — не даёт готовых ответов</span></div>
-              <div className="flex gap-2"><span>3.</span><span>В конце вы видите аналитику и сколько решений нашёл ребёнок</span></div>
-            </div>
+        <div className="absolute top-4 right-4 group">
+          <button onClick={() => setDarkMode(!dm)} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-white text-gray-400 border border-gray-100 hover:bg-gray-50'}`}>
+            {dm ? "☀️" : "🌙"}
+          </button>
+        </div>
+        <div className="max-w-[440px] w-full">
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 bg-[#2D6A4F] rounded-3xl flex items-center justify-center text-4xl shadow-xl shadow-[#2D6A4F]/20">💡</div>
           </div>
+
+          <h1 className={`font-['Playfair_Display',Georgia,serif] text-[30px] md:text-[36px] leading-[1.1] text-center mb-4 ${dm ? 'text-slate-100' : 'text-[#1B1B1B]'}`}>
+            Раскройте потенциал <br /><span className="text-[#2D6A4F]">гениального ума</span>
+          </h1>
+
+          <p className={`text-[16px] leading-relaxed text-center mb-8 ${dm ? 'text-slate-400' : 'text-[#4A4A4A]'}`}>
+            Как научить думать на 10 шагов вперед? <br />Тренажёр ТРИЗ-мышления — это первый шаг к системному подходу в жизни.
+          </p>
 
           <button
             onClick={() => {
               try { sessionStorage.setItem('fi_child', '1'); } catch { }
               setChildMode(true);
             }}
-            className="w-full bg-[#2D6A4F] text-white border-none rounded-2xl py-4 px-6 text-[17px] font-bold cursor-pointer hover:bg-[#24533e] transition-colors shadow-md mb-3">
+            className="w-full bg-[#2D6A4F] text-white border-none rounded-2xl py-4 px-6 text-[18px] font-bold cursor-pointer hover:bg-[#24533e] transition-all hover:scale-[1.02] shadow-lg active:scale-95 mb-4">
             Передать телефон ребёнку →
           </button>
-          <p className="text-center text-[12px] text-gray-400">Нажмите и передайте телефон — дальше бот работает сам</p>
+          <div className="text-center">
+            <span className={`text-[12px] px-3 py-1 rounded-full ${dm ? 'bg-slate-800 text-slate-500' : 'bg-gray-100 text-gray-400'}`}>
+              Дальше тренажёр работает в игровом режиме
+            </span>
+          </div>
         </div>
       </div>
     );
-
     /* ── CHILD TASK SELECT SCREEN ── */
     return (
-      <div className={`min-h-[100dvh] px-4 py-5 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#1a1a2e] text-[#E0E0E0]' : 'bg-[#FAF9F6]'}`}>
+      <div className={`min-h-[100dvh] px-4 py-5 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
+        style={dm ? { background: 'radial-gradient(circle at top, #1E293B 0%, #0F172A 100%)' } : {}}>
         <div className="max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto">
 
-          {/* Small "back to parent" link */}
-          <div className="flex justify-end mb-3">
+          {/* Header for Child Screen */}
+          <div className="flex justify-between items-center mb-4">
+            <button onClick={() => setDarkMode(!dm)} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-white text-gray-400 border border-gray-100'}`}>
+              {dm ? "☀️" : "🌙"}
+            </button>
             <button onClick={() => {
               try { sessionStorage.removeItem('fi_child'); } catch { }
               setChildMode(false);
@@ -403,32 +654,52 @@ export default function App() {
             </button>
           </div>
 
-          {/* Идейка greeting */}
+          {/* Уголёк greeting */}
           <div className={`rounded-2xl p-4 mb-6 flex gap-3 items-start ${dm ? 'bg-amber-900/20' : 'bg-amber-50'} border ${dm ? 'border-amber-700/30' : 'border-amber-100'} shadow-sm`}>
-            <span className="text-3xl cursor-pointer select-none active:scale-95 transition-transform"
+            <img src="./img/webp/ugolok.webp" alt="Уголёк"
+              className="w-12 h-12 rounded-full object-cover flex-shrink-0 cursor-pointer select-none active:scale-95 transition-transform border-2 border-amber-300/60 shadow-sm"
               title="Для учителя"
-              onClick={handleAdminClick}>{CONFIG.character.avatar}</span>
+              onClick={handleAdminClick}
+              onError={e => { e.currentTarget.outerHTML = `<span class="text-3xl cursor-pointer select-none active:scale-95 transition-transform" title="Для учителя">${CONFIG.character.avatar}</span>`; }} />
             <div>
               <div className="text-[12px] font-bold text-amber-600 mb-0.5 uppercase tracking-wider">{CONFIG.character.name}</div>
-              <div className="text-[16px] text-gray-800 leading-snug">
-                Привет! Выбирай любую задачу. В каждой — своя загадка: что-то мешает, и нужно придумать хитрое решение. Подсказки будут, если застрянешь. <strong>Готов?</strong>
+              <div className={`text-[16px] leading-snug ${dm ? 'text-white/90' : 'text-gray-800'}`}>
+                Привет! Выбирай любую задачу. В каждой — своя загадка: что-то мешает, и нужно придумать хитрое решение. Подсказки будут, если застрянешь. <strong>Начнём?</strong>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {TASKS.map((t) => {
               const completed = sessionCompleted[t.id];
+              const diff = t.difficulty || 1;
               return (
                 <div key={t.id} onClick={() => selectTask(t)}
                   role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && selectTask(t)}
-                  className={`rounded-2xl p-4 cursor-pointer border-2 transition-all duration-200 shadow-sm outline-none focus:border-[#2D6A4F] ${dm ? 'bg-[#16213e]' : 'bg-white'} ${completed ? 'border-[#2D6A4F]/30 opacity-60' : `border-transparent hover:border-[#2D6A4F] hover:-translate-y-0.5`}`}>
-                  <div className="mb-3 relative">
-                    <TaskImage task={t} size="small" />
-                    {completed && <div className="absolute top-1 right-1 bg-[#2D6A4F] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✓</div>}
+                  className={`group rounded-3xl p-4 cursor-pointer border-2 transition-all duration-300 shadow-xl hover:shadow-2xl active:scale-95 outline-none ${dm ? 'bg-[#16213e] border-white/5' : 'bg-white border-transparent hover:border-[#2D6A4F]/20'}`}>
+                  <div className="mb-4 relative rounded-2xl overflow-hidden aspect-[16/10] bg-gray-50 shadow-inner group-hover:shadow-2xl transition-all duration-500">
+                    <TaskImage task={t} size="small" dm={dm} />
+                    <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
+                    {completed && (
+                      <div className="absolute top-3 right-3 bg-[#2D6A4F] text-white rounded-full w-8 h-8 flex items-center justify-center text-sm shadow-xl border-2 border-white animate-in zoom-in duration-500 z-10">
+                        ✓
+                      </div>
+                    )}
                   </div>
-                  <div className={`font-bold text-[15px] mb-1 ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>{t.title}</div>
-                  <div className="text-[13px] text-gray-500 leading-snug">{completed ? 'Решено ✔' : t.teaser}</div>
+                  <div className={`font-bold text-[18px] mb-2 transition-colors leading-tight ${dm ? 'text-white' : 'text-[#1B1B1B] group-hover:text-[#2D6A4F]'}`}>{t.title}</div>
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex gap-0.5 bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-full">
+                      {[1, 2, 3].map(s => (
+                        <span key={s} className={`text-[11px] ${s <= diff ? 'text-amber-500' : 'text-gray-200'}`}>★</span>
+                      ))}
+                    </div>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md shadow-sm ${dm ? 'bg-amber-900/40 text-amber-200 border border-amber-800/50' : 'bg-amber-50 text-amber-700 border border-amber-100'}`}>
+                      {t.ageRange || "10-13 лет"}
+                    </span>
+                  </div>
+
+                  <div className="text-[12px] text-gray-500 leading-snug line-clamp-2 min-h-[32px]">{completed ? 'Продолжить тренировку →' : t.teaser}</div>
                 </div>
               );
             })}
@@ -440,7 +711,8 @@ export default function App() {
 
   /* ─── SCREEN: SOLVE ─── */
   if (screen === "solve") return (
-    <div className={`h-[100dvh] flex flex-col max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#1a1a2e] text-[#E0E0E0]' : 'bg-[#FAF9F6]'}`}>
+    <div className={`h-[100dvh] flex flex-col max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
+      style={dm ? { background: 'radial-gradient(circle at top, #1E293B 0%, #0F172A 100%)' } : {}}>
       <style>{`
         @keyframes blink{0%,80%{opacity:.2}40%{opacity:1}}
         @keyframes flyUp{
@@ -458,21 +730,32 @@ export default function App() {
           70%{box-shadow:0 0 0 6px rgba(45,106,79,0)}
           100%{box-shadow:0 0 0 0 rgba(45,106,79,0)}
         }
+        .focus-blur { filter: blur(8px); pointer-events: none; transition: filter 0.3s ease; }
       `}</style>
 
       {imageExpanded && <ImageModal src={task.image} onClose={() => setImageExpanded(false)} dm={dm} />}
 
-      {/* Header with inline progress */}
-      <div className={`px-3 py-2 flex items-center gap-2 border-b ${dm ? 'border-gray-700' : 'border-gray-200'}`}>
-        <button onClick={goBack} aria-label="Назад к задачам" className={`bg-transparent border-none text-lg cursor-pointer p-3 -ml-1 rounded-lg hover:bg-black/5 active:bg-black/10 transition-colors ${dm ? 'text-white' : ''}`}>←</button>
-        <span className="text-lg cursor-pointer active:scale-90 transition-transform" onClick={handleThemeToggle}>{CONFIG.character.avatar}</span>
-        <span className={`font-bold text-[14px] truncate flex-1 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>{task.title}</span>
-        <div className="flex items-center gap-1.5">
-          <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-[#2D6A4F] rounded-full transition-all duration-700"
-              style={{ width: `${(found.length / total) * 100}%`, animation: flyingPrinciple ? 'progressPulse 0.8s ease-out' : 'none' }} />
+      {/* Header with theme toggle and progress */}
+      <div className={`px-4 py-3 flex items-center justify-between border-b shadow-sm ${dm ? 'border-slate-800 bg-slate-900/50 backdrop-blur-md' : 'border-gray-100 bg-white'}`}>
+        <button onClick={goBack} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-90 ${dm ? 'text-slate-400 hover:text-slate-100 bg-slate-800/50' : 'text-gray-400 hover:text-gray-800 bg-gray-50'}`}>
+          <span className="text-xl">←</span>
+        </button>
+
+        <div className="flex flex-col items-center flex-1 mx-2">
+          <div className="flex items-center gap-2 mb-0.5">
+            <div className="w-6 h-6 bg-[#2D6A4F] rounded-lg flex items-center justify-center text-xs shadow-md">💡</div>
+            <span className={`text-[10px] uppercase font-black tracking-widest ${dm ? 'text-slate-400' : 'text-gray-400'}`}>Formula Intelligence</span>
           </div>
-          <span className="text-[12px] font-bold text-[#2D6A4F] min-w-[24px]">{found.length}/{total}</span>
+          <h2 className={`text-sm font-bold truncate max-w-[150px] ${dm ? 'text-slate-100' : 'text-gray-800'}`}>{task.title}</h2>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button onClick={() => setDarkMode(!dm)} className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all text-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
+            {dm ? "☀️" : "🌙"}
+          </button>
+          <button onClick={() => window.open('https://trizintellect.tilda.ws', '_blank')} className={`px-2 py-1 text-[9px] font-bold rounded-lg border transition-all ${dm ? 'border-amber-500/30 text-amber-500 hover:bg-amber-500/10' : 'border-[#2D6A4F]/20 text-[#2D6A4F] hover:bg-[#2D6A4F]/5'}`}>
+            О ШКОЛЕ
+          </button>
         </div>
       </div>
 
@@ -490,20 +773,21 @@ export default function App() {
         </div>
 
         {/* Task Image — Always visible, toggles size */}
-        <div className={`relative rounded-xl overflow-hidden border border-gray-100 mb-2 cursor-zoom-in group transition-all duration-300 ${showCondition ? 'max-h-[320px]' : 'max-h-[64px]'}`}
+        <div className={`relative rounded-xl overflow-hidden border ${dm ? 'border-white/10' : 'border-gray-100'} mb-2 cursor-zoom-in group transition-all duration-300 ${showCondition ? 'aspect-[4/3]' : 'aspect-[16/9]'}`}
           onClick={() => setImageExpanded(true)}>
-          <img src={task.image} alt={task.title} className="w-full h-auto object-contain bg-gray-50"
-            style={{ maxHeight: showCondition ? '320px' : '64px' }} />
+          <img src={task.image} alt={task.title} className={`w-full h-full object-contain ${dm ? 'bg-gray-900' : 'bg-gray-50'}`} />
           <div className={`absolute inset-0 bg-black/5 flex items-center justify-center transition-opacity ${showCondition ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
-            <span className={`${showCondition ? 'text-2xl' : 'text-lg'} drop-shadow-md`}>🔍</span>
+            <span className={`${showCondition ? 'text-2xl' : 'text-lg'} drop-shadow-md text-white`}>🔍</span>
           </div>
         </div>
 
         {showCondition && (
           <div className="animate-in fade-in slide-in-from-top-1 duration-300 mb-2">
-            <Condition text={task.condition} />
+            <Condition text={task.condition} dm={dm} />
           </div>
         )}
+
+        <PhaseTracker step={prizStep} dm={dm} />
 
         <button onClick={() => setShowCondition(!showCondition)} className={`w-full py-1.5 flex items-center justify-center gap-1.5 text-[11px] font-bold transition-colors uppercase tracking-wider rounded-lg ${dm ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
           {showCondition ? "Свернуть описание" : "Развернуть описание"}
@@ -511,37 +795,62 @@ export default function App() {
         </button>
       </div>
 
-      {/* Dialog area — only messages scroll */}
-      <div ref={dialogRef} className="flex-1 overflow-auto px-4 py-4 flex flex-col gap-3 scroll-smooth">
-        {/* Show all button — moved higher to avoid accidental clicks near input */}
-        {attempts >= 8 && found.length < total && !showChoice && (
-          <button onClick={() => { finalizeCurrentTask(); setScreen("result"); }}
-            className="self-center bg-white border border-gray-300 rounded-lg px-4 py-2 text-[12px] text-gray-400 cursor-pointer mb-2 hover:bg-gray-50 transition-colors shadow-sm"
-            style={{ animation: 'popIn 0.4s ease-out' }}>
-            🏁 Показать все решения
-          </button>
-        )}
+      <div ref={dialogRef} className={`flex-1 overflow-auto px-4 py-4 flex flex-col gap-3 scroll-smooth ${isRecording ? 'focus-blur' : ''}`}>
 
         {/* Messages */}
         {messages.map((m, i) => {
+          const isBot = m.role === "system";
+          // Loading placeholder while AI hook is being fetched
+          if (m.loading) return (
+            <div key={i} className="flex gap-2 w-full mt-1 items-end">
+              <div className="flex-shrink-0 self-end mb-1">
+                <img src="./img/webp/ugolok.webp" alt="Уголёк"
+                  className="w-8 h-8 rounded-full object-cover border-2 border-amber-300/60 shadow-sm"
+                  onError={e => { e.currentTarget.style.display = 'none'; }} />
+              </div>
+              <div className={`px-4 py-3 rounded-[16px_16px_16px_4px] ${dm ? 'bg-amber-900/30 border border-amber-500/30' : 'bg-amber-50 border border-amber-200/50'} shadow-sm`}>
+                <div className="text-[10px] font-bold text-amber-600 mb-1.5 uppercase tracking-tighter">{CONFIG.character.name}</div>
+                <div className="flex gap-1 items-center">
+                  {[0, 1, 2].map(d => (
+                    <div key={d} className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: `${d * 0.15}s` }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
           const parts = m.text.split('\n\n').filter(p => p.trim() !== '');
           return (
-            <div key={i} className={`flex flex-col gap-2 w-full mt-1 ${m.role === "user" ? "items-end" : "items-start"}`}>
-              {parts.map((part, partIdx) => (
-                <div key={partIdx} className={`max-w-[82%] md:max-w-[70%] px-3.5 py-2.5 text-[15px] md:text-[16px] leading-snug whitespace-pre-wrap ${m.role === "user" ? `rounded-[14px_14px_4px_14px] ${dm ? 'bg-[#2D6A4F]/30 text-[#E0E0E0]' : 'bg-[#2D6A4F]/10 text-[#1B1B1B]'}` : `rounded-[14px_14px_14px_4px] ${dm ? 'bg-[#C9943A]/20 text-[#E0E0E0]' : 'bg-[#C9943A]/10 text-[#1B1B1B]'}`}`}>
-                  {m.role === "system" && partIdx === 0 && <div className="text-[11px] font-bold text-[#C9943A] mb-0.5">{CONFIG.character.name}</div>}
-                  {m.role === "system"
-                    ? <span dangerouslySetInnerHTML={{ __html: part.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>') }} />
-                    : part}
+            <div key={i} className={`flex gap-2 w-full mt-1 ${isBot ? "items-end" : "justify-end"}`}>
+              {isBot && (
+                <div className="flex-shrink-0 self-end mb-1">
+                  <img src="./img/webp/ugolok.webp" alt="Уголёк"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-amber-300/60 shadow-sm"
+                    onError={e => { e.currentTarget.style.display = 'none'; }} />
                 </div>
-              ))}
+              )}
+              <div className={`flex flex-col gap-2 ${isBot ? "items-start" : "items-end"} max-w-[85%] md:max-w-[75%]`}>
+                {parts.map((part, partIdx) => (
+                  <div key={partIdx} className={`px-3.5 py-2 text-[16px] md:text-[18px] leading-tight whitespace-pre-wrap ${isBot ? `rounded-[16px_16px_16px_4px] ${dm ? 'bg-amber-900/30 text-white border border-amber-500/30 shadow-lg' : 'bg-amber-50 text-amber-900 border border-amber-200/50 shadow-sm'}` : `rounded-[16px_16px_4px_16px] ${dm ? 'bg-emerald-900/30 text-white border border-emerald-500/30' : 'bg-emerald-50 text-emerald-900 border border-emerald-100'}`}`}>
+                    {isBot && partIdx === 0 && <div className="text-[10px] font-bold text-amber-600 mb-0.5 uppercase tracking-tighter">{CONFIG.character.name}</div>}
+                    {isBot
+                      ? <span dangerouslySetInnerHTML={{ __html: part
+                          .replace(/^[\s]*[🐉🦎🔥]\s*/u, '')
+                          .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+                          .replace(/\*([^*]+)\*/g, '<em style="font-style:italic;opacity:0.8">$1</em>') }} />
+                      : part}
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })}
 
         {/* Typing indicator */}
         {typing && (
-          <div className="flex">
+          <div className="flex gap-2 items-end">
+            <img src="./img/webp/ugolok.webp" alt="Уголёк"
+              className="w-8 h-8 rounded-full object-cover border-2 border-amber-300/60 shadow-sm flex-shrink-0"
+              onError={e => { e.currentTarget.style.display = 'none'; }} />
             <div className="px-3.5 py-2.5 rounded-[14px_14px_14px_4px] bg-[#C9943A]/10 text-[11px]">
               <span className="font-bold text-[#C9943A] block mb-0.5">{CONFIG.character.name}</span>
               <div className="text-xl tracking-widest leading-none text-[#C9943A]">
@@ -556,11 +865,11 @@ export default function App() {
 
       {/* Choice card after correct answer - Simplified Navigation Only */}
       {showChoice && (
-        <div className="bg-white rounded-[16px] p-5 shadow-lg border-2 border-[#2D6A4F]/10 mx-3 mb-4 transition-all" style={{ animation: "popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)" }}>
-          <div className="flex flex-col gap-2.5">
+        <div className={`rounded-[24px] p-6 shadow-2xl mx-3 mb-4 transition-all border animate-in zoom-in-95 duration-300 ${dm ? 'bg-white/10 border-white/10 backdrop-blur-xl' : 'bg-white border-[#2D6A4F]/10'}`}>
+          <div className="flex flex-col gap-3">
             {found.length < total && (
               <button onClick={() => { setShowChoice(false); setTimeout(() => inputRef.current?.focus(), 100); }}
-                className="w-full bg-[#2D6A4F] text-white border-none rounded-xl py-3.5 px-4 text-[16px] font-bold cursor-pointer hover:bg-[#24533e] active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2">
+                className="w-full bg-[#2D6A4F] text-white border-none rounded-2xl py-4 px-4 text-[17px] font-bold cursor-pointer hover:bg-[#24533e] active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2">
                 <span>💡</span> Искать другие решения!
               </button>
             )}
@@ -571,27 +880,66 @@ export default function App() {
               sendLogsToTelegramBot(task, messages, found, total, elapsed);
               setScreen("result");
             }}
-              className="w-full bg-white border-2 border-gray-200 text-[#1B1B1B] rounded-xl py-3.5 px-4 text-[15px] font-medium cursor-pointer hover:bg-gray-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+              className={`w-full border-2 rounded-2xl py-4 px-4 text-[16px] font-bold cursor-pointer transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${dm ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-gray-50 border-gray-100 text-[#1B1B1B] hover:bg-gray-100'}`}>
               <span>🏆</span> Посмотреть результаты
             </button>
           </div>
         </div>
       )}
 
+      {/* FAB — floating results button, appears when task is near completion */}
+      {prizStep >= 3 && !showChoice && countdown === null && (
+        <div className="fixed bottom-24 right-4 z-40 animate-in slide-in-from-right duration-300">
+          <button onClick={() => {
+            const elapsed = finalizeCurrentTask();
+            sendLogsToTelegramBot(task, messages, found, total, elapsed);
+            trackEvent('result_screen_opened', { task_id: task.id, found: found.length });
+            setScreen("result");
+          }}
+            className="bg-[#2D6A4F] text-white rounded-full pl-4 pr-5 py-3 text-[14px] font-bold shadow-2xl active:scale-95 transition-all hover:bg-[#24533e] flex items-center gap-2 border-2 border-white/20">
+            🏆 <span>Результаты</span>
+          </button>
+        </div>
+      )}
+
       {/* Input — hidden when choice card is shown */}
       {!showChoice && (
-        <div className={`px-3 py-2 border-t flex gap-2 transition-all duration-300 ${dm ? 'border-gray-700 bg-[#1a1a2e]' : 'border-gray-200 bg-[#FAF9F6]'} ${isFocused ? 'pb-2' : 'pb-3'}`}>
-          <input ref={inputRef} value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setTimeout(() => setIsFocused(false), 50)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder={ikrPhase === 2 ? "Перечисли, что видишь..." : ikrPhase === 1 ? "Что мешает и почему?" : ikrPhase === 3 ? "Как это сделать САМО? 🌟" : attempts === 0 ? "Напиши свою идею сюда..." : "А ещё как можно? Совсем по-другому"}
-            className={`flex-1 border-2 rounded-xl px-3.5 py-2.5 text-base outline-none font-inherit transition-colors ${dm ? 'bg-[#16213e] border-gray-600 text-white focus:border-[#2D6A4F] placeholder:text-gray-500' : 'bg-white border-gray-200 focus:border-[#2D6A4F]'}`} />
+        <div className={`px-3 py-3 border-t flex gap-3 items-center transition-all duration-300 ${dm ? 'border-gray-800 bg-[#1a1a2e]' : 'border-gray-100 bg-white'} ${isFocused ? 'pb-3' : 'pb-8'}`}>
+          <button onClick={startSpeech} title="Голосовой ввод" className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all shadow-xl active:scale-90 ${isRecording ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-[#2D6A4F] text-white hover:bg-[#24533e]'}`}>
+            {isRecording ? "🔴" : <span className="text-2xl">🎤</span>}
+          </button>
+
+          <button onClick={() => setInput("Зачем мы это делаем?")} title="Помощь" className={`w-12 h-12 flex items-center justify-center rounded-2xl bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 transition-all font-bold text-xl shadow-md active:scale-90`}>
+            ?
+          </button>
+
+          <div className="relative flex-1">
+            <input ref={inputRef} value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setTimeout(() => setIsFocused(false), 50)}
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder={prizStep === 1 ? "Что видишь в зале?" : "Твоя идея..."}
+              className={`w-full border-2 rounded-2xl px-4 py-3.5 text-base outline-none font-inherit transition-all ${dm ? 'bg-[#16213e] border-gray-700 text-white focus:border-[#2D6A4F] placeholder:text-gray-500' : 'bg-gray-50 border-gray-100 focus:border-[#2D6A4F] focus:bg-white shadow-inner'}`} />
+          </div>
+
           <button onClick={send} disabled={!input.trim() || sending} aria-label="Отправить сообщение" title="Отправить"
-            className={`shrink-0 w-[48px] h-[48px] rounded-xl border-none text-white text-xl transition-colors ${!input.trim() || sending ? "bg-gray-200 cursor-default" : "bg-[#2D6A4F] cursor-pointer hover:bg-[#24533e]"}`}>
+            className={`shrink-0 w-[54px] h-[54px] rounded-2xl border-none text-white text-xl transition-all shadow-md active:scale-90 ${!input.trim() || sending ? "bg-gray-200 cursor-default opacity-50" : "bg-[#2D6A4F] cursor-pointer hover:bg-[#24533e]"}`}>
             ➤
           </button>
+
+          {isRecording && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(239,68,68,0.8)] animate-pulse mb-8">
+                <span className="text-5xl">🎤</span>
+              </div>
+              <div className="text-white text-2xl font-bold mb-2">Слушаю тебя...</div>
+              <div className="text-white/60 text-lg">Говори смело, здесь нет неправильных ответов!</div>
+              <button onClick={() => setIsRecording(false)} className="mt-12 px-8 py-3 bg-white/10 border border-white/20 text-white rounded-2xl font-bold hover:bg-white/20 transition-all">
+                Остановить
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -604,6 +952,22 @@ export default function App() {
               <button onClick={() => setModal(false)} className="flex-1 py-3 rounded-lg border border-gray-200 bg-white text-[15px] text-[#1B1B1B] cursor-pointer hover:bg-gray-50">Остаться</button>
               <button onClick={() => { setModal(false); finalizeCurrentTask(); setScreen("select"); setTask(null); setPendingBranch(null); }} className="flex-1 py-3 rounded-lg border-none bg-[#2D6A4F] text-white text-[15px] cursor-pointer hover:bg-[#24533e]">Уйти</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Countdown overlay — shown on task completion before transition */}
+      {countdown !== null && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-6">
+          <div className="text-white text-center">
+            <div className="text-7xl mb-4">🏆</div>
+            <div className="text-3xl font-bold mb-2">Задача решена!</div>
+            <div className="text-white/60 text-base mb-8">Переходим к результатам через {countdown} сек.</div>
+            <button
+              onClick={() => countdownRef.goToResult?.()}
+              className="bg-[#2D6A4F] text-white px-8 py-4 rounded-2xl text-[17px] font-bold shadow-xl active:scale-95 transition-all hover:bg-[#24533e]">
+              Посмотреть результаты →
+            </button>
           </div>
         </div>
       )}
@@ -625,160 +989,132 @@ export default function App() {
   const currentTaskTimeMs = currentTaskStats?.timeMs || 0;
   const timeStr = formatTime(currentTaskTimeMs);
 
-  const getTeacherComment = (foundCount, totalCount) => {
-    if (foundCount === totalCount) return `Ваш ребёнок нашёл все ${totalCount} решения — это редкий результат. Он не остановился на первой идее, а последовательно искал разные подходы. Именно так работает изобретательское мышление: не одно «правильное» решение, а несколько рабочих.`;
-    if (foundCount >= 2) return `${foundCount} из ${totalCount} решений — сильный результат. Ребёнок смог переключаться между разными подходами к одной задаче. Это ключевой навык ТРИЗ: видеть задачу с нескольких сторон.`;
-    if (foundCount === 1) return `Первое решение найдено. Для открытой задачи — это уже хороший старт: нет единственно верного ответа, и ребёнок это понял. Остальные решения можно разобрать вместе, нажав «Показать».`;
-    return `Открытые задачи непривычны — в них нет «правильного» ответа в учебнике. Попробуйте разобрать решения вместе: нажмите «Показать» рядом с каждым и обсудите, почему это работает.`;
-  };
-
   const finalCtaUrl = `https://t.me/${CONFIG.cta_telegram}?text=${encodeURIComponent(CONFIG.cta_message)}`;
 
   return (
-    <div className={`min-h-[100dvh] px-4 py-5 font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#1a1a2e] text-[#E0E0E0]' : 'bg-[#FAF9F6]'}`}>
+    <div className={`min-h-[100dvh] font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
+      style={dm ? { background: 'radial-gradient(circle at top, #1E293B 0%, #0F172A 100%)' } : {}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;700&display=swap');`}</style>
+
+      {/* Result screen header */}
+      <div className={`px-4 py-3 flex items-center justify-between border-b ${dm ? 'border-slate-800 bg-slate-900/50 backdrop-blur-md' : 'border-gray-100 bg-white'}`}>
+        <button onClick={() => setScreen("select")} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-90 ${dm ? 'text-slate-400 hover:text-slate-100 bg-slate-800/50' : 'text-gray-400 hover:text-gray-800 bg-gray-50'}`}>
+          <span className="text-xl">←</span>
+        </button>
+        <span className={`text-sm font-bold ${dm ? 'text-slate-300' : 'text-gray-700'}`}>Результаты</span>
+        <button onClick={() => setDarkMode(!dm)} className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all text-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
+          {dm ? "☀️" : "🌙"}
+        </button>
+      </div>
+
+      <div className="px-4 py-5">
       <div className="max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto">
 
-        {/* ── ДЛЯ РЕБЁНКА ── */}
-        <div className="mb-8">
-          <div className="text-center mb-5">
-            <div className="text-[48px] mb-2">{found.length === total ? "🏆" : found.length >= 2 ? "🌟" : "👍"}</div>
-            <h1 className={`font-['Playfair_Display',Georgia,serif] text-[24px] md:text-[28px] leading-tight mb-1 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
-              {found.length === total ? "Все решения найдены!" : found.length >= 2 ? `Найдено ${found.length} решения!` : found.length === 1 ? "Одно решение найдено!" : "Задача пройдена!"}
-            </h1>
-            <p className={`text-[14px] ${dm ? 'text-[#B0B0C0]' : 'text-gray-500'}`}>Задача «{task.title}»</p>
-          </div>
+        {/* ── ДЛЯ ПОЛЬЗОВАТЕЛЯ ── */}
+        <div className="mb-10 text-center">
+          <div className="text-[64px] mb-4 animate-bounce">🏆</div>
+          <h1 className={`font-['Playfair_Display',Georgia,serif] text-[28px] md:text-[34px] leading-tight mb-2 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
+            УРОВЕНЬ: ИЗОБРЕТАТЕЛЬ!
+          </h1>
+          <p className={`text-[16px] mb-6 ${dm ? 'text-[#B0B0C0]' : 'text-gray-500'}`}>{prizStep >= 4 ? "Задача полностью решена!" : `Пройдено ${prizStep} из 4 этапов`} — «{task.title}»</p>
 
-          {/* Навигация */}
-          <div className="flex gap-2 mb-5">
-            {found.length < total && (
-              <button onClick={() => { setTaskStartTime(Date.now()); setScreen("solve"); }}
-                className={`flex-1 border rounded-xl py-2.5 px-3 text-[14px] font-medium cursor-pointer transition-colors ${dm ? 'bg-[#16213e] border-white/10 text-[#E0E0E0] hover:bg-white/5' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
-                ⬅️ Дорешать
-              </button>
-            )}
-            <button onClick={() => { setScreen("select"); setTask(null); }}
-              className={`${found.length < total ? "flex-1" : "w-full"} rounded-xl py-2.5 px-3 text-[14px] font-medium cursor-pointer transition-colors border ${dm ? 'bg-[#2D6A4F]/20 border-[#2D6A4F]/30 text-[#52a880] hover:bg-[#2D6A4F]/30' : 'bg-white border-[#2D6A4F]/30 text-[#2D6A4F] hover:bg-[#2D6A4F]/5'}`}>
-              🔄 Другая задача
-            </button>
+          <div className={`rounded-3xl p-6 mb-6 ${dm ? 'bg-slate-800/40 border-slate-700/50' : 'bg-[#E7F3EF] border-[#2D6A4F]/20'} border-2`}>
+            <h3 className={`font-bold text-[18px] mb-2 ${dm ? 'text-[#00A86B]' : 'text-[#2D6A4F]'}`}>🎓 ТРИЗ-занятия в онлайн-клубе</h3>
+            <p className={`text-[14px] mb-5 ${dm ? 'text-slate-400' : 'text-gray-600'}`}>
+              В нашем клубе разбираются сотни таких задач, дети учатся спорить, доказывать и изобретать. Присоединяйтесь к сообществу!
+            </p>
+            <a href={`https://t.me/${CONFIG.cta_telegram}`} target="_blank" rel="noreferrer" className="inline-block w-full bg-[#2D6A4F] text-white py-3.5 rounded-2xl font-bold no-underline shadow-lg active:scale-95 transition-transform text-center">
+              Запись на пробный урок 🚀
+            </a>
           </div>
-
-          {/* Что было решено */}
-          <p className={`text-center text-[13px] italic mb-3 px-2 ${dm ? 'text-[#52a880]' : 'text-[#2D6A4F]'}`}>{task.final_phrase}</p>
-          <div className="grid grid-cols-1 gap-2">
-            {Object.entries(task.branches).map(([id, b]) => {
-              const isFound = found.includes(id);
-              const isRevealed = revealed[id];
-              return (
-                <div key={id} className={`rounded-xl px-4 py-3 border ${isFound
-                  ? dm ? "border-[#2D6A4F]/50 bg-[#2D6A4F]/10" : "border-[#2D6A4F] bg-[#2D6A4F]/5"
-                  : dm ? "border-white/10 bg-[#16213e]" : "border-gray-200 bg-white"}`}>
-                  <div className="flex justify-between items-center gap-2">
-                    <span className={`font-bold text-[13px] ${isFound ? "text-[#2D6A4F]" : dm ? "text-gray-500" : "text-gray-400"}`}>
-                      {isFound ? "✓ " : ""}{b.principle_child}
-                    </span>
-                    {!isFound && !isRevealed && (
-                      <button onClick={() => setRevealed((p) => ({ ...p, [id]: true }))}
-                        className={`bg-transparent border rounded px-2 py-0.5 text-[11px] cursor-pointer ${dm ? 'border-white/20 text-gray-400 hover:bg-white/5' : 'border-gray-300 text-gray-500 hover:bg-gray-50'}`}>
-                        Показать
-                      </button>
-                    )}
-                  </div>
-                  {(isFound || isRevealed) && (
-                    <p className={`text-[12px] leading-snug mt-1 m-0 ${dm ? 'text-[#B0B0C0]' : 'text-gray-600'}`}>
-                      {b.reaction_found_detailed || b.echo_word}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── РАЗДЕЛИТЕЛЬ ── */}
-        <div className={`flex items-center gap-3 mb-6 ${dm ? 'text-gray-600' : 'text-gray-300'}`}>
-          <div className="flex-1 h-px bg-current opacity-30" />
-          <span className={`text-[11px] uppercase tracking-widest font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`}>Для родителя</span>
-          <div className="flex-1 h-px bg-current opacity-30" />
         </div>
 
         {/* ── ДЛЯ РОДИТЕЛЯ ── */}
+        <div className={`rounded-[24px] p-6 shadow-xl border mb-6 ${dm ? 'bg-[#16213e] border-white/10' : 'bg-white border-gray-100'}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">📊</span>
+            <h3 className={`font-bold text-[18px] ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>Аналитика для родителя</h3>
+          </div>
 
-        {/* Аналитика */}
-        <div className={`rounded-[16px] p-5 shadow-sm border mb-4 ${dm ? 'bg-[#16213e] border-white/10' : 'bg-white border-gray-100'}`}>
-          <div className="grid grid-cols-3 gap-3 text-center mb-4">
-            <div className={`rounded-xl p-3 ${dm ? 'bg-[#2D6A4F]/20' : 'bg-[#2D6A4F]/5'}`}>
-              <div className="text-[20px] font-bold text-[#2D6A4F] mb-1">{found.length}/{total}</div>
-              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Решений</div>
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="text-center">
+              <div className="text-[22px] font-bold text-[#2D6A4F]">{prizStep}/4</div>
+              <div className="text-[10px] text-gray-400 uppercase font-bold">Этапы</div>
             </div>
-            <div className={`rounded-xl p-3 ${dm ? 'bg-[#2D6A4F]/20' : 'bg-[#2D6A4F]/5'}`}>
-              <div className="text-[16px] font-bold text-[#2D6A4F] mb-1 mt-[2px]">{timeStr}</div>
-              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mt-[2px]">Время</div>
+            <div className="text-center">
+              <div className="text-[22px] font-bold text-[#2D6A4F]">{timeStr}</div>
+              <div className="text-[10px] text-gray-400 uppercase font-bold">Время</div>
             </div>
-            <div className={`rounded-xl p-3 ${dm ? 'bg-[#2D6A4F]/20' : 'bg-[#2D6A4F]/5'}`}>
-              <div className="text-[20px] font-bold text-[#2D6A4F] mb-1">{totalMessages}</div>
-              <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Попыток</div>
+            <div className="text-center">
+              <div className="text-[22px] font-bold text-[#2D6A4F]">{messages.filter(m => m.role === "user").length}</div>
+              <div className="text-[10px] text-gray-400 uppercase font-bold">Реплик</div>
             </div>
           </div>
-          <h3 className={`font-bold text-[16px] mb-2 flex items-center gap-2 ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>
-            <span className="text-xl">👩‍🏫</span> Комментарий педагога:
-          </h3>
-          <p className={`text-[14px] leading-relaxed italic rounded-xl p-4 border ${dm ? 'text-[#B0B0C0] bg-white/5 border-white/10' : 'text-[#4A4A4A] bg-gray-50 border-gray-100'}`}>
-            «{getTeacherComment(found.length, total)}»
-          </p>
+
+          <div className={`p-4 rounded-2xl border mb-4 ${dm ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+            {aiReport ? (
+              <p className={`text-[14px] leading-relaxed ${dm ? 'text-white/80' : 'text-gray-700'}`}>{aiReport}</p>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full border-2 border-[#2D6A4F]/40 border-t-[#2D6A4F] animate-spin" />
+                <p className={`text-[13px] italic ${dm ? 'text-white/40' : 'text-gray-400'}`}>Составляем отчёт педагога...</p>
+              </div>
+            )}
+          </div>
+
+          {/* Child's ideas from the session */}
+          {messages.filter(m => m.role === "user").length > 0 && (
+            <div className="mb-6">
+              <h4 className={`text-[13px] font-bold uppercase tracking-wider mb-2 ${dm ? 'text-slate-500' : 'text-gray-400'}`}>Что говорил ребёнок:</h4>
+              <div className="space-y-1.5">
+                {messages.filter(m => m.role === "user").slice(-5).map((m, i) => (
+                  <div key={i} className={`text-[13px] px-3 py-2 rounded-xl border-l-2 border-[#2D6A4F]/40 ${dm ? 'bg-white/5 text-slate-300' : 'bg-emerald-50/60 text-gray-700'}`}>
+                    {m.text.slice(0, 120)}{m.text.length > 120 ? '…' : ''}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <h4 className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Полезные материалы:</h4>
+            <a href={`https://t.me/${CONFIG.cta_telegram}?start=pdf`} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 no-underline text-[#1B1B1B] transition-colors">
+              <span className="text-xl">📄</span>
+              <div className="text-left">
+                <div className="text-[14px] font-bold">PDF-сборник ТРИЗ-задач</div>
+                <div className="text-[12px] text-gray-400">Для обсуждения с ребёнком в машине</div>
+              </div>
+            </a>
+          </div>
         </div>
 
-        {/* Статистика сессии */}
-        {Object.keys(taskStats).length > 1 && (
-          <div className={`rounded-[16px] p-4 shadow-sm border mb-4 ${dm ? 'bg-[#16213e] border-white/10' : 'bg-white border-gray-100'}`}>
-            <h3 className={`font-bold text-[15px] mb-3 flex items-center gap-2 ${dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>
-              <span className="text-lg">📊</span> Статистика сессии
-            </h3>
-            {(() => {
-              const entries = Object.entries(taskStats);
-              const totalTimeAll = entries.reduce((s, [, v]) => s + v.timeMs, 0);
-              return (
-                <div className="space-y-1.5">
-                  {entries.map(([id, s]) => (
-                    <div key={id} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] ${id === task?.id
-                      ? dm ? 'bg-[#2D6A4F]/20 border border-[#2D6A4F]/30' : 'bg-[#2D6A4F]/10 border border-[#2D6A4F]/20'
-                      : dm ? 'bg-white/5' : 'bg-gray-50'}`}>
-                      <span className="text-base">{s.icon}</span>
-                      <span className={`flex-1 font-medium truncate ${id === task?.id ? 'text-[#2D6A4F]' : dm ? 'text-[#E0E0E0]' : 'text-[#1B1B1B]'}`}>{s.title}</span>
-                      <span className="text-[12px] text-gray-500 shrink-0">{s.found}/{s.total}</span>
-                      <span className="text-[12px] text-gray-400 shrink-0 min-w-[60px] text-right">{formatTime(s.timeMs)}</span>
-                    </div>
-                  ))}
-                  <div className={`text-[12px] text-right pt-1 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
-                    Всего: {formatTime(totalTimeAll)}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* CTA */}
-        <a href={finalCtaUrl} className="block no-underline mb-2" onClick={() => trackEvent('cta_clicked', { task_id: task.id, source: 'result_screen' })}>
-          <button className="w-full bg-[#E57A44] text-white border-none rounded-[14px] py-4 px-6 text-[17px] font-bold cursor-pointer font-inherit hover:bg-[#d66a36] transition-colors shadow-md">
-            ✈️ {CONFIG.cta_text}
+        {/* CTA & Sharing */}
+        <div className="space-y-3 mb-10">
+          <button onClick={() => window.open(`https://t.me/${CONFIG.cta_telegram}`, '_blank')}
+            className="w-full bg-[#E57A44] text-white py-4 rounded-2xl text-[18px] font-bold shadow-lg hover:bg-[#d66a36] transition-colors">
+            ✨ Узнать больше о занятиях
           </button>
-        </a>
-        <p className="text-center text-[12px] text-gray-400 mt-1 mb-6">{CONFIG.cta_subtitle}</p>
 
-        {/* Поделиться */}
-        <button onClick={() => {
-          trackEvent('share_clicked', { task_id: task.id });
-          const shareText = `Прошли ТРИЗ-тренажёр «Формула Интеллекта» — задача «${task.title}», найдено ${found.length}/${total} решений. Попробуйте: https://formula-intellect.vercel.app`;
-          if (navigator.share) {
-            navigator.share({ title: 'Формула Интеллекта', text: shareText }).catch(() => { });
-          } else if (navigator.clipboard) {
-            navigator.clipboard.writeText(shareText).then(() => alert('Скопировано! Отправьте друзьям 💌'));
-          }
-        }}
-          className={`w-full border rounded-xl py-2.5 px-4 text-[13px] font-medium cursor-pointer transition-colors mb-8 flex items-center justify-center gap-2 ${dm ? 'bg-transparent border-white/10 text-gray-400 hover:bg-white/5' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-          📤 Поделиться результатом
-        </button>
+          <button onClick={() => {
+            const shareText = `Настоящий изобретательский подход! Пройдено ${prizStep} из 4 этапов задачи «${task.title}». Попробуйте тоже: ${window.location.href}`;
+            if (navigator.share) navigator.share({ title: 'Результаты тренажера', text: shareText });
+            else { navigator.clipboard.writeText(shareText); alert('Ссылка скопирована!'); }
+          }}
+            className="w-full bg-white border-2 border-gray-200 text-gray-600 py-3 rounded-2xl text-[15px] font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+            📤 Поделиться результатом
+          </button>
+
+          <button onClick={continueSolving}
+            className={`w-full py-4 rounded-2xl text-[16px] font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${dm ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-[#2D6A4F]/8 border-[#2D6A4F]/25 text-[#2D6A4F] hover:bg-[#2D6A4F]/15'}`}>
+            🔄 Поискать другие решения
+          </button>
+
+          <button onClick={() => { setScreen("select"); setTask(null); }}
+            className={`w-full text-[14px] font-medium transition-colors py-2 border-none bg-transparent cursor-pointer ${dm ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
+            ↩ Вернуться к выбору задач
+          </button>
+        </div>
+      </div>
       </div>
     </div>
   );

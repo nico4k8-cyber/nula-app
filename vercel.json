@@ -2,6 +2,12 @@
   "functions": {
     "api/classify.js": {
       "maxDuration": 10
+    },
+    "api/hook.js": {
+      "maxDuration": 10
+    },
+    "api/report.js": {
+      "maxDuration": 20
     }
   }
 }
