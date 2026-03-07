@@ -193,14 +193,12 @@ export default async function handler(req, res) {
         .replace("{taskContext}", taskContext)
         .replace("{history}", historyText);
 
-    // Token-based routing:
-    //   < 200 tokens  → gemini-3.1-flash-lite (cheapest)
-    //   200–1000      → claude-3-haiku (reliable mid-tier)
-    //   > 1000        → gemini-2.5-flash (long context)
+    // Routing: Claude Haiku primary (всегда), Gemini — fallback
+    // TODO: вернуть token-based routing когда будет нужно
     const est = estimateTokens(fullPrompt + userMessage);
     console.log(`Chat prompt ~${est} tokens`);
 
-    const useClaudeFirst = est >= 200 && est < 1000;
+    const useClaudeFirst = true; // временно: Claude Haiku на все запросы
     const GEMINI_PRIMARY = est < 200
         ? "gemini-3.1-flash-lite-preview"
         : "gemini-2.5-flash";
