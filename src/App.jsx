@@ -986,15 +986,17 @@ export default function App() {
 
       {/* Countdown overlay — shown on task completion before transition */}
       {countdown !== null && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-6">
-          <div className="text-white text-center">
-            <div className="text-7xl mb-4">🏆</div>
-            <div className="text-3xl font-bold mb-2">Задача решена!</div>
-            <div className="text-white/60 text-base mb-8">Переходим к результатам через {countdown} сек.</div>
+        <div className="fixed inset-0 bg-black/30 z-50 flex flex-col items-center justify-end pb-6 animate-in fade-in duration-500 px-4">
+          <div className="w-full max-w-md bg-[#1a2a22]/90 backdrop-blur-md rounded-3xl p-5 flex items-center gap-4 shadow-2xl border border-white/10">
+            <div className="text-4xl">🏆</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-white font-bold text-[16px]">Задача решена!</div>
+              <div className="text-white/50 text-[13px]">Результаты через {countdown} сек.</div>
+            </div>
             <button
               onClick={() => countdownRef.goToResult?.()}
-              className="bg-[#2D6A4F] text-white px-8 py-4 rounded-2xl text-[17px] font-bold shadow-xl active:scale-95 transition-all hover:bg-[#24533e]">
-              Посмотреть результаты →
+              className="bg-[#2D6A4F] text-white px-4 py-2.5 rounded-xl text-[14px] font-bold shadow-lg active:scale-95 transition-all hover:bg-[#24533e] flex-shrink-0">
+              Смотреть →
             </button>
           </div>
         </div>
