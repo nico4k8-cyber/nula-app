@@ -118,7 +118,7 @@ async function callGemini(modelName, fullPrompt, apiHistory, userMessage) {
     const model = genAI.getGenerativeModel({ model: modelName });
     const chat = model.startChat({
         history: apiHistory,
-        generationConfig: { maxOutputTokens: 500, temperature: 0.8 },
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.8 },
     });
     const result = await chat.sendMessage(fullPrompt + "\n\nТекущее сообщение от ребенка: " + userMessage);
     const response = await result.response;
@@ -145,7 +145,7 @@ async function callClaude(fullPrompt, userMessage) {
             },
             body: JSON.stringify({
                 model,
-                max_tokens: 500,
+                max_tokens: 1000,
                 messages: [
                     { role: "user", content: fullPrompt + "\n\nТекущее сообщение от ребенка: " + userMessage }
                 ],
