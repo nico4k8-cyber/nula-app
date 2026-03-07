@@ -578,7 +578,7 @@ export default function App() {
             setScreen("result");
           };
 
-          let t = 60;
+          let t = 5;
           setCountdown(t);
           const iv = setInterval(() => {
             t--;
@@ -915,20 +915,7 @@ export default function App() {
         </div>
       )}
 
-      {/* FAB — floating results button, appears when task is near completion */}
-      {prizStep >= 3 && !showChoice && countdown === null && (
-        <div className="fixed bottom-24 right-4 z-40 animate-in slide-in-from-right duration-300">
-          <button onClick={() => {
-            const elapsed = finalizeCurrentTask();
-            sendLogsToTelegramBot(task, messages, found, total, elapsed);
-            trackEvent('result_screen_opened', { task_id: task.id, found: found.length });
-            setScreen("result");
-          }}
-            className="bg-[#2D6A4F] text-white rounded-full pl-4 pr-5 py-3 text-[14px] font-bold shadow-2xl active:scale-95 transition-all hover:bg-[#24533e] flex items-center gap-2 border-2 border-white/20">
-            🏆 <span>Результаты</span>
-          </button>
-        </div>
-      )}
+      {/* FAB removed — countdown overlay handles transition */}
 
       {/* Input — hidden when choice card is shown */}
       {!showChoice && (
@@ -1033,6 +1020,23 @@ export default function App() {
     ? Array.from({ length: Math.min(score, 15) }, () => "⭐").join("")
     : "";
 
+  /* Result title — varies by score */
+  const resultTitle = score >= 10
+    ? "Думает как гений!"
+    : score >= 6
+      ? "Мастер решений!"
+      : score >= 3
+        ? "Уровень: Изобретатель!"
+        : "Задача покорена!";
+
+  const resultSubtitle = score >= 10
+    ? "Невероятно. Именно так и рождаются изобретения."
+    : score >= 6
+      ? "Блестящее мышление — сразу видно, что идёт от себя."
+      : score >= 3
+        ? "Отличная работа — настоящий изобретательский подход!"
+        : "Хорошее начало. Ты справился — так держать!";
+
   return (
     <div className={`min-h-[100dvh] font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
       style={dm ? { background: 'radial-gradient(circle at top, #1E293B 0%, #0F172A 100%)' } : {}}>
@@ -1056,9 +1060,10 @@ export default function App() {
         <div className="text-center mb-6">
           <div className="text-[72px] mb-3 animate-bounce">🏆</div>
           <h1 className={`font-['Playfair_Display',Georgia,serif] text-[26px] md:text-[32px] leading-tight mb-2 ${dm ? 'text-white' : 'text-[#1B1B1B]'}`}>
-            Уровень: Изобретатель!
+            {resultTitle}
           </h1>
-          <p className={`text-[15px] mb-3 ${dm ? 'text-slate-400' : 'text-gray-500'}`}>«{task.title}» — задача решена!</p>
+          <p className={`text-[15px] mb-1 ${dm ? 'text-slate-400' : 'text-gray-500'}`}>{resultSubtitle}</p>
+          <p className={`text-[13px] mb-3 ${dm ? 'text-slate-600' : 'text-gray-400'}`}>«{task.title}»</p>
           {score > 0 && (
             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${dm ? 'bg-amber-900/30 border-amber-800/40' : 'bg-yellow-50 border-yellow-200'}`}>
               <span className="text-[15px] tracking-wide">{starsDisplay}</span>
