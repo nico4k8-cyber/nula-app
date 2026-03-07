@@ -1020,22 +1020,23 @@ export default function App() {
     ? Array.from({ length: Math.min(score, 15) }, () => "⭐").join("")
     : "";
 
-  /* Result title — varies by score */
-  const resultTitle = score >= 10
-    ? "Думает как гений!"
-    : score >= 6
+  /* Result title — varies by score
+     Realistic max per session ≈ 6 stars (1 Р + 2 И + 3 ✨) */
+  const resultTitle = score >= 5
+    ? "Думает как изобретатель!"
+    : score >= 3
       ? "Мастер решений!"
-      : score >= 3
-        ? "Уровень: Изобретатель!"
+      : score >= 1
+        ? "Уровень: Исследователь!"
         : "Задача покорена!";
 
-  const resultSubtitle = score >= 10
-    ? "Невероятно. Именно так и рождаются изобретения."
-    : score >= 6
-      ? "Блестящее мышление — сразу видно, что идёт от себя."
-      : score >= 3
-        ? "Отличная работа — настоящий изобретательский подход!"
-        : "Хорошее начало. Ты справился — так держать!";
+  const resultSubtitle = score >= 5
+    ? "Невероятно — такие звёзды получают единицы. Настоящий изобретательский склад ума."
+    : score >= 3
+      ? "Отличная работа! Нашёл неочевидный путь и смог объяснить почему."
+      : score >= 1
+        ? "Хорошее мышление — задал правильные вопросы и нашёл решение."
+        : "Задача решена! Первый шаг к изобретательскому мышлению — сделан.";
 
   return (
     <div className={`min-h-[100dvh] font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
