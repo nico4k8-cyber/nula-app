@@ -578,7 +578,7 @@ export default function App() {
             setScreen("result");
           };
 
-          let t = 5;
+          let t = 30;
           setCountdown(t);
           const iv = setInterval(() => {
             t--;
@@ -1021,22 +1021,18 @@ export default function App() {
     : "";
 
   /* Result title — varies by score
-     Realistic max per session ≈ 6 stars (1 Р + 2 И + 3 ✨) */
-  const resultTitle = score >= 5
+     Min 3 stars (always from ✨ insight), max ≈ 6 (+ intermediate) */
+  const resultTitle = score >= 6
     ? "Думает как изобретатель!"
-    : score >= 3
+    : score >= 4
       ? "Мастер решений!"
-      : score >= 1
-        ? "Уровень: Исследователь!"
-        : "Задача покорена!";
+      : "Задача решена!";
 
-  const resultSubtitle = score >= 5
-    ? "Невероятно — такие звёзды получают единицы. Настоящий изобретательский склад ума."
-    : score >= 3
-      ? "Отличная работа! Нашёл неочевидный путь и смог объяснить почему."
-      : score >= 1
-        ? "Хорошее мышление — задал правильные вопросы и нашёл решение."
-        : "Задача решена! Первый шаг к изобретательскому мышлению — сделан.";
+  const resultSubtitle = score >= 6
+    ? "Невероятно — задавал правильные вопросы с самого начала. Настоящий изобретательский склад ума."
+    : score >= 4
+      ? "Нашёл неочевидный путь и смог объяснить почему. Так и работает изобретательское мышление."
+      : "Справился! Это только начало — с каждой задачей мышление становится острее.";
 
   return (
     <div className={`min-h-[100dvh] font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}
