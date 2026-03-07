@@ -579,19 +579,22 @@ export default function App() {
             setScreen("result");
           };
 
-          let t = 30;
-          setCountdown(t);
-          const iv = setInterval(() => {
-            t--;
-            if (t <= 0) {
-              goToResult();
-            } else {
-              setCountdown(t);
-            }
-          }, 1000);
-          countdownRef.current = iv;
-          // Expose goToResult for the manual button via ref
-          countdownRef.goToResult = goToResult;
+          // Даём 4 сек прочитать финальный ответ Уголька, потом запускаем таймер
+          setTimeout(() => {
+            let t = 30;
+            setCountdown(t);
+            const iv = setInterval(() => {
+              t--;
+              if (t <= 0) {
+                goToResult();
+              } else {
+                setCountdown(t);
+              }
+            }, 1000);
+            countdownRef.current = iv;
+            // Expose goToResult for the manual button via ref
+            countdownRef.goToResult = goToResult;
+          }, 4000); // 4 сек задержки — читаем финальный ответ Уголька
         }
 
         logInteraction(task.id, txt, reply, resultType);
@@ -1121,10 +1124,18 @@ export default function App() {
 
         {/* ── Вторичные действия ── */}
         <div className="space-y-3 mb-8">
-          <button onClick={() => {
-            const shareText = `Настоящий изобретательский подход! Задача «${task.title}» — решена! Попробуй тоже: ${window.location.href}`;
-            if (navigator.share) navigator.share({ title: 'Результаты тренажёра', text: shareText });
-            else { navigator.clipboard.writeText(shareText); alert('Ссылка скопирована!'); }
+          <button onClick={async () => {
+            const url = window.location.origin;
+            const shareText = `Решили задачу «${task.title}» в тренажёре изобретательского мышления! Попробуй: ${url}`;
+            try {
+              if (navigator.share) { await navigator.share({ title: 'Тренажёр ТРИЗ', text: shareText, url }); return; }
+            } catch {}
+            try {
+              await navigator.clipboard.writeText(shareText);
+              alert('Ссылка скопирована в буфер!');
+            } catch {
+              window.prompt('Скопируй ссылку:', shareText);
+            }
           }}
             className={`w-full py-3.5 rounded-2xl text-[15px] font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${dm ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
             📤 Поделиться результатом
