@@ -26,13 +26,14 @@ export async function processUserMessage(txt, task, state, history = [], onError
   }
 
   // 2. Генерация ответа через реальный ИИ
-  const { text: aiReply, tokensUsed, prizStep: aiPrizStep } = await generateUgolokResponse(txt, history, task, onError);
+  const { text: aiReply, tokensUsed, prizStep: aiPrizStep, stars: aiStars } = await generateUgolokResponse(txt, history, task, onError);
 
-  // 3. Обновляем состояние: prizStep приходит от ИИ
+  // 3. Обновляем состояние: prizStep и stars приходят от ИИ
   const newPrizStep = (aiPrizStep !== null && aiPrizStep !== undefined) ? aiPrizStep : state.prizStep;
   return {
     reply: aiReply,
     tokensUsed,
+    stars: aiStars || 0,
     newState: { ...state, prizStep: newPrizStep },
     resultType: "ai_thought"
   };

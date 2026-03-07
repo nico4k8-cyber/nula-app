@@ -125,6 +125,7 @@ export default function App() {
   const [revealed, setRevealed] = useState({});
   const [isFocused, setIsFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [hintCount, setHintCount] = useState(0);
   const [adminClicks, setAdminClicks] = useState(0);
   const [themeMode, setThemeMode] = useState(() => {
     try {
@@ -395,6 +396,7 @@ export default function App() {
     setStreak(0);
     setAttempts(0);
     setTotalMessages(0);
+    setHintCount(0);
     setPendingBranch(null);
     setAiReport(null);
     setCountdown(null);
@@ -495,7 +497,7 @@ export default function App() {
     };
 
     try {
-      const { reply, newState, resultType, tokensUsed } = await processUserMessage(txt, task, engineState, newMessages, sendErrorToTelegramBot);
+      const { reply, newState, resultType, tokensUsed, stars } = await processUserMessage(txt, task, engineState, newMessages, sendErrorToTelegramBot);
       trackTokenUsage(tokensUsed);
       const delay = resultType === "found" ? CONFIG.delay_ms.found : CONFIG.delay_ms.other;
 
@@ -503,11 +505,18 @@ export default function App() {
         setTyping(false);
 
         /* ─── Apply engine state back to React ─── */
-        if (newState.prizStep !== undefined && newState.prizStep > prizStep) {
+        if (newState.prizStep !== undefined && newState.prizStep !== prizStep) {
           setPrizStep(newState.prizStep);
-          setScore(s => s + 1); // Award ⭐ for each stage advance
-        } else if (newState.prizStep !== prizStep) {
-          setPrizStep(newState.prizStep);
+        }
+        // Stars come from AI (0-3 per message), not from stage advance
+        if (stars > 0) {
+          setScore(s => s + stars);
+          if (stars >= 2 && jsConfetti.current) {
+            jsConfetti.current.addConfetti({
+              emojis: ['⭐'],
+              confettiNumber: stars * 8,
+            });
+          }
         }
         if (newState.prizStepStarted !== prizStepStarted) setPrizStepStarted(newState.prizStepStarted);
         if (newState.fbIdx !== fbIdx) setFbIdx(newState.fbIdx);
@@ -605,6 +614,13 @@ export default function App() {
 
   const dm = themeMode === 'dark' || (themeMode === 'system' && systemDark);
   const themeIcon = themeMode === 'light' ? '☀️' : themeMode === 'dark' ? '🌙' : '💻';
+
+  // Sync body/html background so no white margins bleed through on desktop
+  useEffect(() => {
+    const bg = dm ? '#0F172A' : '#FAF9F6';
+    document.documentElement.style.backgroundColor = bg;
+    document.body.style.backgroundColor = bg;
+  }, [dm]);
 
   /* ─── SCREEN: SELECT ─── */
   if (screen === "select") {
@@ -922,7 +938,16 @@ export default function App() {
             {isRecording ? "🔴" : <span className="text-2xl">🎤</span>}
           </button>
 
-          <button onClick={() => setInput("Зачем мы это делаем?")} title="Помощь" className={`w-12 h-12 flex items-center justify-center rounded-2xl bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 transition-all font-bold text-xl shadow-md active:scale-90`}>
+          <button
+            onClick={() => {
+              const hintMessages = ["Подскажи, я не знаю", "Не понимаю, дай ещё подсказку", "Совсем застрял, помоги"];
+              const msg = hintMessages[Math.min(hintCount, 2)];
+              setHintCount(h => h + 1);
+              setInput(msg);
+            }}
+            title={`Подсказка (использовано: ${hintCount})`}
+            className={`w-12 h-12 flex items-center justify-center rounded-2xl border transition-all font-bold text-xl shadow-md active:scale-90 ${hintCount >= 3 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200'}`}
+            disabled={hintCount >= 3}>
             ?
           </button>
 

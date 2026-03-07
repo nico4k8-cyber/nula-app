@@ -20,6 +20,7 @@ export async function generateUgolokResponse(userMessage, history, task, onError
             text: data.text,
             tokensUsed: data.tokensUsed || 0,
             prizStep: data.prizStep ?? null,
+            stars: data.stars ?? 0,
         };
     } catch (error) {
         console.error("AI API Error:", error);
@@ -33,6 +34,6 @@ export async function generateUgolokResponse(userMessage, history, task, onError
             });
         }
 
-        return { text: "🐉 Ой-ой! Что-то пошло не так. Давай попробуем ещё раз?", tokensUsed: 0, prizStep: null };
+        return { text: "🐉 Ой-ой! Что-то пошло не так. Давай попробуем ещё раз?", tokensUsed: 0, prizStep: null, stars: 0 };
     }
 }
