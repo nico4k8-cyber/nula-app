@@ -126,10 +126,20 @@ export default function App() {
   const [isFocused, setIsFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [adminClicks, setAdminClicks] = useState(0);
-  const [darkMode, setDarkMode] = useState(() => {
-    try { return localStorage.getItem('fi_dark') === '1'; } catch { return false; }
+  const [themeMode, setThemeMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('fi_theme');
+      if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
+      // Migrate from old fi_dark key
+      const old = localStorage.getItem('fi_dark');
+      if (old === '1') return 'dark';
+      if (old === '0') return 'light';
+      return 'system';
+    } catch { return 'system'; }
   });
-  const [themeClicks, setThemeClicks] = useState(0);
+  const [systemDark, setSystemDark] = useState(
+    () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+  );
   const [countdown, setCountdown] = useState(null);
   const [aiReport, setAiReport] = useState(null);
   const [childMode, setChildMode] = useState(() => {
@@ -146,6 +156,14 @@ export default function App() {
 
   useEffect(() => {
     jsConfetti.current = new JSConfetti();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mq) return;
+    const handler = (e) => setSystemDark(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   /* ─ Analytics (Yandex Metrika ID: 106910217) ─ */
@@ -311,16 +329,10 @@ export default function App() {
   }, [adminClicks]);
 
   const handleThemeToggle = useCallback(() => {
-    const next = themeClicks + 1;
-    if (next >= 5) {
-      const newDark = !darkMode;
-      setDarkMode(newDark);
-      try { localStorage.setItem('fi_dark', newDark ? '1' : '0'); } catch { }
-      setThemeClicks(0);
-    } else {
-      setThemeClicks(next);
-    }
-  }, [themeClicks, darkMode]);
+    const next = themeMode === 'system' ? 'light' : themeMode === 'light' ? 'dark' : 'system';
+    setThemeMode(next);
+    try { localStorage.setItem('fi_theme', next); } catch { }
+  }, [themeMode]);
 
   const markTaskCompleted = useCallback((taskId, foundCount, taskTimeMs) => {
     setSessionCompleted(prev => {
@@ -591,7 +603,8 @@ export default function App() {
   const parentPhrase = found.length === total ? CONFIG.parent_phrases.all : found.length >= total / 2 ? CONFIG.parent_phrases.mid : CONFIG.parent_phrases.low;
   const initialCtaUrl = `https://t.me/${CONFIG.cta_telegram}?text=${encodeURIComponent(CONFIG.cta_message)}`;
 
-  const dm = darkMode;
+  const dm = themeMode === 'dark' || (themeMode === 'system' && systemDark);
+  const themeIcon = themeMode === 'light' ? '☀️' : themeMode === 'dark' ? '🌙' : '💻';
 
   /* ─── SCREEN: SELECT ─── */
   if (screen === "select") {
@@ -602,8 +615,8 @@ export default function App() {
         <style>{`@keyframes blink{0%,80%{opacity:.2}40%{opacity:1}}`}</style>
 
         <div className="absolute top-4 right-4 group">
-          <button onClick={() => setDarkMode(!dm)} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-white text-gray-400 border border-gray-100 hover:bg-gray-50'}`}>
-            {dm ? "☀️" : "🌙"}
+          <button onClick={handleThemeToggle} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-white text-gray-400 border border-gray-100 hover:bg-gray-50'}`}>
+            {themeIcon}
           </button>
         </div>
         <div className="max-w-[440px] w-full">
@@ -643,8 +656,8 @@ export default function App() {
 
           {/* Header for Child Screen */}
           <div className="flex justify-between items-center mb-4">
-            <button onClick={() => setDarkMode(!dm)} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-white text-gray-400 border border-gray-100'}`}>
-              {dm ? "☀️" : "🌙"}
+            <button onClick={handleThemeToggle} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-white text-gray-400 border border-gray-100'}`}>
+              {themeIcon}
             </button>
             <button onClick={() => {
               try { sessionStorage.removeItem('fi_child'); } catch { }
@@ -750,8 +763,8 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => setDarkMode(!dm)} className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all text-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
-            {dm ? "☀️" : "🌙"}
+          <button onClick={handleThemeToggle} className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all text-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
+            {themeIcon}
           </button>
           <button onClick={() => window.open('https://trizintellect.tilda.ws', '_blank')} className={`px-2 py-1 text-[9px] font-bold rounded-lg border transition-all ${dm ? 'border-amber-500/30 text-amber-500 hover:bg-amber-500/10' : 'border-[#2D6A4F]/20 text-[#2D6A4F] hover:bg-[#2D6A4F]/5'}`}>
             О ШКОЛЕ
@@ -1002,8 +1015,8 @@ export default function App() {
           <span className="text-xl">←</span>
         </button>
         <span className={`text-sm font-bold ${dm ? 'text-slate-300' : 'text-gray-700'}`}>Результаты</span>
-        <button onClick={() => setDarkMode(!dm)} className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all text-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
-          {dm ? "☀️" : "🌙"}
+        <button onClick={handleThemeToggle} className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all text-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
+          {themeIcon}
         </button>
       </div>
 

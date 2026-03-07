@@ -35,24 +35,24 @@ describe('BINGO Logic: Noun + Verb Requirement (Kaizen)', () => {
         expect(newState.found.length).toBe(0);
     });
 
-    it('Задача monkeys (India): "повесить лимоны" ДАЕТ БИНГО', async () => {
+    it('Задача monkeys (India): "повесить лимоны на деревья чтобы обезьяны их съели и убежали" ДАЕТ БИНГО', async () => {
         const task = TASKS.find(t => t.id === 'monkeys');
         const state = { ikrPhase: 0, found: [], fbIdx: 0, streak: 0 };
-        const { reply, newState, resultType } = await processUserMessage('повесить лимоны', task, state);
+        const { reply, newState, resultType } = await processUserMessage('повесить лимоны на деревья чтобы обезьяны их съели и убежали', task, state);
 
         expect(resultType).toBe('found');
         expect(reply).toContain('БИНГО!');
         expect(newState.found).toContain('nature');
     });
 
-    it('Задача monkeys (India): Фраза из списка ("чучело леопарда") ДАЕТ БИНГО даже без глагола', async () => {
+    it('Задача monkeys (India): Фраза из списка ("чучело леопарда") просит подробнее (новый Kaizen)', async () => {
         const task = TASKS.find(t => t.id === 'monkeys');
         const state = { ikrPhase: 0, found: [], fbIdx: 0, streak: 0 };
         const { reply, newState, resultType } = await processUserMessage('чучело леопарда', task, state);
 
         expect(resultType).toBe('found');
-        expect(reply).toContain('БИНГО!');
-        expect(newState.found).toContain('scare');
+        expect(newState.pendingBranch).toBe('scare');
+        expect(reply).not.toContain('БИНГО!');
     });
 
     it('Задача flowers: "пчела" НЕ дает БИНГО', async () => {
@@ -64,19 +64,19 @@ describe('BINGO Logic: Noun + Verb Requirement (Kaizen)', () => {
         expect(reply).not.toContain('БИНГО');
     });
 
-    it('Задача flowers: "прилетит пчела" ДАЕТ БИНГО', async () => {
+    it('Задача flowers: "прилетит пчела и сядет на живой цветок" ДАЕТ БИНГО', async () => {
         const task = TASKS.find(t => t.id === 'flowers');
         const state = { ikrPhase: 0, found: [], fbIdx: 0, streak: 0 };
-        const { reply, resultType, newState } = await processUserMessage('прилетит пчела', task, state);
+        const { reply, resultType, newState } = await processUserMessage('прилетит пчела и сядет на живой цветок', task, state);
         expect(resultType).toBe('found');
         expect(reply).toContain('БИНГО!');
         expect(newState.found).toContain('nature');
     });
 
-    it('Задача bags: "поставить столбики" ДАЕТ БИНГО', async () => {
+    it('Задача bags: "поставить столбики на тротуар чтобы мотоцикл не проехал" ДАЕТ БИНГО', async () => {
         const task = TASKS.find(t => t.id === 'bags');
         const state = { ikrPhase: 0, found: [], fbIdx: 0, streak: 0 };
-        const { reply, resultType, newState } = await processUserMessage('поставить столбики', task, state);
+        const { reply, resultType, newState } = await processUserMessage('поставить столбики на тротуар чтобы мотоцикл не проехал', task, state);
         expect(resultType).toBe('found');
         expect(reply).toContain('БИНГО!');
         expect(newState.found).toContain('road');
@@ -229,10 +229,10 @@ describe('BINGO Logic: Noun + Verb Requirement (Kaizen)', () => {
         expect(newState.found).toContain('road');
     });
 
-    it('Задача bags (moto): "запретить мотоциклы в городе" ДАЕТ БИНГО', async () => {
+    it('Задача bags (moto): "запретить мотоциклы в городе чтобы воры не могли гонять" ДАЕТ БИНГО', async () => {
         const task = TASKS.find(t => t.id === 'bags');
         const state = { ikrPhase: 0, found: [], fbIdx: 0, streak: 0 };
-        const { reply, newState, resultType } = await processUserMessage('запретить мотоциклы в городе', task, state);
+        const { reply, newState, resultType } = await processUserMessage('запретить мотоциклы в городе чтобы воры не могли гонять', task, state);
 
         expect(resultType).toBe('found');
         expect(reply).toContain('БИНГО!');
@@ -240,10 +240,10 @@ describe('BINGO Logic: Noun + Verb Requirement (Kaizen)', () => {
     });
 
     // Real session test: solomon-hall (Escape from Palace) carpet solution
-    it('Задача solomon-hall: "накрыть пол ковром" ДАЕТ БИНГО (real log)', async () => {
+    it('Задача solomon-hall: "накрыть пол ковром чтобы не было скользко" ДАЕТ БИНГО (real log)', async () => {
         const task = TASKS.find(t => t.id === 'solomon-hall');
         const state = { ikrPhase: 0, found: [], fbIdx: 0, streak: 0 };
-        const { reply, newState, resultType } = await processUserMessage('накрыть пол ковром', task, state);
+        const { reply, newState, resultType } = await processUserMessage('накрыть пол ковром чтобы не было скользко', task, state);
 
         expect(resultType).toBe('found');
         expect(reply).toContain('БИНГО!');

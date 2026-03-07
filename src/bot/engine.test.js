@@ -138,7 +138,13 @@ describe('ПЕРСОНА: Умный торопыга (Near Miss, Short Match, A
     { taskId: 'flowers', msg: 'пчела', branchExpected: 'nature' },
     { taskId: 'flowers', msg: 'дуть', branchExpected: 'wind' },
     { taskId: 'flowers', msg: 'насекомые', branchExpected: 'nature' },
-    { taskId: 'monkeys', msg: 'кислый', branchExpected: 'nature' }
+    { taskId: 'flowers', msg: 'насекомые', branchExpected: 'nature' },
+    { taskId: 'flowers', msg: 'насекомые', branchExpected: 'nature' },
+    { taskId: 'monkeys', msg: 'кислый', branchExpected: 'nature' },
+    { taskId: 'bags', msg: 'камеры', branchExpected: 'catch' },
+    { taskId: 'monkeys', msg: 'пугало', branchExpected: 'scare' },
+    { taskId: 'flowers', msg: 'пчела', branchExpected: 'nature' },
+    { taskId: 'bags', msg: 'мотоциклы', branchExpected: 'moto' }
   ];
 
   shortMatchData.forEach(async ({ taskId, msg, branchExpected }) => {
@@ -160,14 +166,14 @@ describe('ПЕРСОНА: Умный торопыга (Near Miss, Short Match, A
 
   // Правильные полные ответы (BINGO)
   const bingoData = [
-    { taskId: 'solomon-hall', msg: 'постелить ковер на масло', branchId: 'carpet' },
-    { taskId: 'solomon-hall', msg: 'перевернуть стол и плыть', branchId: 'table' },
-    { taskId: 'monkeys', msg: 'посадить лимоны по краям', branchId: 'nature' },
-    { taskId: 'monkeys', msg: 'повесить пугало', branchId: 'scare' },
-    { taskId: 'flowers', msg: 'открыть окно для пчел', branchId: 'nature' },
-    { taskId: 'flowers', msg: 'подует ветер из окна', branchId: 'wind' },
-    { taskId: 'bags', msg: 'поставить камеры', branchId: 'catch' },
-    { taskId: 'bags', msg: 'запретить мотоциклы в городе', branchId: 'moto' }
+    { taskId: 'solomon-hall', msg: 'постелить ковер на масляный пол чтобы не скользило', branchId: 'carpet' },
+    { taskId: 'solomon-hall', msg: 'перевернуть стол и плыть на нем как на лодке', branchId: 'table' },
+    { taskId: 'monkeys', msg: 'посадить невкусные лимоны по краям участка чтобы обезьяны их съели и убежали', branchId: 'nature' },
+    { taskId: 'monkeys', msg: 'повесить пугало хищника чтобы обезьяны испугались и ушли', branchId: 'scare' },
+    { taskId: 'flowers', msg: 'открыть окно чтобы прилетели пчелы на запах нектара', branchId: 'nature' },
+    { taskId: 'flowers', msg: 'открыть окно чтобы ветер колыхал живые цветы', branchId: 'wind' },
+    { taskId: 'bags', msg: 'поставить камеры чтобы вычислить воров по номерам', branchId: 'catch' },
+    { taskId: 'bags', msg: 'запретить мотоциклы в центре города чтобы воры не могли подъехать', branchId: 'moto' }
   ];
 
   bingoData.forEach(async ({ taskId, msg, branchId }) => {
