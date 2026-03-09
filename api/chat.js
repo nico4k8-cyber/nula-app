@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getPersona } from "./personas.js";
 
 // Legacy default prompt (kept as fallback if personas.js fails to load)
@@ -68,11 +67,16 @@ const SYSTEM_PROMPT = `
 
 ФРУСТРАЦИЯ: Если ребёнок раздражён или пишет «какую идею ты хочешь?», «я уже сказал», «ты меня слышишь?» — НЕМЕДЛЕННО прими последнюю рабочую идею и завершай. Не задавай больше вопросов.
 
-ПРИ ТУПИКЕ (ребёнок застрял, повторяет одно и то же, 3 неверных подряд):
-1-й признак тупика → абстрактная подсказка
-2-й → чуть конкретнее
-3-й → наводящий вопрос про конкретный предмет из задачи
-НИКОГДА не давай ответ напрямую.
+⛔ ЗАПРЕТ НА ПОДСКАЗКУ РЕШЕНИЙ:
+- ЗАПРЕЩЕНО предлагать списки направлений, вариантов или категорий (типа «может звук? или свет? или движение?»). Это готовое меню — ребёнок выбирает, а не думает.
+- ЗАПРЕЩЕНО называть конкретные механизмы решения — даже как намёк.
+- ВМЕСТО ЭТОГО: задай ОДИН вопрос про конкретный момент или объект из условия задачи.
+
+ПРИ ТУПИКЕ («не знаю», «подскажи», «помоги», «застрял»):
+1-й раз → вопрос про ключевой момент ситуации: «Что происходит прямо в эту секунду?»
+2-й раз → сузь до одного объекта из условия: «Посмотри на [объект из задачи]. Что у него есть?»
+3-й раз → наводящий вопрос про одно свойство: «А может ли [объект] сам как-то реагировать?»
+НИКОГДА не давай ответ. НИКОГДА не предлагай список вариантов. Только один вопрос за раз.
 
 КУЛЬТУРНЫЙ СЛОЙ (органично, не назидательно — 1 отсылка на задачу максимум):
 Говоришь изнутри традиции — не «евреи делали так», а «мы всегда так делали».
@@ -116,8 +120,19 @@ function parseTag(rawText) {
             .replace(/^[🐉🦎🔥]\s*/gmu, '')
             .replace(/\n{3,}/g, '\n\n')
             .trimEnd();
-        // Safety: if AI says "Задача решена" but forgets the tag or uses wrong stage
-        if (cleanText.includes("Задача решена!") && prizStep < 4) {
+        // Safety: if AI celebrates completion but uses wrong stage tag (З instead of ✨)
+        // Catches common variants: "Задача решена!", "задача решена 🎉", "ты победил!", etc.
+        const COMPLETION_PHRASES = [
+            "задача решена",
+            "ты уже победил",
+            "ты победил!",
+            "задача решена!",
+            "задача решена 🎉",
+        ];
+        const lowerText = cleanText.toLowerCase();
+        const hasCompletion = COMPLETION_PHRASES.some(p => lowerText.includes(p));
+        if (hasCompletion && prizStep < 4) {
+            console.log(`[parseTag] Safety override: completion phrase found but prizStep=${prizStep} → forcing ✨`);
             return { cleanText, prizStep: 4, stars };
         }
         return { cleanText, prizStep, stars };
@@ -132,38 +147,6 @@ function parseTag(rawText) {
         .replace(/\n{3,}/g, '\n\n')
         .trimEnd();
     return { cleanText, prizStep, stars: 0 };
-}
-
-// Rough token estimator (1 token ≈ 4 chars)
-function estimateTokens(text) {
-    return Math.ceil(text.length / 4);
-}
-
-function isSkippable(err) {
-    const msg = err.message || "";
-    return msg.includes("429") || msg.includes("quota") ||
-        msg.includes("RESOURCE_EXHAUSTED") || msg.includes("404") ||
-        msg.includes("not found");
-}
-
-async function callGemini(modelName, fullPrompt, apiHistory, userMessage) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY not set");
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: modelName });
-    const chat = model.startChat({
-        history: apiHistory,
-        generationConfig: { temperature: 0.8 },
-    });
-    const result = await chat.sendMessage(fullPrompt + "\n\nТекущее сообщение от ребенка: " + userMessage);
-    const response = await result.response;
-    const rawText = response.text().trim();
-    const tokensUsed = response.usageMetadata?.totalTokenCount || 0;
-    const inputTokens = response.usageMetadata?.promptTokenCount || 0;
-    const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
-    const { cleanText, prizStep, stars } = parseTag(rawText);
-    return { text: cleanText, tokensUsed, inputTokens, outputTokens, prizStep, stars, model: modelName };
 }
 
 async function callClaude(fullPrompt, userMessage) {
@@ -247,13 +230,35 @@ export default async function handler(req, res) {
     if (prizStep >= 4) {
         stageHint = `\n⚡ ЗАДАЧА УЖЕ РЕШЕНА (стадия ✨). На любое сообщение ребёнка — только одна фраза: «🎉 Ты уже победил! Выбирай следующую задачу.» ЗАПРЕЩЕНО: задавать вопросы, продолжать беседу, что-либо объяснять.`;
     } else if (prizStep === 3) {
-        stageHint = `\n⚡ СТОП — ФИНАЛ: Ребёнок уже дал рабочую идею (стадия ${stageLabel}). Его текущее сообщение = финальный ответ. ДЕЙСТВИЕ: «Задача решена! 🎉» + один инсайт. ЗАПРЕЩЕНО: вопросы, аргументы, уточнения.`;
+        stageHint = `\n⚡ СТОП — ФИНАЛ: Ребёнок уже дал рабочую идею (стадия ${stageLabel}). Его текущее сообщение = финальный ответ. ДЕЙСТВИЕ: напиши «Задача решена! 🎉» + один инсайт. ТЕГИРУЙ ОБЯЗАТЕЛЬНО [ПРИЗ:✨|⭐:3] — НЕ [ПРИЗ:З]. ЗАПРЕЩЕНО: вопросы, аргументы, уточнения.`;
     } else if (prizStep === 2) {
-        stageHint = `\n⚡ СТАДИЯ И: Если текущее сообщение содержит физически реалистичную идею — НЕМЕДЛЕННО принимай ([ПРИЗ:З]): «Задача решена! 🎉» + инсайт. ЗАПРЕЩЕНО: уточняющие вопросы, возражения («а хватит ли?»). Первая рабочая идея = победа.`;
+        stageHint = `\n⚡ СТАДИЯ И: Если текущее сообщение содержит физически реалистичную идею — НЕМЕДЛЕННО принимай: напиши «Задача решена! 🎉» + инсайт, тегируй [ПРИЗ:✨|⭐:N] — НЕ [ПРИЗ:З]. ЗАПРЕЩЕНО: уточняющие вопросы, возражения («а хватит ли?»). Первая рабочая идея = победа.`;
     } else {
         stageHint = `\n⚡ РАННЯЯ ИДЕЯ: Если ребёнок называет конкретный предмет или действие как способ решения — принимай НЕМЕДЛЕННО ([ПРИЗ:З] → «Задача решена! 🎉» + инсайт). ЗАПРЕЩЕНО: сомневаться в выполнимости («а ты уверен?», «а не широко?», «а хватит?», «а дотянется?»). ЕДИНСТВЕННОЕ исключение: явное волшебство (ковёр-самолёт, телепорт, «само полетит») → одна фраза «без магии?», и только.`;
     }
     console.log(`Chat stage: prizStep=${prizStep} → ${stageLabel}`);
+
+    // ─── Hint key rotation: detect hint requests, pick next unused key ───
+    const HINT_KEYS = [
+        "Движение — что двигается, останавливается, меняет скорость?",
+        "Звук — что слышно, что могло бы звучать?",
+        "Тепло и холод — что нагревается, остывает, меняет температуру?",
+        "Свет — что видно, что могло бы светиться или быть невидимым?",
+        "Химия — что растворяется, меняет форму, вступает в реакцию?",
+        "Живая природа — какие живые существа есть рядом, что они делают?",
+        "Поведение людей — как люди ведут себя в этой ситуации, что можно изменить?",
+    ];
+    const HINT_PHRASES = ["подскажи", "не знаю", "не понимаю", "помоги", "застрял", "не могу придумать"];
+    const isHintRequest = HINT_PHRASES.some(p => userMessage.toLowerCase().includes(p));
+    const pastHintCount = (history || []).filter(m =>
+        m.role === "user" && HINT_PHRASES.some(p => m.text?.toLowerCase().includes(p))
+    ).length;
+    let hintKeyLine = "";
+    if (isHintRequest && pastHintCount < HINT_KEYS.length) {
+        const key = HINT_KEYS[pastHintCount % HINT_KEYS.length];
+        hintKeyLine = `\n🔑 ВНУТРЕННЯЯ ПОДСКАЗКА ДЛЯ ТЕБЯ (НЕ показывай ребёнку!): Сформулируй вопрос в направлении «${key}». НЕ называй категорию — просто задай вопрос про конкретный объект/момент из задачи в этом направлении.`;
+        console.log(`Hint key #${pastHintCount}: ${key}`);
+    }
 
     const taskContext = `
     Задача: ${task.title}
@@ -261,87 +266,49 @@ export default async function handler(req, res) {
     Целевая аудитория: ${task.ageRange} лет
     ${resourcesLine}
     ПРАВИЛО РЕСУРСОВ: Ребёнок опирается на картинку. Если он называет предмет из списка выше — ЗАПРЕЩЕНО спрашивать "откуда он взялся" или "где мы это возьмём". Считай, что этот ресурс уже в руках у героя.
-    ТЕКУЩАЯ СТАДИЯ: ${stageLabel}${stageHint}
+    ТЕКУЩАЯ СТАДИЯ: ${stageLabel}${stageHint}${hintKeyLine}
   `;
 
-    const historyText = (history || []).map(m =>
-        `${m.role === "user" ? "Ребенок" : "Уголек"}: ${m.text}`
-    ).join("\n");
+    // ─── History compression: keep first msg (hook) + last 6 msgs, summarize middle ───
+    const msgs = history || [];
+    let historyText;
+    if (msgs.length <= 8) {
+        // Short dialog — send full history
+        historyText = msgs.map(m =>
+            `${m.role === "user" ? "Ребенок" : "Уголек"}: ${m.text}`
+        ).join("\n");
+    } else {
+        // Long dialog — compress middle part
+        const hook = msgs[0]; // first bot message
+        const tail = msgs.slice(-6); // last 6 messages (3 exchanges)
+        const middle = msgs.slice(1, -6);
+        const middleChildMsgs = middle.filter(m => m.role === "user");
+        const middleTopics = middleChildMsgs.map(m => {
+            const short = (m.text || "").substring(0, 80);
+            return short.length < (m.text || "").length ? short + "…" : short;
+        });
+        const summary = middleTopics.length > 0
+            ? `[...ранее ребёнок говорил: ${middleTopics.join("; ")}...]`
+            : "[...ранее шло обсуждение условия задачи...]";
+        historyText = [
+            `${hook.role === "user" ? "Ребенок" : "Уголек"}: ${hook.text}`,
+            summary,
+            ...tail.map(m => `${m.role === "user" ? "Ребенок" : "Уголек"}: ${m.text}`)
+        ].join("\n");
+        console.log(`History compressed: ${msgs.length} msgs → hook + summary + ${tail.length} recent (saved ~${middle.length} msgs)`);
+    }
 
     const fullPrompt = personaPrompt
         .replace("{taskContext}", taskContext)
         .replace("{history}", historyText);
 
-    // Routing: Claude Haiku primary (всегда), Gemini — fallback
-    // TODO: вернуть token-based routing когда будет нужно
-    const est = estimateTokens(fullPrompt + userMessage);
-    console.log(`Chat prompt ~${est} tokens`);
-
-    const useClaudeFirst = true; // временно: Claude Haiku на все запросы
-    const GEMINI_PRIMARY = est < 200
-        ? "gemini-3.1-flash-lite-preview"
-        : "gemini-2.5-flash";
-    const GEMINI_FALLBACKS = ["gemini-2.5-flash", "gemini-3-flash-preview", "gemini-2.5-pro"];
-
-    // Build Gemini-format history (must start with user)
-    let apiHistory = [];
-    let foundFirst = false;
-    for (const msg of (history || [])) {
-        const role = msg.role === "user" ? "user" : "model";
-        if (!foundFirst && role === "user") foundFirst = true;
-        if (foundFirst) apiHistory.push({ role, parts: [{ text: msg.text }] });
-    }
-    if (apiHistory.length > 0 && apiHistory[apiHistory.length - 1].role === "user") {
-        apiHistory.pop();
-    }
-
-    // Try Claude first if it's the primary for this token range
-    if (useClaudeFirst) {
-        try {
-            const result = await callClaude(fullPrompt, userMessage);
-            return res.status(200).json({ ...result, personaId: persona.id });
-        } catch (claudeErr) {
-            console.warn("Chat Claude (primary) failed:", claudeErr.message, "→ trying Gemini");
-        }
-    }
-
-    // Try primary Gemini model
+    // Claude Haiku — sole provider
     try {
-        const result = await callGemini(GEMINI_PRIMARY, fullPrompt, apiHistory, userMessage);
-        return res.status(200).json(result);
-    } catch (primaryErr) {
-        if (!isSkippable(primaryErr)) {
-            console.error("Chat Gemini primary fatal:", primaryErr.message);
-            return res.status(500).json({ error: primaryErr.message });
-        }
-        console.warn(`Chat Gemini ${GEMINI_PRIMARY} unavailable → trying fallbacks`);
+        const result = await callClaude(fullPrompt, userMessage);
+        console.log(`Chat ${result.model} (in:${result.inputTokens} out:${result.outputTokens})`);
+        return res.status(200).json({ ...result, personaId: persona.id });
+    } catch (err) {
+        console.error("Chat Claude failed:", err.message);
+        return res.status(503).json({ error: "AI provider unavailable", details: err.message });
     }
-
-    // Try remaining Gemini fallbacks (skip primary if already tried)
-    for (const modelName of GEMINI_FALLBACKS) {
-        if (modelName === GEMINI_PRIMARY) continue;
-        try {
-            const result = await callGemini(modelName, fullPrompt, apiHistory, userMessage);
-            return res.status(200).json(result);
-        } catch (err) {
-            if (!isSkippable(err)) {
-                console.error(`Chat Gemini ${modelName} fatal:`, err.message);
-                break;
-            }
-            console.warn(`Chat Gemini ${modelName} unavailable → trying next`);
-        }
-    }
-
-    // Claude as final fallback (if we didn't try it first)
-    if (!useClaudeFirst) {
-        try {
-            const result = await callClaude(fullPrompt, userMessage);
-            return res.status(200).json(result);
-        } catch (claudeErr) {
-            console.error("Chat Claude fallback failed:", claudeErr.message);
-            return res.status(503).json({ error: "Both AI providers unavailable", details: claudeErr.message });
-        }
-    }
-
-    return res.status(503).json({ error: "All AI providers unavailable" });
 }

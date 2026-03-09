@@ -1,12 +1,10 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 const HOOK_PROMPT = `Ты — Уголёк, маленький дракон-помощник в детском тренажёре изобретательского мышления.
 Прочитай задачу и напиши короткое первое сообщение ребёнку.
 
 Задача: {taskTitle}
 Условие: {taskCondition}
 
-Напиши РОВНО 3 абзаца, разделяя их пустой строкой (\n\n):
+Напиши РОВНО 3 абзаца, разделяя их пустой строкой (\\n\\n):
 1) Первый абзац всегда СТРОГО такое предложение: «Вот наш маршрут: разберём условие → найдём где загвоздка → придумаем идеи → выберем лучшую.»
 2) Второй абзац — опиши ситуацию из задачи ярко и живо. Ключевые существительные выдели жирным: **вот так**.
 3) Третий абзац — один короткий вопрос-приглашение начать думать. НЕ зондируй тему, НЕ спрашивай про свойства объектов.
@@ -44,18 +42,13 @@ const HOOK_PROMPT = `Ты — Уголёк, маленький дракон-по
 
 ВАЖНО: отвечай ТОЛЬКО на русском языке.`;
 
-// Rough token estimator (1 token ≈ 4 chars, good enough for routing)
-function estimateTokens(text) {
-    return Math.ceil(text.length / 4);
-}
-
 // Extract hook text from model response (expects JSON {"hook":"..."}, falls back to raw text)
 function parseHookResponse(raw) {
     // Strip markdown code fences if present (```json ... ```)
     let text = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     // Try regex extraction first (more robust than JSON.parse for partial responses)
     const match = text.match(/"hook"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (match) return match[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim();
+    if (match) return match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').trim();
     // Try full JSON parse
     try {
         const parsed = JSON.parse(text);
@@ -65,66 +58,37 @@ function parseHookResponse(raw) {
     return text.replace(/^\{.*?"hook"\s*:\s*"?/, '').replace(/"?\s*\}$/, '').trim();
 }
 
-async function hookViaGemini(modelName, prompt) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY not set");
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: { maxOutputTokens: 200, temperature: 1.0 }
+const CLAUDE_MODELS = ["claude-haiku-4-5-20251001", "claude-3-haiku-20240307"];
+
+async function callClaude(apiKey, modelName, prompt) {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: modelName,
+            max_tokens: 300,
+            messages: [{ role: "user", content: prompt }],
+        }),
     });
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const inputTokens = response.usageMetadata?.promptTokenCount || 0;
-    const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
-    return { hook: parseHookResponse(response.text()), model: modelName, inputTokens, outputTokens };
-}
 
-async function hookViaClaude(prompt) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
-
-    // Try newest haiku first, fall back to stable v3 if overloaded (529)
-    const models = ["claude-haiku-4-5-20251001", "claude-3-haiku-20240307"];
-    let lastErr;
-    for (const model of models) {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: {
-                "x-api-key": apiKey,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            body: JSON.stringify({
-                model,
-                max_tokens: 200,
-                messages: [{ role: "user", content: prompt }],
-            }),
-        });
-        if (response.ok) {
-            const data = await response.json();
-            return {
-                hook: parseHookResponse(data.content[0].text),
-                model: "claude-haiku",
-                inputTokens: data.usage?.input_tokens || 0,
-                outputTokens: data.usage?.output_tokens || 0,
-            };
-        }
+    if (!response.ok) {
         const err = await response.text();
-        lastErr = `Claude API error ${response.status} (${model}): ${err}`;
-        // Only retry on overload/rate-limit, not auth errors
-        if (response.status !== 529 && response.status !== 429) break;
-        console.warn(lastErr, "→ retrying with fallback model");
+        const error = new Error(`Claude ${modelName} error ${response.status}: ${err}`);
+        error.status = response.status;
+        throw error;
     }
-    throw new Error(lastErr);
-}
 
-// Skippable Gemini errors: quota, rate-limit, model not found
-function isSkippable(err) {
-    const msg = err.message || "";
-    return msg.includes("429") || msg.includes("quota") ||
-        msg.includes("RESOURCE_EXHAUSTED") || msg.includes("404") ||
-        msg.includes("not found");
+    const data = await response.json();
+    return {
+        text: data.content[0].text.trim(),
+        model: modelName,
+        inputTokens: data.usage?.input_tokens || 0,
+        outputTokens: data.usage?.output_tokens || 0,
+    };
 }
 
 export default async function handler(req, res) {
@@ -150,62 +114,23 @@ export default async function handler(req, res) {
         .replace("{taskCondition}", task.condition || "")
         .replace("Первое предложение всегда СТРОГО такое: «Вот наш маршрут: разберём условие → найдём где загвоздка → придумаем идеи → выберем лучшую.»", `Первое предложение всегда СТРОГО такое: «${routePhrase}»`);
 
-    // Token-based routing:
-    //   < 200 tokens  → gemini-3.1-flash-lite (cheapest)
-    //   200–1000      → claude-3-haiku (reliable mid-tier)
-    //   > 1000        → gemini-2.5-flash (long context)
-    // Hook prompt is always short (<200), so flash-lite is always primary here.
-    // Fallback chain: flash-lite → claude-haiku → flash → gemini-3-flash → pro
-    const est = estimateTokens(prompt);
-    console.log(`Hook prompt ~${est} tokens`);
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "ANTHROPIC_API_KEY not set" });
 
-    const GEMINI_FALLBACKS = est < 200
-        ? ["gemini-3.1-flash-lite-preview", "gemini-2.5-flash", "gemini-3-flash-preview", "gemini-2.5-pro"]
-        : est < 1000
-            ? ["gemini-2.5-flash", "gemini-3-flash-preview", "gemini-2.5-pro"]
-            : ["gemini-2.5-flash", "gemini-3-flash-preview", "gemini-2.5-pro"];
-
-    // If primary tier is Claude (200-1000 tokens range), try Claude first
-    const useClaudeFirst = est >= 200 && est < 1000;
-
-    if (useClaudeFirst) {
-        try {
-            const result = await hookViaClaude(prompt);
-            console.log(`Hook Claude (in:${result.inputTokens} out:${result.outputTokens})`);
-            return res.status(200).json(result);
-        } catch (claudeErr) {
-            console.warn("Hook Claude (primary) failed:", claudeErr.message, "→ trying Gemini");
-        }
-    }
-
-    // Try Gemini models in order
     let lastErr;
-    for (const modelName of GEMINI_FALLBACKS) {
+    for (const modelName of CLAUDE_MODELS) {
         try {
-            const result = await hookViaGemini(modelName, prompt);
+            const result = await callClaude(apiKey, modelName, prompt);
+            const hook = parseHookResponse(result.text);
             console.log(`Hook ${result.model} (in:${result.inputTokens} out:${result.outputTokens})`);
-            return res.status(200).json(result);
+            return res.status(200).json({ hook, model: result.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens });
         } catch (err) {
+            console.warn(`Hook: ${modelName} failed — ${err.message}`);
             lastErr = err;
-            if (!isSkippable(err)) {
-                // Auth or unexpected error — propagate immediately
-                console.error(`Hook Gemini ${modelName} fatal error:`, err.message);
-                break;
-            }
-            console.warn(`Hook Gemini ${modelName} unavailable → trying next`);
+            if (err.status !== 529 && err.status !== 429) break;
         }
     }
 
-    // Claude as final fallback (if we didn't try it first)
-    if (!useClaudeFirst) {
-        try {
-            const result = await hookViaClaude(prompt);
-            console.log(`Hook Claude fallback (in:${result.inputTokens} out:${result.outputTokens})`);
-            return res.status(200).json(result);
-        } catch (claudeErr) {
-            console.error("Hook Claude fallback failed:", claudeErr.message);
-        }
-    }
-
+    console.error(`Hook: all models failed. Last error: ${lastErr?.message}`);
     return res.status(503).json({ error: "All AI providers unavailable" });
 }

@@ -2,10 +2,16 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import JSConfetti from 'js-confetti';
 import posthog from 'posthog-js';
 
-if (typeof window !== 'undefined') {
-  posthog.init('phc_mock_key_for_v14', { api_host: 'https://app.posthog.com' });
-}
-
+// PostHog Analytics
+const POSTHOG_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_POSTHOG_KEY)
+  || 'phc_SUO1vWSfLfRqKQ7JQjAKKiXm4DZS3os9COiCmcMzonI';
+posthog.init(POSTHOG_KEY, {
+  api_host: 'https://us.i.posthog.com',
+  defaults: '2026-01-30',
+  person_profiles: 'identified_only',
+  autocapture: false,       // только ручные события, не спамим кликами
+  capture_pageview: true,
+});
 
 /* ═══ CONFIG ═══ */
 const CONFIG = {
@@ -32,6 +38,33 @@ const CONFIG = {
 /* ═══ TASKS ═══ */
 import { TASKS, PICK, processUserMessage } from "./bot/engine";
 import { TRIZ_PRINCIPLES } from "./bot/principles";
+
+/* ═══ FUZZY PRINCIPLE LOOKUP ═══ */
+const PRINCIPLE_KEYS = Object.keys(TRIZ_PRINCIPLES);
+function findPrinciple(name) {
+  if (!name) return null;
+  // Exact match
+  if (TRIZ_PRINCIPLES[name]) return name;
+  // Normalize: lowercase + trim
+  const norm = name.toLowerCase().trim();
+  // Direct key match (case-insensitive)
+  const exactCI = PRINCIPLE_KEYS.find(k => k.toLowerCase() === norm);
+  if (exactCI) return exactCI;
+  // Key is substring of AI name (e.g. "Вынесение" inside "Замена вещества (Вынесение свойств)")
+  const partial = PRINCIPLE_KEYS.find(k => norm.includes(k.toLowerCase()));
+  if (partial) return partial;
+  // AI name is substring of key
+  const reverse = PRINCIPLE_KEYS.find(k => k.toLowerCase().includes(norm));
+  if (reverse) return reverse;
+  return null;
+}
+
+/* ═══ RANDOM EXAMPLE PICKER ═══ */
+function pickRandom(arr, count = 1) {
+  if (!arr || arr.length === 0) return [];
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, arr.length));
+}
 
 /* ═══ RENDER CONDITION ═══ */
 function Condition({ text, dm }) {
@@ -100,9 +133,12 @@ function ImageModal({ src, onClose, dm }) {
 }
 
 /* ═══ TRIZ PRINCIPLE MODAL ═══ */
-function PrincipleModal({ principle, onClose, dm }) {
+function PrincipleModal({ principle, childUsage, onClose, dm }) {
   if (!principle) return null;
-  const data = TRIZ_PRINCIPLES[principle] || { title: principle, description: "Интересный прием, который помогает находить нестандартные решения!", examples: [] };
+  const key = findPrinciple(principle);
+  const data = key ? TRIZ_PRINCIPLES[key] : { title: principle, description: "Интересный прием, который помогает находить нестандартные решения!", examples: [] };
+  const [shownExamples, setShownExamples] = useState(() => pickRandom(data.examples || [], 3));
+  const hasMore = (data.examples?.length || 0) > 3;
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300" onClick={onClose}>
@@ -118,22 +154,40 @@ function PrincipleModal({ principle, onClose, dm }) {
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">&times;</button>
         </div>
 
-        <p className={`text-lg leading-relaxed mb-6 ${dm ? 'text-white/80' : 'text-slate-600'}`}>{data.description}</p>
+        {/* What the child did — personal connection */}
+        {childUsage && (
+          <div className={`p-4 rounded-2xl mb-4 border-2 ${dm ? 'bg-amber-500/10 border-amber-500/30' : 'bg-amber-50 border-amber-200'}`}>
+            <div className={`text-xs font-bold uppercase tracking-widest mb-1.5 ${dm ? 'text-amber-400' : 'text-amber-600'}`}>🏆 Твоё решение</div>
+            <p className={`text-[15px] leading-relaxed ${dm ? 'text-amber-100' : 'text-amber-900'}`}>{childUsage}</p>
+          </div>
+        )}
 
-        {data.examples?.length > 0 && (
-          <div className="space-y-4">
-            <h4 className="text-sm font-bold uppercase tracking-widest opacity-40">Как это работает в мире?</h4>
-            {data.examples.map((ex, i) => (
-              <div key={i} className={`p-4 rounded-2xl border ${dm ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+        <p className={`text-[15px] leading-relaxed mb-5 ${dm ? 'text-white/80' : 'text-slate-600'}`}>{data.description}</p>
+
+        {shownExamples.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className={`text-xs font-bold uppercase tracking-widest ${dm ? 'text-white/30' : 'opacity-40'}`}>Настоящие изобретения с этим приёмом</h4>
+              {hasMore && (
+                <button
+                  onClick={() => setShownExamples(pickRandom(data.examples, 3))}
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full transition-all active:scale-95 ${dm ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20' : 'text-amber-600 bg-amber-50 hover:bg-amber-100'}`}
+                >
+                  Ещё примеры 🔄
+                </button>
+              )}
+            </div>
+            {shownExamples.map((ex, i) => (
+              <div key={ex.item} className={`p-4 rounded-2xl border ${dm ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
                 <div className="font-bold text-amber-500 mb-1">✨ {ex.item}</div>
-                <div className="text-sm opacity-80">{ex.text}</div>
+                <div className={`text-[13px] ${dm ? 'text-white/60' : 'opacity-80'}`}>{ex.text}</div>
               </div>
             ))}
           </div>
         )}
 
-        <button onClick={onClose} className="w-full mt-8 bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95">
-          Понятно!
+        <button onClick={onClose} className="w-full mt-6 bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95">
+          Круто! 🔥
         </button>
       </div>
     </div>
@@ -172,6 +226,10 @@ export default function App() {
   const [revealed, setRevealed] = useState({});
   const [isFocused, setIsFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [speechText, setSpeechText] = useState(""); // текст распознанный в процессе записи
+  const [silenceCountdown, setSilenceCountdown] = useState(null); // обратный отсчёт тишины: 5,4,3,2,1
+  const speechAccRef = useRef(""); // аккумулятор финальных фрагментов
+  const silenceTimerRef = useRef(null); // интервал тишины (посекундный)
   const [hintCount, setHintCount] = useState(0);
   const [adminClicks, setAdminClicks] = useState(0);
   const [themeMode, setThemeMode] = useState(() => {
@@ -192,6 +250,7 @@ export default function App() {
   const [aiReport, setAiReport] = useState(null);
   const [activePrinciple, setActivePrinciple] = useState(null);
   const [resultChildMessage, setResultChildMessage] = useState(null);
+  const [resultTab, setResultTab] = useState('child');
   const sessionTokensRef = useRef({ input: 0, output: 0 });
   const sessionIdRef = useRef(null);
   const [childMode, setChildMode] = useState(() => {
@@ -242,7 +301,7 @@ export default function App() {
     try {
       if (window.ym) window.ym(106910217, 'reachGoal', name, params);
       if (window.gtag) window.gtag('event', name, params);
-      if (window.posthog) window.posthog.capture(name, params);
+      posthog.capture(name, params);
     } catch (e) { }
   }, []);
 
@@ -478,7 +537,7 @@ export default function App() {
 
   const selectTask = (t) => {
     if (task && taskStartTime) finalizeCurrentTask();
-    posthog.capture('task_started', { task_id: t.id });
+    posthog.capture('task_started', { task_id: t.id, task_title: t.title, age_range: t.ageRange });
     setTask(t);
     setScreen("solve");
     setFound([]);
@@ -531,13 +590,34 @@ export default function App() {
     else { finalizeCurrentTask(); setScreen("select"); setTask(null); setPendingBranch(null); }
   };
 
+  const stopSilenceTimer = () => {
+    if (silenceTimerRef.current) { clearInterval(silenceTimerRef.current); silenceTimerRef.current = null; }
+    setSilenceCountdown(null);
+  };
+
+  const startSilenceTimer = () => {
+    stopSilenceTimer();
+    let sec = 5;
+    setSilenceCountdown(sec);
+    silenceTimerRef.current = setInterval(() => {
+      sec--;
+      if (sec <= 0) {
+        stopSilenceTimer();
+        // Авто-стоп после 5 сек тишины
+        if (recognitionRef.current) {
+          try { recognitionRef.current.stop(); } catch (e) { }
+        }
+      } else {
+        setSilenceCountdown(sec);
+      }
+    }, 1000);
+  };
+
   const stopSpeech = () => {
+    stopSilenceTimer();
     if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch (e) { } // abort быстрее release mic чем stop
-      recognitionRef.current = null;
+      try { recognitionRef.current.stop(); } catch (e) { } // stop (не abort) — чтобы onend получил финальный результат
     }
-    releaseMic(); // явно гасим системный индикатор микрофона
-    setIsRecording(false);
   };
 
   const startSpeech = async () => {
@@ -555,6 +635,7 @@ export default function App() {
       try { recognitionRef.current.abort(); } catch (e) { }
       recognitionRef.current = null;
     }
+    stopSilenceTimer();
     releaseMic();
 
     // 3. Явно захватить медиапоток — чтобы потом явно его освободить и погасить индикатор ОС
@@ -569,60 +650,113 @@ export default function App() {
     const recognition = new Recognition();
     recognitionRef.current = recognition;
     recognition.lang = 'ru-RU';
-    recognition.interimResults = false;
-    recognition.continuous = false;
+    recognition.interimResults = true;   // показываем текст в процессе
+    recognition.continuous = true;       // НЕ останавливаемся при паузе — ждём пользователя
     recognition.maxAlternatives = 1;
 
+    // Сброс аккумулятора
+    speechAccRef.current = "";
+    setSpeechText("");
     setIsRecording(true);
 
-    // 4. Предохранитель — принудительно останавливаем через 15 сек
-    const timeoutId = setTimeout(() => stopSpeech(), 15000);
+    // Жёсткий предохранитель — 60 сек максимум
+    const hardTimeoutId = setTimeout(() => stopSpeech(), 60000);
 
     recognition.onresult = (event) => {
-      clearTimeout(timeoutId);
-      const result = event.results[0][0].transcript;
-      setInput(result);
-      setIsRecording(false);
-      recognitionRef.current = null;
-      releaseMic(); // гасим индикатор сразу после получения текста
+      // Собираем финальные + промежуточные фрагменты
+      let finalText = "";
+      let interimText = "";
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalText += event.results[i][0].transcript;
+        } else {
+          interimText += event.results[i][0].transcript;
+        }
+      }
+      speechAccRef.current = finalText;
+      setSpeechText(finalText + interimText);
+
+      // Сброс таймера тишины: 5 секунд без новых слов → авто-стоп с обратным отсчётом
+      startSilenceTimer();
     };
+
     recognition.onerror = (event) => {
-      clearTimeout(timeoutId);
-      releaseMic(); // гасим индикатор при ошибке
+      clearTimeout(hardTimeoutId);
+      stopSilenceTimer();
+      releaseMic();
       setIsRecording(false);
+      setSpeechText("");
       recognitionRef.current = null;
       if (event.error === 'not-allowed') {
         alert("Нет доступа к микрофону. Разреши использование микрофона в настройках браузера. 🎙️");
       } else if (event.error === 'no-speech') {
         // тихо — просто закрываем
-      } else {
+      } else if (event.error !== 'aborted') {
         console.warn("Speech error:", event.error);
       }
     };
+
     recognition.onend = () => {
-      clearTimeout(timeoutId);
-      releaseMic(); // гасим индикатор при любом завершении
+      clearTimeout(hardTimeoutId);
+      stopSilenceTimer();
+      releaseMic();
       setIsRecording(false);
       recognitionRef.current = null;
+
+      // Авто-отправка накопленного текста
+      const text = (speechAccRef.current || "").trim();
+      setSpeechText("");
+      speechAccRef.current = "";
+      if (text) {
+        send(text);
+      }
     };
 
     try {
       recognition.start();
     } catch (e) {
-      clearTimeout(timeoutId);
+      clearTimeout(hardTimeoutId);
       releaseMic();
       setIsRecording(false);
+      setSpeechText("");
       recognitionRef.current = null;
       console.warn("Recognition start failed:", e);
     }
   };
 
-  const send = useCallback(async () => {
-    if (sending || !input.trim()) return;
-    const txt = input.trim();
+  // Генерация шаблонного отчёта если AI не отработал
+  const buildFallbackReport = useCallback((currentTask, currentMessages, currentPrizStep) => {
+    const stageDescriptions = {
+      0: "начал знакомство с задачей",
+      1: "исследовал условие и определил, что есть в ситуации",
+      2: "искал идеи и предлагал варианты решения",
+      3: "нашёл рабочее решение и обосновал его",
+      4: "прошёл полный цикл решения задачи и нашёл нестандартный выход",
+    };
+    const step = Math.min(currentPrizStep ?? 0, 4);
+    const childMsgs = currentMessages.filter(m => m.role === "user" && m.text?.trim());
+    const lastIdea = childMsgs.length > 0 ? childMsgs[childMsgs.length - 1].text.trim() : null;
+
+    let report = `Ваш ребёнок решал задачу «${currentTask.title}». `;
+    report += `В ходе тренировки ${stageDescriptions[step]}. `;
+    if (lastIdea && step >= 2) {
+      const shortIdea = lastIdea.length > 80 ? lastIdea.slice(0, 80) + "…" : lastIdea;
+      report += `Последняя идея ребёнка: «${shortIdea}». `;
+    }
+    report += step >= 3
+      ? "Это отличный результат — умение находить нестандартные пути решения формируется именно через такие задачи."
+      : "Каждая попытка — это тренировка мышления. С каждой задачей навык поиска решений становится сильнее.";
+
+    return { report, principles: [], fallback: true };
+  }, []);
+
+  const send = useCallback(async (overrideText) => {
+    const raw = overrideText || input;
+    if (sending || !raw.trim()) return;
+    const txt = raw.trim();
     setInput(""); setSending(true);
     setTotalMessages(m => m + 1);
-    posthog.capture('message_sent', { task_id: task.id, priz_step: prizStep });
+    posthog.capture('message_sent', { task_id: task?.id, priz_step: prizStep, msg_num: totalMessages + 1 });
     if (showCondition) setShowCondition(false);
     const newAttempts = attempts + 1;
     setAttempts(newAttempts);
@@ -710,14 +844,27 @@ export default function App() {
         }
         // Trigger report generation whenever a new idea is found to reduce wait time later
         if (newState.newBranch) {
+          const allMsgs = [...newMessages, { role: "system", text: reply }];
           fetch("/api/report", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: [...newMessages, { role: "system", text: reply }], task })
-          }).then(r => r.json()).then(d => {
-            if (d.report) setAiReport(d.report);
-            logEvent({ op: "report_incremental", taskId: task.id, ageRange: task.ageRange, model: d.model });
-          }).catch(() => { });
+            body: JSON.stringify({ messages: allMsgs, task })
+          }).then(r => {
+            if (!r.ok) throw new Error(`Server ${r.status}`);
+            return r.json();
+          }).then(d => {
+            if (d.report) {
+              setAiReport(d);
+            } else {
+              // API вернул fallback — генерируем шаблонный отчёт
+              setAiReport(buildFallbackReport(task, allMsgs, newState.prizStep ?? prizStep));
+              sendErrorToTelegramBot({ error: "Report API fallback (incremental)", details: d.error || "No report in response", taskTitle: task.title });
+            }
+            logEvent({ op: "report_incremental", taskId: task.id, ageRange: task.ageRange, model: d.model, fallback: !d.report });
+          }).catch((err) => {
+            setAiReport(buildFallbackReport(task, allMsgs, newState.prizStep ?? prizStep));
+            sendErrorToTelegramBot({ error: "Report API failed (incremental)", details: err?.message || String(err), taskTitle: task.title });
+          });
         }
 
         // AI-driven completion: переход на результаты когда AI говорит "Задача решена" (СТАДИЯ:4)
@@ -735,16 +882,25 @@ export default function App() {
 
           // Pre-fetch report if not already generating from a branch
           if (!aiReport) {
-            // Only send child's messages for the report as requested
-            const childMessages = msgsCopy.filter(m => m.role === "user");
             fetch("/api/report", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ messages: childMessages, task })
-            }).then(r => r.json()).then(d => {
-              if (d.report) setAiReport(d.report);
-              logEvent({ op: "report", taskId: task.id, ageRange: task.ageRange, model: d.model, inputTokens: d.inputTokens || 0, outputTokens: d.outputTokens || 0 });
-            }).catch(() => { });
+              body: JSON.stringify({ messages: msgsCopy, task })
+            }).then(r => {
+              if (!r.ok) throw new Error(`Server ${r.status}`);
+              return r.json();
+            }).then(d => {
+              if (d.report) {
+                setAiReport(d);
+              } else {
+                setAiReport(buildFallbackReport(task, msgsCopy, 4));
+                sendErrorToTelegramBot({ error: "Report API fallback (final)", details: d.error || "No report in response", taskTitle: task.title });
+              }
+              logEvent({ op: "report", taskId: task.id, ageRange: task.ageRange, model: d.model, inputTokens: d.inputTokens || 0, outputTokens: d.outputTokens || 0, fallback: !d.report });
+            }).catch((err) => {
+              setAiReport(buildFallbackReport(task, msgsCopy, 4));
+              sendErrorToTelegramBot({ error: "Report API failed (final)", details: err?.message || String(err), taskTitle: task.title });
+            });
           }
 
           const goToResult = () => {
@@ -776,6 +932,10 @@ export default function App() {
           setTimeout(() => {
             let t = 60;
             setCountdown(t);
+            // Скроллим вниз чтобы последние сообщения были видны над overlay
+            setTimeout(() => {
+              dialogRef.current?.scrollTo({ top: dialogRef.current.scrollHeight, behavior: 'smooth' });
+            }, 100);
             const iv = setInterval(() => {
               t--;
               if (t <= 0) {
@@ -960,7 +1120,7 @@ export default function App() {
                 <a href={`https://t.me/${CONFIG.cta_telegram}?text=${encodeURIComponent(CONFIG.cta_message)}`}
                   target="_blank" rel="noreferrer"
                   className="block bg-[#2D6A4F] text-white px-6 py-3 rounded-2xl font-bold text-[15px] no-underline shadow-lg active:scale-95 transition-transform">
-                  Записаться на пробный урок 🚀
+                  Записаться на бесплатный пробный урок 🚀
                 </a>
                 {CONFIG.subscribe_bot !== "ВАШ_БОТ" && (
                   <a href={`https://t.me/${CONFIG.subscribe_bot}?start=allDone`} target="_blank" rel="noreferrer"
@@ -998,7 +1158,7 @@ export default function App() {
                       ))}
                     </div>
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md shadow-sm ${dm ? 'bg-amber-900/40 text-amber-200 border border-amber-800/50' : 'bg-amber-50 text-amber-700 border border-amber-100'}`}>
-                      {t.ageRange || "10-13 лет"}
+                      {`${t.ageRange || "10-13"} лет`}
                     </span>
                   </div>
 
@@ -1014,7 +1174,7 @@ export default function App() {
 
   /* ─── SCREEN: SOLVE ─── */
   if (screen === "solve") return (
-    <div className={`h-[100dvh] flex flex-col max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}>
+    <div className={`h-[100dvh] flex flex-col relative max-w-[480px] md:max-w-[720px] lg:max-w-[900px] mx-auto font-['DM_Sans',system-ui,sans-serif] ${dm ? 'bg-[#0F172A] text-slate-300' : 'bg-[#FAF9F6]'}`}>
       <style>{`
         @keyframes blink{0%,80%{opacity:.2}40%{opacity:1}}
         @keyframes flyUp{
@@ -1036,7 +1196,7 @@ export default function App() {
       `}</style>
 
       {imageExpanded && <ImageModal src={task.image} onClose={() => setImageExpanded(false)} dm={dm} />}
-      {activePrinciple && <PrincipleModal principle={activePrinciple} onClose={() => setActivePrinciple(null)} dm={dm} />}
+      {activePrinciple && <PrincipleModal principle={activePrinciple.name || activePrinciple} childUsage={activePrinciple.childUsage} onClose={() => setActivePrinciple(null)} dm={dm} />}
 
       {/* Header with theme toggle and progress */}
       <div className={`px-4 py-3 flex items-center justify-between border-b shadow-sm ${dm ? 'border-slate-800 bg-slate-900/50 backdrop-blur-md' : 'border-gray-100 bg-white'}`}>
@@ -1097,7 +1257,7 @@ export default function App() {
         </button>
       </div>
 
-      <div ref={dialogRef} className={`flex-1 overflow-auto px-4 py-4 flex flex-col gap-3 scroll-smooth ${isRecording ? 'focus-blur' : ''}`}>
+      <div ref={dialogRef} className={`flex-1 overflow-auto px-4 py-4 flex flex-col gap-3 scroll-smooth ${isRecording ? 'focus-blur' : ''} ${prizStep >= 4 && countdown !== null ? 'pb-28' : ''}`}>
 
         {/* Messages */}
         {messages.map((m, i) => {
@@ -1207,35 +1367,52 @@ export default function App() {
 
       {/* FAB removed — countdown overlay handles transition */}
 
-      {/* Input — hidden when choice card is shown or task solved */}
-      {!showChoice && prizStep < 4 && (
-        <div className={`px-3 py-3 border-t flex gap-3 items-center transition-all duration-300 ${dm ? 'border-slate-800 bg-[#0F172A]' : 'border-gray-100 bg-white'} ${isFocused ? 'pb-3' : 'pb-8'}`}>
-          <button onClick={startSpeech} title="Голосовой ввод" className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all shadow-xl active:scale-90 ${isRecording ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-[#2D6A4F] text-white hover:bg-[#24533e]'}`}>
+      {/* Input — hidden when choice card is shown */}
+      {!showChoice && (
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className={`px-3 py-3 border-t flex gap-3 items-center transition-all duration-300 ${dm ? 'border-slate-800 bg-[#0F172A]' : 'border-gray-100 bg-white'} ${isFocused ? 'pb-3' : 'pb-8'}`}>
+          <button type="button" onClick={startSpeech} title="Голосовой ввод" className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all shadow-xl active:scale-90 ${isRecording ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-[#2D6A4F] text-white hover:bg-[#24533e]'}`}>
             {isRecording ? "🔴" : <span className="text-2xl">🎤</span>}
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (sending) return;
+              const hintMessages = ["Подскажи, я не знаю", "Не понимаю, дай ещё подсказку", "Совсем застрял, помоги"];
+              const msg = hintMessages[Math.min(hintCount, hintMessages.length - 1)];
+              setHintCount(h => h + 1);
+              send(msg);
+            }}
+            title="Подсказка"
+            disabled={sending}
+            className={`w-12 h-12 flex items-center justify-center rounded-2xl border transition-all font-bold text-xl shadow-md active:scale-90 ${sending ? (dm ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed') : (dm ? 'bg-amber-900/30 text-amber-400 border-amber-800/50 hover:bg-amber-900/50' : 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200')}`}>
+            ?
+          </button>
+
           <div className="flex-1 relative">
             <input
               ref={inputRef}
               type="text"
+              enterKeyHint="send"
+              autoComplete="off"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && send()}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               placeholder={prizStep <= 1 ? "Что ты думаешь?" : "Твоя идея..."}
               className={`w-full border-2 rounded-2xl px-4 py-3.5 text-base outline-none font-inherit transition-all ${dm ? 'bg-slate-800 border-slate-700 text-white focus:border-[#2D6A4F] placeholder:text-slate-500' : 'bg-gray-50 border-gray-100 focus:border-[#2D6A4F] focus:bg-white shadow-inner'}`} />
           </div>
 
-          <button onClick={send} disabled={!input.trim() || sending} aria-label="Отправить сообщение" title="Отправить"
+          <button type="submit" disabled={!input.trim() || sending} aria-label="Отправить сообщение" title="Отправить"
             className={`shrink-0 w-[54px] h-[54px] rounded-2xl border-none text-white text-xl transition-all shadow-md active:scale-90 ${!input.trim() || sending ? "bg-gray-200 cursor-default opacity-50" : "bg-[#2D6A4F] cursor-pointer hover:bg-[#24533e]"}`}>
             ➤
           </button>
-        </div>
+        </form>
       )}
 
-      {/* Completion Bar — replaces input when task is solved */}
+      {/* Completion Bar — overlay on top of input when task is solved */}
       {prizStep >= 4 && countdown !== null && (
-        <div className={`px-3 py-4 border-t transition-all duration-500 animate-in slide-in-from-bottom-full ${dm ? 'border-slate-800 bg-[#0F172A]' : 'border-gray-100 bg-white'} pb-10`}>
+        <div className={`absolute bottom-0 left-0 right-0 z-30 px-3 py-4 border-t transition-all duration-500 animate-in slide-in-from-bottom-full ${dm ? 'border-slate-800 bg-[#0F172A]' : 'border-gray-100 bg-white'} pb-10`}>
           <div className="flex items-center gap-4 bg-[#2D6A4F] p-4 rounded-2xl shadow-lg border border-white/10">
             <div className="text-3xl">🏆</div>
             <div className="flex-1 min-w-0">
@@ -1253,14 +1430,31 @@ export default function App() {
 
       {/* Recording overlay — at top-level so fixed positioning works regardless of ancestor filters */}
       {isRecording && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(239,68,68,0.8)] animate-pulse mb-4">
-            <span className="text-5xl">🎤</span>
+        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-6">
+          <div className={`w-28 h-28 rounded-full flex items-center justify-center mb-4 transition-all duration-300 ${silenceCountdown !== null ? 'bg-amber-500 shadow-[0_0_40px_rgba(245,158,11,0.6)]' : 'bg-red-500 shadow-[0_0_50px_rgba(239,68,68,0.8)] animate-pulse'}`}>
+            {silenceCountdown !== null ? (
+              <span className="text-white text-5xl font-bold tabular-nums">{silenceCountdown}</span>
+            ) : (
+              <span className="text-5xl">🎤</span>
+            )}
           </div>
-          <div className="text-white text-2xl font-bold mb-2">Слушаю тебя...</div>
-          <div className="text-white/60 text-lg">Говори смело, здесь нет неправильных ответов!</div>
-          <button onClick={stopSpeech} className="mt-6 px-8 py-3 bg-white/10 border border-white/20 text-white rounded-2xl font-bold hover:bg-white/20 transition-all">
-            Остановить
+          <div className="text-white text-2xl font-bold mb-2">
+            {silenceCountdown !== null ? "Тишина..." : speechText ? "Записываю..." : "Слушаю тебя..."}
+          </div>
+          {speechText ? (
+            <div className="text-white/90 text-lg text-center max-w-[90vw] max-h-[30vh] overflow-auto bg-white/10 rounded-2xl px-4 py-3 mb-2 leading-relaxed">
+              {speechText}
+            </div>
+          ) : (
+            <div className="text-white/60 text-lg text-center">Говори смело, можно думать вслух!</div>
+          )}
+          {silenceCountdown !== null ? (
+            <div className="text-amber-300/80 text-sm mt-1 mb-3">Отправлю через {silenceCountdown}... Говори — и таймер сбросится!</div>
+          ) : (
+            <div className="text-white/40 text-sm mt-1 mb-3">Пауза 5 сек → авто-отправка</div>
+          )}
+          <button onClick={stopSpeech} className="px-8 py-3 bg-white/10 border border-white/20 text-white rounded-2xl font-bold hover:bg-white/20 transition-all active:scale-95">
+            Отправить ✓
           </button>
         </div>
       )}
@@ -1341,7 +1535,25 @@ export default function App() {
         </button>
       </div>
 
-      {/* ── Зона для ребёнка ── */}
+      {/* Tab bar */}
+      <div className={`flex border-b ${dm ? 'border-slate-800 bg-slate-900/30' : 'border-gray-100 bg-white'}`}>
+        <button onClick={() => setResultTab('child')} className={`flex-1 py-3.5 text-center text-[14px] font-bold transition-all relative ${resultTab === 'child' ? (dm ? 'text-amber-400' : 'text-amber-600') : (dm ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600')}`}>
+          🏆 Мои открытия
+          {resultTab === 'child' && <div className={`absolute bottom-0 left-4 right-4 h-[3px] rounded-full ${dm ? 'bg-amber-400' : 'bg-amber-500'}`} />}
+        </button>
+        <button onClick={() => setResultTab('parent')} className={`flex-1 py-3.5 text-center text-[14px] font-bold transition-all relative ${resultTab === 'parent' ? (dm ? 'text-emerald-400' : 'text-[#2D6A4F]') : (dm ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')}`}>
+          📋 Для родителей
+          {resultTab === 'parent' && <div className={`absolute bottom-0 left-4 right-4 h-[3px] rounded-full ${dm ? 'bg-emerald-400' : 'bg-[#2D6A4F]'}`} />}
+          {resultTab !== 'parent' && (
+            <span className="absolute -top-0.5 right-4 flex h-3 w-3">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${dm ? 'bg-emerald-400' : 'bg-emerald-500'}`}></span>
+              <span className={`relative inline-flex rounded-full h-3 w-3 ${dm ? 'bg-emerald-400' : 'bg-emerald-500'}`}></span>
+            </span>
+          )}
+        </button>
+      </div>
+
+      {resultTab === 'child' && (
       <div className={`px-4 py-5 border-b ${dm ? 'border-slate-800 bg-slate-900/40' : 'border-amber-100 bg-amber-50/60'}`}>
         <div className="max-w-[480px] md:max-w-[600px] mx-auto">
           <div className="flex items-start gap-3 mb-4">
@@ -1400,10 +1612,12 @@ export default function App() {
           </div>
         </div>
       </div>
+      )}
 
       <div className="px-4 py-6 overflow-auto">
         <div className="max-w-[480px] md:max-w-[600px] mx-auto">
 
+          {resultTab === 'child' ? (<>
           {/* ── Заголовок — Победа ── */}
           <div className="text-center mb-6">
             <div className="text-[72px] mb-3 animate-bounce">🏆</div>
@@ -1411,9 +1625,89 @@ export default function App() {
               {resultTitle}
             </h1>
             <p className={`text-[15px] mb-1 ${dm ? 'text-slate-400' : 'text-gray-500'}`}>{resultSubtitle}</p>
-            <p className={`text-[13px] mb-3 ${dm ? 'text-slate-600' : 'text-gray-400'}`}>«{task.title}»</p>
-            {/* Stars hidden from users — keeping score logic for future use */}
+            <p className={`text-[13px] ${dm ? 'text-slate-600' : 'text-gray-400'}`}>«{task.title}»</p>
           </div>
+
+          {/* ── TRIZ Invention Cards — BIG ── */}
+          {aiReport?.principles?.length > 0 && (
+            <div className="mb-6">
+              <h2 className={`text-center text-[13px] font-black uppercase tracking-widest mb-4 ${dm ? 'text-amber-500' : 'text-amber-600'}`}>
+                🔬 Твои изобретательские приёмы
+              </h2>
+              <div className="space-y-3">
+                {aiReport.principles.map((p, i) => {
+                  const key = findPrinciple(p.name);
+                  const data = key ? TRIZ_PRINCIPLES[key] : null;
+                  const teaserEx = data?.examples?.length > 0 ? data.examples[(i * 7 + p.name.length) % data.examples.length] : null;
+                  return (
+                  <button
+                    key={i}
+                    onClick={() => setActivePrinciple({ name: p.name, childUsage: p.childUsage })}
+                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all active:scale-[0.98] ${p.isIFR
+                      ? (dm ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'bg-amber-50 border-amber-300 shadow-md shadow-amber-200/50')
+                      : (dm ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md')
+                    }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-2xl flex-shrink-0">{p.isIFR ? '🏆' : '💡'}</span>
+                        <div className="min-w-0">
+                          <div className={`font-bold text-[16px] ${dm ? 'text-white' : 'text-slate-800'}`}>
+                            {data?.title || p.name}
+                            {p.isIFR && <span className={`ml-2 text-[11px] font-black px-2 py-0.5 rounded-full ${dm ? 'text-amber-400 bg-amber-500/20' : 'text-amber-600 bg-amber-100'}`}>ИКР</span>}
+                          </div>
+                          {/* Show child's usage — personal connection */}
+                          {p.childUsage ? (
+                            <div className={`text-[13px] mt-1 ${dm ? 'text-amber-400/80' : 'text-amber-700'}`}>
+                              {p.childUsage}
+                            </div>
+                          ) : (
+                            <div className={`text-[13px] mt-0.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {data?.description || 'Нажми чтобы узнать больше'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`text-[20px] flex-shrink-0 ml-2 ${dm ? 'text-slate-600' : 'text-slate-300'}`}>›</span>
+                    </div>
+                    {teaserEx && (
+                      <div className={`mt-3 pt-3 border-t text-[12px] ${dm ? 'border-white/5 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
+                        ✨ Такой же приём в жизни: <b>{teaserEx.item}</b>
+                      </div>
+                    )}
+                  </button>
+                  );
+                })}
+              </div>
+              <p className={`text-center text-[12px] mt-3 ${dm ? 'text-amber-500/60' : 'text-amber-600/60'}`}>
+                👆 Нажми на карточку — узнай про настоящие изобретения!
+              </p>
+            </div>
+          )}
+
+          {/* ── Action buttons (child tab) ── */}
+          <div className="space-y-3 mb-4">
+            {found.length < total && (
+              <button
+                onClick={() => {
+                  const challengeMsg = "🔥 **Вызов принят!** Давай откроем еще один секрет ЭТОЙ ЖЕ задачи?";
+                  setResultChildMessage(null);
+                  continueSolving(challengeMsg);
+                }}
+                className="w-full bg-amber-400 text-amber-950 py-3.5 rounded-xl font-black text-[15px] transition-all active:scale-[0.98] hover:bg-amber-300 shadow-md shadow-amber-400/10">
+                💡 ОТКРЫТЬ ЕЩЁ СЕКРЕТ!
+              </button>
+            )}
+            <button
+              onClick={() => { setResultChildMessage(null); setScreen('select'); setTimeout(() => setTask(null), 300); }}
+              className={`w-full py-3 rounded-xl font-bold text-[15px] transition-all active:scale-[0.98] border-2 ${dm ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm'}`}>
+              🌟 Другая задача
+            </button>
+            <button onClick={continueSolving}
+              className={`w-full py-2.5 rounded-xl text-[13px] font-medium border transition-all active:scale-95 ${dm ? 'bg-white/5 border-white/10 text-slate-400' : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'}`}>
+              🔄 Поискать другое решение
+            </button>
+          </div>
+          </>) : (<>
 
           {/* ── Итоговая оценка ── */}
           <div className={`rounded-2xl px-5 py-4 mb-5 text-center border-2 ${dm
@@ -1435,11 +1729,11 @@ export default function App() {
                 {aiReport.principles.map((p, i) => (
                   <button
                     key={i}
-                    onClick={() => setActivePrinciple(p.name)}
+                    onClick={() => setActivePrinciple({ name: p.name, childUsage: p.childUsage })}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[12px] font-bold transition-all active:scale-95 border ${p.isIFR
                       ? (dm ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-amber-100/50 text-amber-700 border-amber-200 shadow-sm')
                       : (dm ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100')}`}>
-                    {p.isIFR ? '🏆 ' : '💡 '}{p.name}
+                    {p.isIFR ? '🏆 ' : '💡 '}{findPrinciple(p.name) ? TRIZ_PRINCIPLES[findPrinciple(p.name)].title : p.name}
                     {p.isIFR && <span className="text-[10px] opacity-70 ml-0.5">ИКР</span>}
                   </button>
                 ))}
@@ -1467,23 +1761,17 @@ export default function App() {
             )}
           </div>
 
-          {/* ── Зачем это всё? ── */}
-          <div className={`rounded-[20px] p-5 border mb-5 ${dm ? 'bg-amber-900/10 border-amber-900/30' : 'bg-amber-50 border-amber-100'}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">💡</span>
-              <h3 className={`font-bold text-[16px] ${dm ? 'text-amber-300' : 'text-amber-800'}`}>Зачем это всё?</h3>
-            </div>
-            <p className={`text-[13px] leading-relaxed mb-2 ${dm ? 'text-slate-300' : 'text-gray-700'}`}>
-              Открытые задачи — где нет одного правильного ответа — это сложно. По-настоящему. Большинство взрослых зависают на них точно так же, как дети.
+          {/* ── Главный CTA — сразу после отчёта, на пике эмоций ── */}
+          <div className={`rounded-[20px] p-5 border-2 mb-5 ${dm ? 'bg-slate-800/40 border-slate-700/50' : 'bg-[#E7F3EF] border-[#2D6A4F]/20'}`}>
+            <h3 className={`font-bold text-[17px] mb-1.5 ${dm ? 'text-emerald-400' : 'text-[#2D6A4F]'}`}>🎓 ТРИЗ-занятия в онлайн-клубе</h3>
+            <p className={`text-[13px] mb-4 ${dm ? 'text-slate-400' : 'text-gray-600'}`}>
+              В нашем клубе разбираются сотни таких задач — дети учатся спорить, доказывать и изобретать вместе.
             </p>
-            <p className={`text-[13px] leading-relaxed ${dm ? 'text-slate-400' : 'text-gray-600'}`}>
-              {task.ageRange === "6-9"
-                ? "Тот, кто учится думать «а что если...» в детстве — потом придумывает решения, которые другие просто не видят. Это не способность от рождения — это тренировка."
-                : task.ageRange === "10-11"
-                  ? "Умение найти выход там, где кажется его нет — пригодится в любой профессии и в любой жизненной ситуации. Именно этим занятиям, а не зубрёжке, стоит уделять время."
-                  : "Умение формулировать противоречие и искать нестандартный выход — это навык, которому не учат в школе. Но именно он отличает тех, кто решает задачи, от тех, кто их избегает."
-              }
-            </p>
+            <a href={finalCtaUrl} target="_blank" rel="noreferrer"
+              className="block w-full bg-[#2D6A4F] text-white py-4 rounded-2xl font-bold text-[17px] no-underline shadow-lg active:scale-95 transition-transform text-center">
+              Записаться на бесплатный пробный урок 🚀
+            </a>
+            <p className={`text-center text-[11px] mt-2 ${dm ? 'text-slate-500' : 'text-gray-400'}`}>{CONFIG.cta_subtitle}</p>
           </div>
 
           {/* ── Что дала эта тренировка ── */}
@@ -1506,38 +1794,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* ── Ценность для родителя ── */}
-          <div className={`rounded-[20px] p-5 border mb-5 ${dm ? 'bg-slate-800/40 border-slate-700/50' : 'bg-gray-50 border-gray-100'}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">📋</span>
-              <h3 className={`font-bold text-[16px] ${dm ? 'text-slate-300' : 'text-gray-800'}`}>Это показывает, как мы работаем на занятиях</h3>
-            </div>
-            <div className="space-y-2">
-              {[
-                'Тренажёр знакомит с форматом задач онлайн-клуба',
-                'Ребёнок приходит на урок уже с опытом — включается быстрее и без потери времени',
-              ].map((item, i) => (
-                <div key={i} className={`flex gap-2 items-start text-[13px] leading-snug ${dm ? 'text-slate-400' : 'text-gray-600'}`}>
-                  <span className={`shrink-0 font-bold ${dm ? 'text-[#2D6A4F]' : 'text-[#2D6A4F]'}`}>→</span>
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Главный CTA ── */}
-          <div className={`rounded-[20px] p-5 border-2 mb-5 ${dm ? 'bg-slate-800/40 border-slate-700/50' : 'bg-[#E7F3EF] border-[#2D6A4F]/20'}`}>
-            <h3 className={`font-bold text-[17px] mb-1.5 ${dm ? 'text-emerald-400' : 'text-[#2D6A4F]'}`}>🎓 ТРИЗ-занятия в онлайн-клубе</h3>
-            <p className={`text-[13px] mb-4 ${dm ? 'text-slate-400' : 'text-gray-600'}`}>
-              В нашем клубе разбираются сотни таких задач — дети учатся спорить, доказывать и изобретать вместе.
-            </p>
-            <a href={finalCtaUrl} target="_blank" rel="noreferrer"
-              className="block w-full bg-[#2D6A4F] text-white py-4 rounded-2xl font-bold text-[17px] no-underline shadow-lg active:scale-95 transition-transform text-center">
-              Записаться на пробный урок 🚀
-            </a>
-            <p className={`text-center text-[11px] mt-2 ${dm ? 'text-slate-500' : 'text-gray-400'}`}>{CONFIG.cta_subtitle}</p>
-          </div>
-
           {/* ── Подписка на новые задачи ── */}
           {CONFIG.subscribe_bot !== "ВАШ_БОТ" && (
             <a href={`https://t.me/${CONFIG.subscribe_bot}?start=result`} target="_blank" rel="noreferrer"
@@ -1548,6 +1804,18 @@ export default function App() {
                 <div className={`text-[12px] ${dm ? 'text-blue-400/70' : 'text-blue-600/70'}`}>Подпишись на бота — пришлём когда появится что-то новое</div>
               </div>
               <span className={`text-[12px] font-bold flex-shrink-0 ${dm ? 'text-blue-400' : 'text-blue-600'}`}>→</span>
+            </a>
+          )}
+
+          {/* ── Поддержка ── */}
+          {CONFIG.subscribe_bot !== "ВАШ_БОТ" && (
+            <a href={`https://t.me/${CONFIG.subscribe_bot}?start=support`} target="_blank" rel="noreferrer"
+              className={`flex items-center gap-3 rounded-[20px] p-3 border mb-5 no-underline transition-all active:scale-[0.98] ${dm ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}>
+              <span className="text-lg flex-shrink-0">💬</span>
+              <div className={`text-[13px] ${dm ? 'text-slate-400' : 'text-slate-500'}`}>
+                Нашли ошибку или есть идея? <b className={dm ? 'text-slate-300' : 'text-slate-700'}>Напишите нам</b>
+              </div>
+              <span className={`text-[12px] flex-shrink-0 ${dm ? 'text-slate-500' : 'text-slate-400'}`}>→</span>
             </a>
           )}
 
@@ -1574,29 +1842,14 @@ export default function App() {
               className={`w-full text-[13px] font-medium transition-colors py-2 border-none bg-transparent cursor-pointer ${dm ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}>
               ↩ Вернуться к выбору задач
             </button>
-
-            <div>
-              <button onClick={continueSolving}
-                className={`w-full py-3 rounded-2xl text-[13px] font-medium border transition-all active:scale-95 flex items-center justify-center gap-2 ${dm ? 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10' : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'}`}>
-                🔄 Поискать другое решение
-              </button>
-              <p className={`text-center text-[11px] mt-1.5 ${dm ? 'text-slate-600' : 'text-gray-400'}`}>
-                Попробуй найти другой способ решения
-              </p>
-            </div>
           </div>
 
-          {/* ── Зона для родителя ── */}
-          <div className={`mt-4 pt-4 border-t text-center ${dm ? 'border-slate-700' : 'border-gray-200'}`}>
-            <p className={`text-[13px] ${dm ? 'text-slate-500' : 'text-gray-400'}`}>
-              Можешь вернуть телефон обратно 😊
-            </p>
-          </div>
+          </>)}
 
         </div>
       </div>
       {modal && <ImageModal src={task.image} onClose={() => setModal(false)} dm={dm} />}
-      {activePrinciple && <PrincipleModal principle={activePrinciple} onClose={() => setActivePrinciple(null)} dm={dm} />}
+      {activePrinciple && <PrincipleModal principle={activePrinciple.name || activePrinciple} childUsage={activePrinciple.childUsage} onClose={() => setActivePrinciple(null)} dm={dm} />}
     </div>
   );
 }

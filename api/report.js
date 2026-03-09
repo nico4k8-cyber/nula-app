@@ -1,5 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 const REPORT_PROMPT = `Ты — опытный ТРИЗ-педагог. Твоя задача — написать краткий, вдохновляющий отчет для родителя о прогрессе ребенка.
 
 ### КОНТЕКСТ:
@@ -25,21 +23,34 @@ const REPORT_PROMPT = `Ты — опытный ТРИЗ-педагог. Твоя
   "report": "Текст отчета для родителя...",
   "principles": [
     {
-      "name": "Название приема",
-      "isIFR": true/false
+      "name": "ТОЧНОЕ название из списка ниже",
+      "isIFR": true/false,
+      "childUsage": "Одно предложение — КАК ИМЕННО ребенок применил этот прием в своем решении"
     }
   ]
 }
 
-### СПИСОК ПРИЕМОВ ТРИЗ ДЛЯ ПРОВЕРКИ (используй только эти названия):
-Сегментация, Вынесение, Объединение, Универсальность, Матрешка, Адаптивность, Наоборот, Предварительное действие, Посредник, Самообслуживание.
+### СТРОГИЙ СПИСОК ПРИЕМОВ (используй ТОЛЬКО эти точные строки в поле "name"):
+- Сегментация
+- Вынесение
+- Объединение
+- Универсальность
+- Матрешка
+- Адаптивность
+- Наоборот
+- Предварительное действие
+- Посредник
+- Самообслуживание
 
-Важно: Если решение ребенка близко к Идеальному Конечному Результату (использует ресурсы, которые уже есть, или превращает вред в пользу), обязательно ставь isIFR: true. Отвечай ТОЛЬКО на русском языке.`;
+КРИТИЧЕСКИ ВАЖНО для поля "name":
+- Копируй название РОВНО как написано выше, без изменений, без скобок, без пояснений.
+- НЕ ПИШИ свои названия типа "Замена вещества" — найди ближайший из 10 приемов.
+- Пример ПРАВИЛЬНО: "name": "Вынесение"
+- Пример НЕПРАВИЛЬНО: "name": "Замена вещества (Вынесение свойств)"
 
-const MODELS = [
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-];
+Поле "childUsage" — обязательно. Опиши КОНКРЕТНО что придумал ребенок. Пример: "Ты предложил убрать лишнюю часть — как настоящий инженер!"
+
+Важно: Если решение ребенка близко к Идеальному Конечному Результату (использует ресурсы, которые уже есть, или превращает вред в пользу), обязательно ставь isIFR: true. Отвечай ТОЛЬКО на русском языке. Верни ТОЛЬКО валидный JSON без markdown.`;
 
 function extractJSON(text) {
     try {
@@ -54,15 +65,38 @@ function extractJSON(text) {
     }
 }
 
-async function callGemini(apiKey, modelName, prompt) {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: { maxOutputTokens: 1000, temperature: 0.7, responseMimeType: "application/json" }
+// Claude Haiku models — newest first, stable fallback
+const CLAUDE_MODELS = ["claude-haiku-4-5-20251001", "claude-3-haiku-20240307"];
+
+async function callClaude(apiKey, modelName, prompt) {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: modelName,
+            max_tokens: 1000,
+            messages: [{ role: "user", content: prompt }],
+        }),
     });
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    return { text: response.text().trim(), model: modelName };
+
+    if (!response.ok) {
+        const err = await response.text();
+        const error = new Error(`Claude ${modelName} error ${response.status}: ${err}`);
+        error.status = response.status;
+        throw error;
+    }
+
+    const data = await response.json();
+    return {
+        text: data.content[0].text.trim(),
+        model: modelName,
+        inputTokens: data.usage?.input_tokens || 0,
+        outputTokens: data.usage?.output_tokens || 0,
+    };
 }
 
 export default async function handler(req, res) {
@@ -76,8 +110,8 @@ export default async function handler(req, res) {
     const { messages, task } = req.body;
     if (!messages || !task) return res.status(400).json({ error: "messages and task required" });
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY not set" });
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "ANTHROPIC_API_KEY not set" });
 
     // Limit to last 20 messages to avoid context blowup/timeout
     const conversationText = messages
@@ -92,17 +126,26 @@ export default async function handler(req, res) {
         .replace("{conversation}", conversationText);
 
     let lastErr;
-    for (const modelName of MODELS) {
+    for (const modelName of CLAUDE_MODELS) {
         try {
-            const { text, model } = await callGemini(apiKey, modelName, prompt);
-            const data = extractJSON(text);
-            return res.status(200).json({ ...data, model });
+            const result = await callClaude(apiKey, modelName, prompt);
+            const data = extractJSON(result.text);
+            console.log(`Report ${result.model} (in:${result.inputTokens} out:${result.outputTokens})`);
+            return res.status(200).json({ ...data, model: result.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens });
         } catch (err) {
             console.warn(`Report: ${modelName} failed — ${err.message}`);
             lastErr = err;
+            // Only retry on overload/rate-limit
+            if (err.status !== 529 && err.status !== 429) break;
         }
     }
 
-    // Fallback if parsing fails or all models fail
-    return res.status(200).json({ report: "Произошла ошибка при генерации подробного отчета, но ваш ребенок отлично справился с задачей!", principles: [] });
+    // Fallback if all models fail
+    console.error(`Report: all models failed for task "${task.title}". Last error: ${lastErr?.message}`);
+    return res.status(200).json({
+        report: null,
+        principles: [],
+        fallback: true,
+        error: lastErr?.message || "All models failed",
+    });
 }
