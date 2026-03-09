@@ -1213,26 +1213,15 @@ export default function App() {
           <button onClick={startSpeech} title="Голосовой ввод" className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all shadow-xl active:scale-90 ${isRecording ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-[#2D6A4F] text-white hover:bg-[#24533e]'}`}>
             {isRecording ? "🔴" : <span className="text-2xl">🎤</span>}
           </button>
-
-          <button
-            onClick={() => {
-              const hintMessages = ["Подскажи, я не знаю", "Не понимаю, дай ещё подсказку", "Совсем застрял, помоги"];
-              const msg = hintMessages[Math.min(hintCount, 2)];
-              setHintCount(h => h + 1);
-              setInput(msg);
-            }}
-            title={`Подсказка (использовано: ${hintCount})`}
-            className={`w-12 h-12 flex items-center justify-center rounded-2xl border transition-all font-bold text-xl shadow-md active:scale-90 ${hintCount >= 3 ? (dm ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed') : (dm ? 'bg-amber-900/40 text-amber-300 border-amber-800/50 hover:bg-amber-900/60' : 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200')}`}
-            disabled={hintCount >= 3}>
-            ?
-          </button>
-
-          <div className="relative flex-1">
-            <input ref={inputRef} value={input}
+          <div className="flex-1 relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && send()}
               onFocus={() => setIsFocused(true)}
-              onBlur={() => setTimeout(() => setIsFocused(false), 50)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
+              onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               placeholder={prizStep <= 1 ? "Что ты думаешь?" : "Твоя идея..."}
               className={`w-full border-2 rounded-2xl px-4 py-3.5 text-base outline-none font-inherit transition-all ${dm ? 'bg-slate-800 border-slate-700 text-white focus:border-[#2D6A4F] placeholder:text-slate-500' : 'bg-gray-50 border-gray-100 focus:border-[#2D6A4F] focus:bg-white shadow-inner'}`} />
           </div>
@@ -1241,7 +1230,24 @@ export default function App() {
             className={`shrink-0 w-[54px] h-[54px] rounded-2xl border-none text-white text-xl transition-all shadow-md active:scale-90 ${!input.trim() || sending ? "bg-gray-200 cursor-default opacity-50" : "bg-[#2D6A4F] cursor-pointer hover:bg-[#24533e]"}`}>
             ➤
           </button>
+        </div>
+      )}
 
+      {/* Completion Bar — replaces input when task is solved */}
+      {prizStep >= 4 && countdown !== null && (
+        <div className={`px-3 py-4 border-t transition-all duration-500 animate-in slide-in-from-bottom-full ${dm ? 'border-slate-800 bg-[#0F172A]' : 'border-gray-100 bg-white'} pb-10`}>
+          <div className="flex items-center gap-4 bg-[#2D6A4F] p-4 rounded-2xl shadow-lg border border-white/10">
+            <div className="text-3xl">🏆</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-white font-bold text-[16px]">Задача решена!</div>
+              <div className="text-white/70 text-[13px]">Финал через {countdown} сек.</div>
+            </div>
+            <button
+              onClick={() => countdownRef.goToResult?.()}
+              className="bg-white text-[#2D6A4F] px-6 py-3 rounded-xl text-[15px] font-bold shadow-xl active:scale-95 transition-all hover:bg-gray-100 flex-shrink-0">
+              Смотреть результаты →
+            </button>
+          </div>
         </div>
       )}
 
@@ -1274,24 +1280,6 @@ export default function App() {
                 setScreen("select"); setTask(null); setPendingBranch(null);
               }} className="flex-1 py-3 rounded-lg border-none bg-[#2D6A4F] text-white text-[15px] cursor-pointer hover:bg-[#24533e]">Уйти</button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Countdown overlay — shown on task completion before transition */}
-      {countdown !== null && (
-        <div className="fixed top-[72px] left-0 right-0 z-50 flex justify-center animate-in slide-in-from-top-full duration-500 px-4">
-          <div className="w-full max-w-md bg-[#1a2a22]/95 backdrop-blur-md rounded-2xl p-3 flex items-center gap-4 shadow-2xl border border-white/20">
-            <div className="text-3xl">🏆</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-white font-bold text-[15px]">Задача решена!</div>
-              <div className="text-white/60 text-[12px]">Результаты через {countdown} сек.</div>
-            </div>
-            <button
-              onClick={() => countdownRef.goToResult?.()}
-              className="bg-[#2D6A4F] text-white px-4 py-2 rounded-xl text-[14px] font-bold shadow-lg active:scale-95 transition-all hover:bg-[#24533e] flex-shrink-0">
-              Смотреть →
-            </button>
           </div>
         </div>
       )}

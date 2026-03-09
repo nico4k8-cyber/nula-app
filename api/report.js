@@ -37,9 +37,22 @@ const REPORT_PROMPT = `Ты — опытный ТРИЗ-педагог. Твоя
 Важно: Если решение ребенка близко к Идеальному Конечному Результату (использует ресурсы, которые уже есть, или превращает вред в пользу), обязательно ставь isIFR: true. Отвечай ТОЛЬКО на русском языке.`;
 
 const MODELS = [
-    "gemini-1.5-flash", // Updated for general availability
+    "gemini-1.5-flash",
     "gemini-1.5-pro",
 ];
+
+function extractJSON(text) {
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        const match = text.match(/```json\s*([\s\S]*?)\s*```/);
+        if (match) return JSON.parse(match[1]);
+        const first = text.indexOf('{');
+        const last = text.lastIndexOf('}');
+        if (first !== -1 && last !== -1) return JSON.parse(text.substring(first, last + 1));
+        throw e;
+    }
+}
 
 async function callGemini(apiKey, modelName, prompt) {
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -82,7 +95,7 @@ export default async function handler(req, res) {
     for (const modelName of MODELS) {
         try {
             const { text, model } = await callGemini(apiKey, modelName, prompt);
-            const data = JSON.parse(text);
+            const data = extractJSON(text);
             return res.status(200).json({ ...data, model });
         } catch (err) {
             console.warn(`Report: ${modelName} failed — ${err.message}`);
