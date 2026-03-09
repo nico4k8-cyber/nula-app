@@ -735,10 +735,12 @@ export default function App() {
 
           // Pre-fetch report if not already generating from a branch
           if (!aiReport) {
+            // Only send child's messages for the report as requested
+            const childMessages = msgsCopy.filter(m => m.role === "user");
             fetch("/api/report", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ messages: msgsCopy, task })
+              body: JSON.stringify({ messages: childMessages, task })
             }).then(r => r.json()).then(d => {
               if (d.report) setAiReport(d.report);
               logEvent({ op: "report", taskId: task.id, ageRange: task.ageRange, model: d.model, inputTokens: d.inputTokens || 0, outputTokens: d.outputTokens || 0 });
@@ -770,9 +772,9 @@ export default function App() {
             setScreen("result");
           };
 
-          // Даём 2 сек прочитать финальный ответ Уголька, потом запускаем таймер
+          // Даём 2 сек прочитать начало финального ответа Уголька, потом запускаем таймер на 60 сек
           setTimeout(() => {
-            let t = 8;
+            let t = 60;
             setCountdown(t);
             const iv = setInterval(() => {
               t--;
