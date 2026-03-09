@@ -474,7 +474,7 @@ export default function App() {
     return gradients[id] || "from-gray-400 to-gray-600";
   };
 
-  const FALLBACK_HOOK = "Интересная задача попалась нам сегодня! Расскажи мне её своими словами, как будто я только что появился!";
+  const FALLBACK_HOOK = "Вот наш маршрут: разберём условие → найдём где загвоздка → придумаем идеи → выберем лучшую. **Уголёк** уже здесь и готов помогать! С чего начнёшь?";
 
   const selectTask = (t) => {
     if (task && taskStartTime) finalizeCurrentTask();
