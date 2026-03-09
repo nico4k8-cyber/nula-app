@@ -474,7 +474,7 @@ export default function App() {
     return gradients[id] || "from-gray-400 to-gray-600";
   };
 
-  const FALLBACK_HOOK = "Вот наш маршрут: разберём условие → найдём где загвоздка → придумаем идеи → выберем лучшую. **Уголёк** уже здесь и готов помогать! С чего начнёшь?";
+  const FALLBACK_HOOK = "Вот наш маршрут: разберём условие → найдём где загвоздка → придумаем идеи → выберем лучшую.\n\n**Уголёк** уже здесь и готов помогать!\n\nС чего начнёшь?";
 
   const selectTask = (t) => {
     if (task && taskStartTime) finalizeCurrentTask();
@@ -505,7 +505,7 @@ export default function App() {
     fetch("/api/hook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ task: t })
+      body: JSON.stringify({ task: t, ageRange: t.ageRange })
     })
       .then(r => r.json())
       .then(d => {
