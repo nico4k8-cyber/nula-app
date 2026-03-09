@@ -724,6 +724,15 @@ export default function App() {
         if (newState.prizStep === 4 && prizStep < 4) {
           const msgsCopy = [...newMessages, { role: "system", text: reply }];
 
+          // Instant rewards!
+          setScore(s => s + 10);
+          if (jsConfetti.current) {
+            jsConfetti.current.addConfetti({
+              emojis: ['🎉', '✨', '🏆', '⭐', '💡'],
+              confettiNumber: 60,
+            });
+          }
+
           // Pre-fetch report if not already generating from a branch
           if (!aiReport) {
             fetch("/api/report", {
@@ -761,9 +770,9 @@ export default function App() {
             setScreen("result");
           };
 
-          // Даём 4 сек прочитать финальный ответ Уголька, потом запускаем таймер
+          // Даём 2 сек прочитать финальный ответ Уголька, потом запускаем таймер
           setTimeout(() => {
-            let t = 30;
+            let t = 8;
             setCountdown(t);
             const iv = setInterval(() => {
               t--;
@@ -776,7 +785,7 @@ export default function App() {
             countdownRef.current = iv;
             // Expose goToResult for the manual button via ref
             countdownRef.goToResult = goToResult;
-          }, 4000); // 4 сек задержки — читаем финальный ответ Уголька
+          }, 2000); // 2 сек задержки — читаем финальный ответ Уголька
         }
 
         logInteraction(task.id, txt, reply, resultType);
@@ -882,7 +891,7 @@ export default function App() {
 
           {/* Время */}
           <p className={`text-center text-[13px] leading-tight mb-3 ${dm ? 'text-slate-500' : 'text-[#6B7280]'}`}>
-            ⏱ 2–5 минут на задачу<br/>
+            ⏱ 2–5 минут на задачу<br />
             <span className="opacity-70 text-[11px]">(но обычно дети хотят ещё, поэтому может занять больше времени)</span>
           </p>
 
@@ -1196,8 +1205,8 @@ export default function App() {
 
       {/* FAB removed — countdown overlay handles transition */}
 
-      {/* Input — hidden when choice card is shown */}
-      {!showChoice && (
+      {/* Input — hidden when choice card is shown or task solved */}
+      {!showChoice && prizStep < 4 && (
         <div className={`px-3 py-3 border-t flex gap-3 items-center transition-all duration-300 ${dm ? 'border-slate-800 bg-[#0F172A]' : 'border-gray-100 bg-white'} ${isFocused ? 'pb-3' : 'pb-8'}`}>
           <button onClick={startSpeech} title="Голосовой ввод" className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all shadow-xl active:scale-90 ${isRecording ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-[#2D6A4F] text-white hover:bg-[#24533e]'}`}>
             {isRecording ? "🔴" : <span className="text-2xl">🎤</span>}
@@ -1269,16 +1278,16 @@ export default function App() {
 
       {/* Countdown overlay — shown on task completion before transition */}
       {countdown !== null && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex flex-col items-center justify-end pb-6 animate-in fade-in duration-500 px-4">
-          <div className="w-full max-w-md bg-[#1a2a22]/90 backdrop-blur-md rounded-3xl p-5 flex items-center gap-4 shadow-2xl border border-white/10">
-            <div className="text-4xl">🏆</div>
+        <div className="fixed top-[72px] left-0 right-0 z-50 flex justify-center animate-in slide-in-from-top-full duration-500 px-4">
+          <div className="w-full max-w-md bg-[#1a2a22]/95 backdrop-blur-md rounded-2xl p-3 flex items-center gap-4 shadow-2xl border border-white/20">
+            <div className="text-3xl">🏆</div>
             <div className="flex-1 min-w-0">
-              <div className="text-white font-bold text-[16px]">Задача решена!</div>
-              <div className="text-white/50 text-[13px]">Результаты через {countdown} сек.</div>
+              <div className="text-white font-bold text-[15px]">Задача решена!</div>
+              <div className="text-white/60 text-[12px]">Результаты через {countdown} сек.</div>
             </div>
             <button
               onClick={() => countdownRef.goToResult?.()}
-              className="bg-[#2D6A4F] text-white px-4 py-2.5 rounded-xl text-[14px] font-bold shadow-lg active:scale-95 transition-all hover:bg-[#24533e] flex-shrink-0">
+              className="bg-[#2D6A4F] text-white px-4 py-2 rounded-xl text-[14px] font-bold shadow-lg active:scale-95 transition-all hover:bg-[#24533e] flex-shrink-0">
               Смотреть →
             </button>
           </div>

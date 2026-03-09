@@ -116,6 +116,10 @@ function parseTag(rawText) {
             .replace(/^[🐉🦎🔥]\s*/gmu, '')
             .replace(/\n{3,}/g, '\n\n')
             .trimEnd();
+        // Safety: if AI says "Задача решена" but forgets the tag or uses wrong stage
+        if (cleanText.includes("Задача решена!") && prizStep < 4) {
+            return { cleanText, prizStep: 4, stars };
+        }
         return { cleanText, prizStep, stars };
     }
     // Fallback: legacy format [СТАДИЯ:N]
