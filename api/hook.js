@@ -1,19 +1,42 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const HOOK_PROMPT = `Ты — Уголёк, маленький дракон-помощник в детском тренажёре по изобретательскому мышлению. Ты только что прочитал условие задачи и хочешь заинтересовать ребёнка.
+const HOOK_PROMPT = `Ты — Уголёк, маленький дракон-помощник в детском тренажёре изобретательского мышления.
+Прочитай задачу и напиши короткое первое сообщение ребёнку.
 
 Задача: {taskTitle}
 Условие: {taskCondition}
 
-Напиши 1-2 предложения приветствия. Требования:
-- Конкретно упомяни деталь из условия (ситуацию, предмет, персонажа)
-- Покажи своё любопытство или удивление от ЭТОЙ конкретной задачи
-- Попроси ребёнка рассказать задачу своими словами (можно в конце добавить что-то вроде "расскажи мне её своими словами!")
-- НЕ начинай с "Ой, какая интересная задача"
-- НЕ используй клише вроде "давай попробуем решить" или "это сложная задача"
-- Будь живым, тёплым, немного игривым
-- Только русский язык
-- Без эмодзи в начале предложения (можно 1 в конце если уместно)
+Напиши РОВНО 2 предложения:
+1) Одно предложение — опиши ситуацию ярко и живо. Ключевые существительные выдели жирным: **вот так**.
+2) Один короткий вопрос — только общее приглашение начать думать. НЕ зондируй тему, НЕ спрашивай про свойства объектов.
+
+ДЛЯ ВОПРОСА используй только такие формы (или похожие):
+- «Есть идеи с чего начать?»
+- «С чего начнёшь?»
+- «Что первым делом приходит в голову?»
+- «Похоже на загадку, правда?»
+
+СТРОГО НЕЛЬЗЯ в вопросе:
+- Спрашивать про свойства, поведение или отличия объектов из задачи
+- Сравнивать («а чем отличаются...», «что происходит с X, а с Y — нет»)
+- Называть любые процессы или явления, связанные с задачей
+- Намекать на механизм или направление решения
+
+ПЛОХО (нельзя так):
+«Что происходит с живыми цветами со временем, а с тканевыми — нет?»
+— прямая подсказка на механизм решения
+
+«Что ты знаешь об обезьянах — как они себя ведут, чего боятся?»
+— зондирует тему, уже подталкивает к нужным свойствам
+
+ХОРОШО (вот так):
+«**Обезьяны** каждый день приходят на **плантацию** и забирают **апельсины**. Есть идеи с чего начать?»
+«**Царица** принесла царю **Соломону** две вазы с **цветами** — живые и тканевые выглядят одинаково. С чего начнёшь?»
+
+ЗАПРЕЩЕНО везде: "расскажи своими словами", "давай попробуем", "это интересная задача", любые клише.
+ЗАПРЕЩЕНО: глаголы прошедшего времени с родовым окончанием (-ил/-ала/-ел/-ела) при обращении к ребёнку.
+Будь живым, тёплым, немного игривым. Только русский язык.
+Без эмодзи в начале предложений (можно 1 в конце если очень уместно).
 
 Верни ТОЛЬКО валидный JSON без markdown, без пояснений:
 {"hook": "твой текст здесь"}
@@ -50,7 +73,10 @@ async function hookViaGemini(modelName, prompt) {
         generationConfig: { maxOutputTokens: 200, temperature: 1.0 }
     });
     const result = await model.generateContent(prompt);
-    return parseHookResponse(result.response.text());
+    const response = result.response;
+    const inputTokens = response.usageMetadata?.promptTokenCount || 0;
+    const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
+    return { hook: parseHookResponse(response.text()), model: modelName, inputTokens, outputTokens };
 }
 
 async function hookViaClaude(prompt) {
@@ -76,7 +102,12 @@ async function hookViaClaude(prompt) {
         });
         if (response.ok) {
             const data = await response.json();
-            return parseHookResponse(data.content[0].text);
+            return {
+                hook: parseHookResponse(data.content[0].text),
+                model: "claude-haiku",
+                inputTokens: data.usage?.input_tokens || 0,
+                outputTokens: data.usage?.output_tokens || 0,
+            };
         }
         const err = await response.text();
         lastErr = `Claude API error ${response.status} (${model}): ${err}`;
@@ -130,8 +161,9 @@ export default async function handler(req, res) {
 
     if (useClaudeFirst) {
         try {
-            const hook = await hookViaClaude(prompt);
-            return res.status(200).json({ hook });
+            const result = await hookViaClaude(prompt);
+            console.log(`Hook Claude (in:${result.inputTokens} out:${result.outputTokens})`);
+            return res.status(200).json(result);
         } catch (claudeErr) {
             console.warn("Hook Claude (primary) failed:", claudeErr.message, "→ trying Gemini");
         }
@@ -141,8 +173,9 @@ export default async function handler(req, res) {
     let lastErr;
     for (const modelName of GEMINI_FALLBACKS) {
         try {
-            const hook = await hookViaGemini(modelName, prompt);
-            return res.status(200).json({ hook });
+            const result = await hookViaGemini(modelName, prompt);
+            console.log(`Hook ${result.model} (in:${result.inputTokens} out:${result.outputTokens})`);
+            return res.status(200).json(result);
         } catch (err) {
             lastErr = err;
             if (!isSkippable(err)) {
@@ -157,8 +190,9 @@ export default async function handler(req, res) {
     // Claude as final fallback (if we didn't try it first)
     if (!useClaudeFirst) {
         try {
-            const hook = await hookViaClaude(prompt);
-            return res.status(200).json({ hook });
+            const result = await hookViaClaude(prompt);
+            console.log(`Hook Claude fallback (in:${result.inputTokens} out:${result.outputTokens})`);
+            return res.status(200).json(result);
         } catch (claudeErr) {
             console.error("Hook Claude fallback failed:", claudeErr.message);
         }

@@ -1,35 +1,55 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const REPORT_PROMPT = `Ты — опытный педагог по изобретательскому мышлению. Проанализируй диалог ребёнка с тренажёром и напиши короткий комментарий для родителя.
+const REPORT_PROMPT = `Ты — опытный ТРИЗ-педагог. Твоя задача — написать краткий, вдохновляющий отчет для родителя о прогрессе ребенка.
 
-Задача: {taskTitle}
-Условие: {taskCondition}
-
-Диалог:
+### КОНТЕКСТ:
+- Задача: {taskTitle}
+- Описание: {taskCondition}
+- Диалог:
 {conversation}
 
-Напиши комментарий в 4-5 предложений:
-1. Сколько разных подходов/решений предложил ребёнок — назови их конкретно, своими словами
-2. Что было интересного в ходе рассуждений — какая идея была самой неожиданной или умной
-3. Почему умение решать такие открытые задачи (где нет одного правильного ответа) важно в жизни — конкретный пример из реальной жизни
-4. Короткая рекомендация: что попробовать дома или о чём поговорить
+### ТРЕБОВАНИЯ К ОТЧЕТУ:
+1. **Тон**: Поддерживающий, экспертный, но без сложной терминологии.
+2. **Содержание**:
+   - Что именно придумал ребенок (кратко).
+   - Какой прием ТРИЗ он использовал (даже если неосознанно).
+   - ПОХВАЛА: Акцент на том, что ребенок — молодец, он нашел нестандартный путь.
+3. **Объем**: 3-4 предложения.
 
-Тон: живой и тёплый, как записка от педагога родителю после урока. Без формальностей, без восклицательных знаков через слово. Не начинай с «Уважаемый родитель». Не используй слова ТРИЗ, ИКР, противоречие, ресурсы. ВАЖНО: отвечай ТОЛЬКО на русском языке.`;
+### ПРАВИЛА (КРИТИЧЕСКИ ВАЖНО):
+- **НИКАКИХ ГАЛЛЮЦИНАЦИЙ**: Не выдумывай факты. Если приводишь аналогию (например, «так же делают инженеры...»), она должна быть на 100% правдивой. Если не уверен — не пиши аналогию, сфокусируйся на решении ребенка.
+- **ТЕРМИНОЛОГИЯ**: Не используй слова ТРИЗ, ИКР в тексте отчета (только в JSON-поле principles).
+
+### ФОРМАТ ОТВЕТА (СТРОГИЙ JSON):
+{{
+  "report": "Текст отчета для родителя...",
+  "principles": [
+    {{
+      "name": "Название приема (выбирай из списка ниже)",
+      "isIFR": true/false (true если решение использует минимум ресурсов и очень эффективно)
+    }}
+  ]
+}}
+
+### СПИСОК ПРИЕМОВ ТРИЗ ДЛЯ ПРОВЕРКИ (используй только эти названия):
+Сегментация, Вынесение, Объединение, Универсальность, Матрешка, Адаптивность, Наоборот, Предварительное действие, Посредник, Самообслуживание.
+
+Важно: Если решение ребенка близко к Идеальному Конечному Результату (использует ресурсы, которые уже есть, или превращает вред в пользу), обязательно ставь isIFR: true. Отвечай ТОЛЬКО на русском языке.`;
 
 const MODELS = [
-    "gemini-3.1-flash-lite-preview",
-    "gemma-3-4b-it",
-    "gemini-2.5-flash",
+    "gemini-1.5-flash", // Updated for general availability
+    "gemini-1.5-pro",
 ];
 
 async function callGemini(apiKey, modelName, prompt) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
         model: modelName,
-        generationConfig: { maxOutputTokens: 600, temperature: 0.7 }
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.7, responseMimeType: "application/json" }
     });
     const result = await model.generateContent(prompt);
-    return result.response.text().trim();
+    const response = result.response;
+    return { text: response.text().trim(), model: modelName };
 }
 
 export default async function handler(req, res) {
@@ -59,15 +79,15 @@ export default async function handler(req, res) {
     let lastErr;
     for (const modelName of MODELS) {
         try {
-            const report = await callGemini(apiKey, modelName, prompt);
-            console.log(`Report generated with ${modelName}`);
-            return res.status(200).json({ report });
+            const { text, model } = await callGemini(apiKey, modelName, prompt);
+            const data = JSON.parse(text);
+            return res.status(200).json({ ...data, model });
         } catch (err) {
             console.warn(`Report: ${modelName} failed — ${err.message}`);
             lastErr = err;
         }
     }
 
-    console.error("All report models failed:", lastErr?.message);
-    return res.status(500).json({ error: lastErr?.message || "All models failed" });
+    // Fallback if parsing fails or all models fail
+    return res.status(200).json({ report: "Произошла ошибка при генерации подробного отчета, но ваш ребенок отлично справился с задачей!", principles: [] });
 }
