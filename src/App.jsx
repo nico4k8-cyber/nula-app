@@ -206,6 +206,10 @@ export default function App() {
   const [activePersonaId] = useState(() => {
     try { return new URLSearchParams(window.location.search).get("persona") || null; } catch { return null; }
   });
+
+  /* ─ Telegram Mini App: определяем пользователя ─ */
+  const [tgUser, setTgUser] = useState(null); // { id, first_name, username?, is_premium? }
+  const isTMA = !!(window.Telegram?.WebApp?.initData); // работаем внутри TMA?
   const [found, setFound] = useState([]);
   const [prizStep, setPrizStep] = useState(0);
   const [prizStepStarted, setPrizStepStarted] = useState(false);
@@ -286,6 +290,36 @@ export default function App() {
     };
   }, []);
 
+  /* ─ Telegram Mini App init ─ */
+  useEffect(() => {
+    const twa = window.Telegram?.WebApp;
+    if (!twa?.initData) return; // не TMA — ничего не делаем
+
+    // Говорим Telegram, что приложение готово (убирает лоадер)
+    twa.ready();
+    // Расширяем на весь экран (по умолчанию TMA занимает ~80% высоты)
+    twa.expand();
+
+    // initDataUnsafe — данные, предоставленные Telegram клиентом.
+    // Для аналитики (PostHog.identify) этого достаточно: Telegram не даст подделать
+    // данные реальному ребёнку через официальный клиент. Бэкенд-верификацию можно
+    // добавить позже, когда понадобится авторизованные действия (покупки, прогресс).
+    const user = twa.initDataUnsafe?.user;
+    if (!user) return;
+
+    setTgUser(user);
+
+    // Линкуем анонимную PostHog-сессию с реальным Telegram-пользователем
+    posthog.identify(`tg_${user.id}`, {
+      tg_id: user.id,
+      tg_username: user.username || null,
+      tg_first_name: user.first_name || null,
+      tg_is_premium: user.is_premium || false,
+    });
+
+    console.log("[TMA] ✅ User from initDataUnsafe:", user.id, user.username || user.first_name);
+  }, []);
+
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
     if (!mq) return;
@@ -350,7 +384,9 @@ export default function App() {
       const inputCost = (inp / 1_000_000 * 0.80).toFixed(4);
       const outputCost = (out / 1_000_000 * 4.00).toFixed(4);
       const totalCost = (parseFloat(inputCost) + parseFloat(outputCost)).toFixed(4);
-      const costLine = `💰 <b>Стоимость:</b> $${totalCost} (вх: ${inp} tok × $0.8/M + исх: ${out} tok × $4/M)\n`;
+      const RUB_RATE = 90;
+      const totalRub = (parseFloat(totalCost) * RUB_RATE).toFixed(2);
+      const costLine = `💰 <b>Стоимость:</b> $${totalCost} (≈ ${totalRub} ₽) (вх: ${inp} tok × $0.8/M + исх: ${out} tok × $4/M)\n`;
       const logHeader = `🤖 <b>ОТЧЁТ О СЕССИИ ТРИЗ</b>\n<b>Задача:</b> ${currentTask.title}\n<b>ПРИЗ:</b> ${currentPrizStep}/4 (${stageLabel})\n<b>Время:</b> ${timeStr}\n${costLine}\n`;
       const logBody = currentMessages
         .filter(m => m.text && !m.loading)
@@ -537,7 +573,7 @@ export default function App() {
 
   const selectTask = (t) => {
     if (task && taskStartTime) finalizeCurrentTask();
-    posthog.capture('task_started', { task_id: t.id, task_title: t.title, age_range: t.ageRange });
+    posthog.capture('task_started', { task_id: t.id, task_title: t.title, age_range: t.ageRange, tg_user_id: tgUser?.id || null });
     setTask(t);
     setScreen("solve");
     setFound([]);
@@ -987,7 +1023,14 @@ export default function App() {
         style={dm ? { background: 'radial-gradient(circle at center, #1E293B 0%, #0F172A 100%)' } : {}}>
         <style>{`@keyframes blink{0%,80%{opacity:.2}40%{opacity:1}}`}</style>
 
-        <div className="absolute top-4 right-4 group">
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          {/* Telegram user chip (показывается только в TMA) */}
+          {isTMA && tgUser && (
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${dm ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+              <span>✈️</span>
+              <span>{tgUser.first_name || tgUser.username || "Telegram"}</span>
+            </div>
+          )}
           <button onClick={handleThemeToggle} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm ${dm ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' : 'bg-white text-gray-400 border border-gray-100 hover:bg-gray-50'}`}>
             {themeIcon}
           </button>

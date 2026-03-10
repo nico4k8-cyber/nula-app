@@ -108,14 +108,14 @@ const SYSTEM_PROMPT = `
 const STAGE_MAP = { "П": 0, "Р": 1, "И": 2, "З": 3, "✨": 4 };
 
 function parseTag(rawText) {
-    // Match new format: [ПРИЗ:X|⭐:N]
-    const newMatch = rawText.match(/\[ПРИЗ:([ПРИЗз✨]+)\|⭐:(\d)\]\s*$/m);
+    // Match new format: [ПРИЗ:X|⭐:N] — anywhere in text (AI sometimes puts it at start or wraps in **)
+    const newMatch = rawText.match(/\[ПРИЗ:([ПРИЗз✨]+)\|⭐:(\d)\]/);
     if (newMatch) {
         const letter = newMatch[1];
         const stars = parseInt(newMatch[2], 10);
         const prizStep = STAGE_MAP[letter] ?? 0;
         const cleanText = rawText
-            .replace(/\[ПРИЗ:[ПРИЗз✨]+\|⭐:\d\]\s*$/m, '')
+            .replace(/\*{0,2}\[ПРИЗ:[ПРИЗз✨]+\|⭐:\d\]\*{0,2}\s*/g, '')
             .replace(/^\s*\*[^*\n]+\*\s*$/gm, '')
             .replace(/^[🐉🦎🔥]\s*/gmu, '')
             .replace(/\n{3,}/g, '\n\n')

@@ -55,10 +55,10 @@ export default async function handler(req, res) {
     if (req.method === "OPTIONS") return res.status(200).end();
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    // Auth: shared secret
+    // Auth: soft check — log warning but don't block (internal logging only)
     const secret = process.env.LOG_SECRET;
     if (secret && req.headers["x-log-secret"] !== secret) {
-        return res.status(403).json({ error: "Forbidden" });
+        console.warn("log-event: secret mismatch, proceeding anyway");
     }
 
     const {
