@@ -396,11 +396,9 @@ export default function App() {
             <div className="text-center">
               <div className="mb-4 flex flex-col items-center gap-2">
                 <style>{`
-                  @keyframes dragonBounce {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-8px); }
-                  }
-                  .dragon-main { animation: dragonBounce 2.2s ease-in-out infinite; }
+                  @keyframes floatChar { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+                  @keyframes glowPulse { 0%, 100% { filter: blur(28px) opacity(0.6); } 50% { filter: blur(28px) opacity(0.9); } }
+                  .dragon-float { animation: floatChar 3.5s ease-in-out infinite; }
                 `}</style>
                 <button onClick={() => {
                   if (dragonGreeting) {
@@ -410,10 +408,14 @@ export default function App() {
                     setDragonInfoOpen(true);
                   }
                 }}
-                  className="dragon-main transition-transform cursor-pointer"
+                  className="cursor-pointer"
                   title="Узнай о драконе"
                 >
-                  <img src="./img/webp/ugolok.webp" alt="Дракон" className="w-48 h-48 object-contain drop-shadow-lg" />
+                  <div className="relative w-48 h-48 dragon-float">
+                    <div className="absolute rounded-full blur-3xl pointer-events-none bg-amber-500/25" style={{ inset: '-28px', animation: '3.5s ease-in-out 0s infinite normal none running glowPulse' }}></div>
+                    <div className="absolute rounded-full blur-xl pointer-events-none bg-orange-600/15" style={{ inset: '-14px' }}></div>
+                    <img src="./img/webp/ugolok.webp" alt="Дракон" className="relative w-full h-full rounded-full object-cover shadow-2xl border-4 border-amber-500/50" style={{ boxShadow: '0 25px 50px -12px rgba(146, 64, 14, 0.4)' }} />
+                  </div>
                 </button>
                 {dragonGreeting && <p className="text-[11px] text-gray-400">Нажми на дракона</p>}
               </div>
