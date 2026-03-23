@@ -30,8 +30,8 @@ export async function askAI(userMessage, history, puzzle, ageGroup = "senior") {
     console.error("AI error:", err.message);
     return {
       text: isTimeout
-        ? "🔍 Задумался слишком долго... Давай ещё раз?"
-        : "🔍 Что-то пошло не так. Попробуй написать ещё раз.",
+        ? "Дракон задумался слишком долго... Давай ещё раз?"
+        : "Что-то пошло не так. Попробуй написать ещё раз.",
       prizStep: 0,
       stars: 0,
       error: true,

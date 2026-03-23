@@ -164,7 +164,7 @@ export default function App() {
         setTimeout(goDebrief, 1800);
       }
     } catch {
-      setMessages(prev => [...prev, { type: "bot", text: "🔍 Что-то пошло не так. Попробуй ещё раз." }]);
+      setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз." }]);
     } finally {
       setIsTyping(false);
     }
@@ -297,10 +297,7 @@ export default function App() {
               {messages.map((m, i) => {
                 if (m.type === "bot") return (
                   <div key={i} className="flex gap-2 items-start">
-                    <div className="flex flex-col items-center flex-shrink-0">
-                      <span className="text-xl">🐉</span>
-                      <span className="text-[10px] text-gray-400">Дракон</span>
-                    </div>
+                    <span className="text-2xl flex-shrink-0 mt-1">🐉</span>
                     <div className="bg-gray-100 rounded-[16px] rounded-tl-[4px] px-4 py-3 text-[15px] text-gray-800 max-w-[80%]">
                       {m.text}
                       {m.stars > 0 && <span className="ml-2 text-yellow-500">{"⭐".repeat(m.stars)}</span>}
@@ -352,7 +349,7 @@ export default function App() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleUserMessage()}
-                placeholder="Твоя версия..."
+                placeholder="Напиши свою версию..."
                 className="flex-1 bg-gray-100 rounded-[18px] px-4 py-3 text-[15px] outline-none"
                 disabled={isTyping}
               />
