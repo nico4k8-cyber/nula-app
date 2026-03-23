@@ -228,9 +228,9 @@ export default function App() {
                   >
                     <span className="text-3xl">{t.puzzle.emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-800 text-[15px] flex items-center gap-2">
-                        {t.puzzle.question.slice(0, 48)}…
-                        {done && <span className="text-green-500 text-xs">✓</span>}
+                      <div className="font-semibold text-gray-800 text-[14px] leading-snug line-clamp-2 flex gap-1">
+                        <span className="flex-1">{t.puzzle.question}</span>
+                        {done && <span className="text-green-500 text-xs flex-shrink-0">✓</span>}
                       </div>
                       <div className="text-[12px] mt-0.5" style={{ color: t.trick.color }}>
                         {t.trick.animal} {t.trick.name}
@@ -280,7 +280,11 @@ export default function App() {
         {phase === "dialog" && (
           <div className="flex flex-col flex-1">
             <div className="flex items-center px-4 pt-2">
-              <button onClick={() => setPhase("picker")}
+              <button
+                onClick={() => {
+                  if (messages.length > 1 && !window.confirm("Выйти из расследования? Прогресс в этой задаче не сохранится.")) return;
+                  setPhase("picker");
+                }}
                 className="text-gray-400 text-[13px] flex items-center gap-1 py-1"
               >
                 ← задачи
@@ -293,8 +297,11 @@ export default function App() {
               {messages.map((m, i) => {
                 if (m.type === "bot") return (
                   <div key={i} className="flex gap-2 items-start">
-                    <span className="text-xl mt-0.5 flex-shrink-0">🔍</span>
-                    <div className="bg-gray-100 rounded-[16px] rounded-tl-[4px] px-4 py-3 text-[15px] text-gray-800 max-w-[85%]">
+                    <div className="flex flex-col items-center flex-shrink-0">
+                      <span className="text-xl">🔍</span>
+                      <span className="text-[10px] text-gray-400">Следак</span>
+                    </div>
+                    <div className="bg-gray-100 rounded-[16px] rounded-tl-[4px] px-4 py-3 text-[15px] text-gray-800 max-w-[80%]">
                       {m.text}
                       {m.stars > 0 && <span className="ml-2 text-yellow-500">{"⭐".repeat(m.stars)}</span>}
                     </div>
