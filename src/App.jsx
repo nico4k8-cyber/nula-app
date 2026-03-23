@@ -55,6 +55,70 @@ function methodDescription(methodName) {
   return descriptions[methodName] || "";
 }
 
+/* ═══ SettingsMenu ═══ */
+function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress, collected }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full bg-white rounded-t-[24px] p-6 flex flex-col gap-4 shadow-lg">
+        <div className="text-center mb-2">
+          <h3 className="text-[18px] font-bold text-gray-900">Меню</h3>
+        </div>
+
+        <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">
+          {/* Age selection */}
+          <button onClick={() => { onChangeAge(); onClose(); }}
+            className="w-full text-left px-4 py-3 rounded-[14px] hover:bg-gray-50 flex items-center gap-3 transition-all"
+          >
+            <span className="text-xl">🧠</span>
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900 text-[15px]">Выбрать возраст</div>
+              <div className="text-gray-500 text-[13px]">
+                {ageGroup === "junior" ? "10–12 лет" : "13–16 лет"}
+              </div>
+            </div>
+            <span className="text-gray-400">›</span>
+          </button>
+
+          {/* Profile (future auth) */}
+          <button className="w-full text-left px-4 py-3 rounded-[14px] hover:bg-gray-50 flex items-center gap-3 transition-all opacity-50 cursor-not-allowed"
+            disabled
+          >
+            <span className="text-xl">👤</span>
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900 text-[15px]">Профиль</div>
+              <div className="text-gray-500 text-[13px]">Скоро</div>
+            </div>
+            <span className="text-gray-400">›</span>
+          </button>
+
+          {/* Reset progress */}
+          {collected.length > 0 && (
+            <button onClick={() => { onResetProgress(); onClose(); }}
+              className="w-full text-left px-4 py-3 rounded-[14px] hover:bg-red-50 flex items-center gap-3 transition-all"
+            >
+              <span className="text-xl">🔄</span>
+              <div className="flex-1">
+                <div className="font-semibold text-gray-900 text-[15px]">Сбросить прогресс</div>
+                <div className="text-gray-500 text-[13px]">Начать заново</div>
+              </div>
+              <span className="text-gray-400">›</span>
+            </button>
+          )}
+        </div>
+
+        <button onClick={onClose}
+          className="w-full mt-2 py-3 rounded-[14px] bg-gray-100 text-gray-700 font-semibold transition-all active:scale-95"
+        >
+          Закрыть
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ═══ Main App ═══ */
 export default function App() {
   const saved = loadState();
@@ -76,6 +140,9 @@ export default function App() {
 
   // twist
   const [twistChoice, setTwistChoice] = useState(null);
+
+  // menu
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
@@ -267,8 +334,17 @@ export default function App() {
         {/* PICKER */}
         {phase === "picker" && (
           <div className="flex flex-col flex-1 px-4 pb-6">
-            <TopProgress collected={collected} current={-1} />
-            <h2 className="text-[20px] font-bold text-gray-900 mb-2 mt-3 text-center">
+            <div className="flex items-center justify-between pt-3 pb-2">
+              <div className="w-8" />
+              <TopProgress collected={collected} current={-1} />
+              <button onClick={() => setMenuOpen(true)}
+                className="w-8 h-8 flex items-center justify-center text-[24px] hover:bg-gray-100 rounded-[8px] transition-all"
+                title="Меню"
+              >
+                ☰
+              </button>
+            </div>
+            <h2 className="text-[20px] font-bold text-gray-900 mb-2 mt-1 text-center">
               🐉 Разгадай загадки природы
             </h2>
             <p className="text-gray-500 text-[13px] text-center mb-3">
@@ -336,18 +412,6 @@ export default function App() {
                 💡 Нажми на любую задачу, чтобы начать расследование с драконом
               </p>
             )}
-            {collected.length > 0 && (
-              <button onClick={resetProgress}
-                className="mt-4 text-gray-300 text-[13px] text-center w-full hover:text-gray-400"
-              >
-                Сбросить прогресс
-              </button>
-            )}
-            <button onClick={changeAgeGroup}
-              className="mt-2 text-gray-300 text-[13px] text-center w-full hover:text-gray-400"
-            >
-              Изменить возраст
-            </button>
           </div>
         )}
 
@@ -638,6 +702,16 @@ export default function App() {
         )}
 
       </div>
+
+      {/* Settings Menu */}
+      <SettingsMenu
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        ageGroup={ageGroup}
+        onChangeAge={changeAgeGroup}
+        onResetProgress={resetProgress}
+        collected={collected}
+      />
     </div>
   );
 }
