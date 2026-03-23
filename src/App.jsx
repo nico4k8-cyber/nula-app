@@ -126,21 +126,24 @@ function DragonInfo({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full bg-white rounded-t-[24px] p-6 flex flex-col gap-4 shadow-lg">
+      <div className="relative w-full bg-white rounded-t-[24px] p-6 flex flex-col gap-4 shadow-lg max-h-[80vh] overflow-y-auto">
         <div className="text-center mb-2">
           <div className="text-[64px] mb-3">🐉</div>
-          <h3 className="text-[20px] font-bold text-gray-900">Дракон Логики</h3>
+          <h3 className="text-[20px] font-bold text-gray-900">Уголёк</h3>
         </div>
 
         <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">
           <p className="text-gray-700 text-[15px] leading-relaxed">
-            Я страж древних манускриптов и хранитель природных секретов. Веками я собираю загадки, которые природа решила раньше, чем люди.
+            Я живу в генизе — месте, куда приносят книги, которые нельзя выбросить. Не потому что жалко бумагу, а потому что в словах остаётся что-то живое.
           </p>
           <p className="text-gray-700 text-[15px] leading-relaxed">
-            В моей пещере лежат сломанные изобретения людей и записи о том, как те же задачи решила сама природа. Я зову тебя учиться видеть так же, как видит природа.
+            Я прочитал все эти книги. Спорил с ними. С книгами можно спорить — это нормально, даже правильно.
           </p>
-          <p className="text-gray-600 text-[14px] italic">
-            Сможешь ли ты найти решения, которые природа хранила для тебя миллионы лет?
+          <p className="text-gray-700 text-[15px] leading-relaxed">
+            Рядом со свитками стоят сломанные дроны, старые платы, прототипы вещей без названия. Для меня нет границы между древней мудростью и современным изобретением.
+          </p>
+          <p className="text-gray-700 text-[15px] leading-relaxed">
+            Я не даю ответы. Я задаю вопросы — не потому что не знаю, а потому что твой ответ интереснее моего.
           </p>
         </div>
 
