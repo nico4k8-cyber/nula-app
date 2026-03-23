@@ -242,8 +242,8 @@ export default function App() {
   // menu
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // dragon info
-  const [dragonInfoOpen, setDragonInfoOpen] = useState(false);
+  // dragon greeting bubble on age-select
+  const [dragonGreetingOpen, setDragonGreetingOpen] = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
@@ -418,7 +418,7 @@ export default function App() {
                   .dragon-float { animation: floatChar 3.5s ease-in-out infinite; }
                 `}</style>
                 <button onClick={() => {
-                  setDragonInfoOpen(true);
+                  setDragonGreetingOpen(true);
                 }}
                   className="cursor-pointer"
                   title="Узнай о драконе"
@@ -429,7 +429,7 @@ export default function App() {
                     <img src="./img/webp/ugolok.webp" alt="Дракон" className="relative w-full h-full rounded-full object-cover shadow-2xl border-4 border-amber-500/50" style={{ boxShadow: '0 25px 50px -12px rgba(146, 64, 14, 0.4)' }} />
                   </div>
                 </button>
-                <p className="text-[11px] text-gray-400">Нажми на дракона</p>
+                {!dragonGreetingOpen && <p className="text-[11px] text-gray-400">Нажми на дракона</p>}
               </div>
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 Разгадай загадки природы
@@ -868,10 +868,10 @@ export default function App() {
         collected={collected}
       />
 
-      {/* Dragon Info Modal */}
-      <DragonInfo
-        isOpen={dragonInfoOpen}
-        onClose={() => setDragonInfoOpen(false)}
+      {/* Dragon Greeting Bubble */}
+      <DragonsGreeting
+        isVisible={dragonGreetingOpen}
+        onClose={() => setDragonGreetingOpen(false)}
       />
     </div>
   );
