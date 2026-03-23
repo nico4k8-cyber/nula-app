@@ -103,9 +103,12 @@ export default function App() {
     setTwistChoice(null);
     setSessionStars(0);
     const hook = ageGroup === "senior" ? t.puzzle.hookSenior : t.puzzle.hookJunior;
-    // Greeting + puzzle question
+    // Age-personalized greeting + puzzle question
+    const greeting = ageGroup === "senior"
+      ? "Привет! 🐉 У меня есть интересная загадка для тебя:"
+      : "Привет! 🐉 Готов разгадать мою загадку? Это будет интересно! 😄";
     setMessages([
-      { type: "bot", text: "Привет! 🐉 Вот для тебя загадка:" },
+      { type: "bot", text: greeting },
       { type: "bot", text: hook }
     ]);
     setPhase("dialog");
@@ -161,9 +164,11 @@ export default function App() {
 
       const isSolved = result.prizStep === 4 || result.text.toLowerCase().includes("задача решена");
       const isBingo  = isSolved && !messages.some(m => m.type === "show-answer");
+      const prizAdvanced = result.prizStep > prizStep;
 
       if (result.stars > 0) setSessionStars(s => s + result.stars);
-      setPrizStep(result.prizStep || 0);
+      const newPrizStep = result.prizStep || 0;
+      setPrizStep(newPrizStep);
 
       if (isBingo) {
         setDebriefBingo(true);
@@ -172,10 +177,28 @@ export default function App() {
         setTimeout(() => setBingoFlash(false), 700);
       }
 
-      setMessages(prev => [...prev, { type: "bot", text: result.text, stars: result.stars }]);
+      // Add stage advancement message if ПРИЗ progressed
+      let messageText = result.text;
+      const stageMessages = {
+        1: "🔍 Вижу противоречие!",
+        2: "💡 Нашёл идею!",
+        3: "✓ Решение найдено!",
+        4: "🎉 Путь открыт!"
+      };
+
+      setMessages(prev => {
+        let updates = [...prev, { type: "bot", text: messageText, stars: result.stars }];
+        if (prizAdvanced && stageMessages[newPrizStep]) {
+          updates.push({ type: "bot", text: stageMessages[newPrizStep], isStageMsg: true });
+        }
+        return updates;
+      });
 
       if (isSolved) {
-        setTimeout(goDebrief, 1800);
+        setTimeout(() => {
+          setMessages(prev => [...prev, { type: "bot", text: `✨ Ты открыл метод: ${task.trick.name}`, isDiscovery: true }]);
+          setTimeout(goDebrief, 1200);
+        }, 800);
       }
     } catch {
       setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз." }]);
@@ -349,15 +372,35 @@ export default function App() {
             </div>
             <div className="flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-3 pt-2" style={{ maxHeight: "calc(100vh - 160px)" }}>
               {messages.map((m, i) => {
-                if (m.type === "bot") return (
-                  <div key={i} className="flex gap-2 items-start">
-                    <span className="text-2xl flex-shrink-0 mt-1">🐉</span>
-                    <div className="bg-gray-100 rounded-[16px] rounded-tl-[4px] px-4 py-3 text-[15px] text-gray-800 max-w-[80%]">
-                      {m.text}
-                      {m.stars > 0 && <span className="ml-2 text-yellow-500">{"⭐".repeat(m.stars)}</span>}
+                if (m.type === "bot") {
+                  if (m.isStageMsg) {
+                    return (
+                      <div key={i} className="flex justify-center">
+                        <div className="bg-orange-50 border border-orange-200 rounded-[14px] px-3 py-2 text-[13px] font-semibold text-orange-700">
+                          {m.text}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (m.isDiscovery) {
+                    return (
+                      <div key={i} className="flex justify-center">
+                        <div className="bg-green-50 border border-green-200 rounded-[14px] px-4 py-2 text-[14px] font-bold text-green-700 animate-pulse">
+                          {m.text}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={i} className="flex gap-2 items-start">
+                      <span className="text-2xl flex-shrink-0 mt-1">🐉</span>
+                      <div className="bg-gray-100 rounded-[16px] rounded-tl-[4px] px-4 py-3 text-[15px] text-gray-800 max-w-[80%]">
+                        {m.text}
+                        {m.stars > 0 && <span className="ml-2 text-yellow-500">{"⭐".repeat(m.stars)}</span>}
+                      </div>
                     </div>
-                  </div>
-                );
+                  );
+                }
                 if (m.type === "child") return (
                   <div key={i} className="flex justify-end">
                     <div className={`bg-orange-500 text-white rounded-[16px] rounded-tr-[4px] px-4 py-3 text-[15px] max-w-[85%] ${bingoFlash ? "animate-pulse" : ""}`}>
