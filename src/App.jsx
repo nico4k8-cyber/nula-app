@@ -128,7 +128,9 @@ function DragonInfo({ isOpen, onClose }) {
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full bg-white rounded-t-[24px] p-6 flex flex-col gap-4 shadow-lg max-h-[80vh] overflow-y-auto">
         <div className="text-center mb-2">
-          <img src="./img/webp/ugolok.webp" alt="" className="w-48 h-48 mx-auto mb-3 object-contain" />
+          <div className="w-48 h-48 rounded-full bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center mx-auto mb-3 shadow-sm border border-amber-200/40">
+            <img src="./img/webp/ugolok.webp" alt="" className="w-40 h-40 object-contain" />
+          </div>
         </div>
 
         <div className="border-t border-gray-100 pt-4 flex flex-col gap-4">
@@ -352,7 +354,7 @@ export default function App() {
             <div className="text-center">
               <div className="mb-4 flex flex-col items-center gap-2">
                 <button onClick={() => setDragonInfoOpen(true)}
-                  className="hover:scale-110 transition-transform cursor-pointer"
+                  className="transition-transform cursor-pointer"
                   title="Узнай о драконе"
                 >
                   <style>{`
@@ -362,7 +364,9 @@ export default function App() {
                     }
                     .dragon-main { animation: dragonBounce 2.2s ease-in-out infinite; }
                   `}</style>
-                  <img src="./img/webp/ugolok.webp" alt="Дракон" className="w-40 h-40 object-contain dragon-main" />
+                  <div className="w-40 h-40 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center shadow-md border border-amber-200/60 dragon-main">
+                    <img src="./img/webp/ugolok.webp" alt="Дракон" className="w-32 h-32 object-contain" />
+                  </div>
                 </button>
                 <p className="text-[11px] text-gray-400">Нажми на дракона</p>
               </div>
