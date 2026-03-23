@@ -144,15 +144,15 @@ function DragonsGreeting({ isVisible, onClose }) {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end pointer-events-none">
-      <div className="absolute bottom-80 left-1/2 -translate-x-1/2 max-w-xs pointer-events-auto">
-        <div className="bg-white rounded-3xl rounded-bl-none px-4 py-3 shadow-lg border-2 border-amber-200 relative">
-          <div className="absolute -bottom-3 left-8 w-4 h-4 bg-white border-b-2 border-r-2 border-amber-200 transform rotate-45"></div>
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none">
+      <div className="mb-2 max-w-xs pointer-events-auto">
+        <div className="bg-amber-50 rounded-2xl px-4 py-3 shadow-lg border-2 border-amber-200 relative">
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-amber-50 border-b-2 border-r-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(-45deg)' }}></div>
           <p className="text-gray-800 text-sm leading-relaxed min-h-8">
             {displayedText}<span className={displayedText.length < greeting.length ? "animate-pulse" : ""}>▌</span>
           </p>
           {displayedText.length === greeting.length && (
-            <button onClick={onClose} className="mt-2 text-xs text-amber-600 font-semibold hover:text-amber-700">
+            <button onClick={onClose} className="mt-2 text-xs text-amber-600 font-semibold hover:text-amber-700 cursor-pointer">
               Закрыть →
             </button>
           )}
