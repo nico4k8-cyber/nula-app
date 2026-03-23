@@ -185,6 +185,7 @@ export default function App() {
     const greeting = greetings[Math.floor(Math.random() * greetings.length)];
     setMessages([
       { type: "bot", text: greeting },
+      { type: "bot", text: "🔍 Вот что произойдёт:" },
       { type: "bot", text: hook }
     ]);
     setPhase("dialog");
