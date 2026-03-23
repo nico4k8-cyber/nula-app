@@ -254,23 +254,14 @@ export default function App() {
         {phase === "start" && (
           <div className="flex flex-col flex-1 px-5 pb-8">
             <TopProgress collected={collected} current={taskIdx} />
-            <div className="flex flex-col items-center flex-1 justify-center gap-5">
+            <div className="flex flex-col items-center flex-1 justify-center gap-6">
               <div className="text-6xl">{task.puzzle.emoji}</div>
-              <h2 className="text-[19px] font-bold text-gray-900 text-center leading-snug px-2">
+              <h2 className="text-[20px] font-bold text-gray-900 text-center leading-snug px-2">
                 {task.puzzle.question}
               </h2>
-              <div className="w-full bg-gray-50 rounded-[16px] p-4 flex flex-col gap-3">
-                <p className="text-[13px] text-gray-500 font-medium">Свидетели</p>
-                {task.puzzle.witnesses.map((w, i) => (
-                  <div key={i} className="flex gap-3 items-start">
-                    <span className="text-2xl">{w.avatar}</span>
-                    <div>
-                      <span className="text-[13px] font-semibold text-gray-700">{w.name}: </span>
-                      <span className="text-[13px] text-gray-600">{w.fact}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-[14px] text-gray-400 text-center px-4">
+                {ageGroup === "senior" ? task.puzzle.hookSenior : task.puzzle.hookJunior}
+              </p>
               <button onClick={startDialog}
                 className="bg-orange-500 text-white text-[19px] font-bold px-10 py-4 rounded-[20px] shadow-lg active:scale-95 transition-transform"
               >
@@ -279,7 +270,7 @@ export default function App() {
               <button onClick={() => setPhase("picker")}
                 className="text-gray-400 text-[14px]"
               >
-                ← Назад
+                ← Другая задача
               </button>
             </div>
           </div>
@@ -288,7 +279,16 @@ export default function App() {
         {/* DIALOG */}
         {phase === "dialog" && (
           <div className="flex flex-col flex-1">
-            <TopProgress collected={collected} current={taskIdx} />
+            <div className="flex items-center px-4 pt-2">
+              <button onClick={() => setPhase("picker")}
+                className="text-gray-400 text-[13px] flex items-center gap-1 py-1"
+              >
+                ← задачи
+              </button>
+              <div className="flex-1">
+                <TopProgress collected={collected} current={taskIdx} />
+              </div>
+            </div>
             <div className="flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-3 pt-2" style={{ maxHeight: "calc(100vh - 160px)" }}>
               {messages.map((m, i) => {
                 if (m.type === "bot") return (
