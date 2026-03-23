@@ -235,24 +235,47 @@ export default function App() {
             <h2 className="text-[20px] font-bold text-gray-900 mb-2 mt-3 text-center">
               🐉 Разгадай загадки природы
             </h2>
-            <p className="text-gray-500 text-[13px] text-center mb-4">
+            <p className="text-gray-500 text-[13px] text-center mb-3">
               Дракон ждёт • {collected.length} из {TASKS.length} разгадано
             </p>
+            {/* Progress bar */}
+            <div className="mb-4 flex items-center gap-2">
+              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-orange-500 transition-all duration-300"
+                  style={{ width: `${(collected.length / TASKS.length) * 100}%` }}
+                />
+              </div>
+              <span className="text-[12px] font-semibold text-gray-600">{Math.round((collected.length / TASKS.length) * 100)}%</span>
+            </div>
+            {/* Motivational message at 50% */}
+            {collected.length === 3 && (
+              <div className="mb-4 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-[12px] text-center text-[13px] text-yellow-700 font-medium">
+                🌟 Половина пути! Ты уже видишь, как думают инженеры
+              </div>
+            )}
             <div className="flex flex-col gap-3">
               {TASKS.map((t, i) => {
                 const done = collected.includes(t.id);
+                const questionLength = t.puzzle.question.split(" ").length;
+                const difficulty = questionLength < 8 ? "Легко" : questionLength < 12 ? "Средне" : "Сложно";
                 return (
                   <button key={t.id}
                     onClick={() => startTask(i)}
-                    className={`w-full rounded-[18px] p-4 flex items-center gap-3 text-left border-2 active:scale-95 transition-all
+                    className={`w-full rounded-[18px] p-4 flex items-start gap-3 text-left border-2 active:scale-95 transition-all
                       ${done ? "border-green-200 bg-green-50 shadow-sm" : "border-gray-100 bg-white hover:border-orange-400 hover:shadow-md hover:scale-105"}`}
                   >
-                    <span className="text-3xl">{t.puzzle.emoji}</span>
+                    <span className="text-4xl flex-shrink-0">{t.puzzle.emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-800 text-[14px] leading-snug line-clamp-2 flex gap-1">
+                      <div className="font-semibold text-gray-800 text-[14px] leading-snug line-clamp-2 flex gap-1 items-start">
                         <span className="flex-1">{t.puzzle.question}</span>
-                        {done && <span className="text-green-500 text-xs flex-shrink-0">✓</span>}
+                        {done && <span className="text-green-500 text-xs flex-shrink-0 mt-1">✓</span>}
                       </div>
+                      {!done && (
+                        <div className="text-[11px] text-gray-400 mt-2">
+                          {difficulty}
+                        </div>
+                      )}
                       {done && (
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <span className="inline-block text-[11px] font-semibold px-2 py-1 rounded-full"
@@ -377,13 +400,13 @@ export default function App() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleUserMessage()}
                 placeholder="Напиши свою версию..."
-                className="flex-1 bg-gray-100 rounded-[18px] px-4 py-3 text-[15px] outline-none min-h-[48px] leading-relaxed"
+                className="flex-1 bg-gray-100 rounded-[18px] px-4 py-3 text-[15px] outline-none min-h-[48px] leading-relaxed focus:bg-orange-50 focus:ring-2 focus:ring-orange-300 transition-all"
                 disabled={isTyping}
               />
               <button
                 onClick={handleUserMessage}
                 disabled={!input.trim() || isTyping}
-                className="bg-orange-500 text-white rounded-full w-11 h-11 flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform flex-shrink-0"
+                className="bg-orange-500 text-white rounded-full w-11 h-11 flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform flex-shrink-0 hover:bg-orange-600"
               >
                 ↑
               </button>
