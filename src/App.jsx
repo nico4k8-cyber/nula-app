@@ -370,7 +370,8 @@ export default function App() {
               {TASKS.map((t, i) => {
                 const done = collected.includes(t.id);
                 const questionLength = t.puzzle.question.split(" ").length;
-                const difficulty = questionLength < 8 ? "Легко" : questionLength < 12 ? "Средне" : "Сложно";
+                const difficultyLevel = questionLength < 8 ? 1 : questionLength < 12 ? 2 : 3;
+                const difficultyColor = difficultyLevel === 1 ? "text-green-500" : difficultyLevel === 2 ? "text-amber-500" : "text-red-500";
                 return (
                   <button key={t.id}
                     onClick={() => startTask(i)}
@@ -384,8 +385,8 @@ export default function App() {
                         {done && <span className="text-green-500 text-xs flex-shrink-0 mt-1">✓</span>}
                       </div>
                       {!done && (
-                        <div className="text-[11px] text-gray-400 mt-2">
-                          {difficulty}
+                        <div className={`text-[13px] font-semibold mt-2 ${difficultyColor}`}>
+                          {"⭐".repeat(difficultyLevel)}
                         </div>
                       )}
                       {done && (
@@ -400,8 +401,8 @@ export default function App() {
                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-200 text-green-700">
                             Освоен
                           </span>
-                          <span className="text-[10px] text-gray-500 px-1.5 py-0.5">
-                            {questionLength < 8 ? "Легко" : questionLength < 12 ? "Средне" : "Сложно"}
+                          <span className={`text-[12px] font-semibold ${difficultyColor}`}>
+                            {"⭐".repeat(difficultyLevel)}
                           </span>
                         </div>
                       )}
