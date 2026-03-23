@@ -240,22 +240,20 @@ export default function App() {
                         <span className="flex-1">{t.puzzle.question}</span>
                         {done && <span className="text-green-500 text-xs flex-shrink-0">✓</span>}
                       </div>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="inline-block text-[11px] font-semibold px-2 py-1 rounded-full"
-                          style={{ backgroundColor: t.trick.color + "20", color: t.trick.color }}>
-                          {t.trick.name}
-                        </span>
-                        {done && (
-                          <>
-                            <span className="text-[12px]" style={{ color: t.trick.color }}>
-                              {t.trick.animal}
-                            </span>
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-200 text-green-700">
-                              Освоен
-                            </span>
-                          </>
-                        )}
-                      </div>
+                      {done && (
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <span className="inline-block text-[11px] font-semibold px-2 py-1 rounded-full"
+                            style={{ backgroundColor: t.trick.color + "20", color: t.trick.color }}>
+                            {t.trick.name}
+                          </span>
+                          <span className="text-[12px]" style={{ color: t.trick.color }}>
+                            {t.trick.animal}
+                          </span>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-200 text-green-700">
+                            Освоен
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
