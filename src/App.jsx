@@ -235,9 +235,11 @@ export default function App() {
                         <span className="flex-1">{t.puzzle.question}</span>
                         {done && <span className="text-green-500 text-xs flex-shrink-0">✓</span>}
                       </div>
-                      <div className="text-[12px] mt-0.5" style={{ color: t.trick.color }}>
-                        {t.trick.animal} {t.trick.name}
-                      </div>
+                      {done && (
+                        <div className="text-[12px] mt-0.5" style={{ color: t.trick.color }}>
+                          {t.trick.animal} {t.trick.name}
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
