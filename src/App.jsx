@@ -146,13 +146,13 @@ function DragonsGreeting({ isVisible, onClose }) {
   return (
     <div className="fixed inset-0 z-40 flex flex-col items-center justify-start pointer-events-none">
       <div className="mt-56 max-w-xs pointer-events-auto">
-        <div className="bg-amber-50 rounded-2xl px-4 py-3 shadow-lg border-2 border-amber-200 relative">
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-amber-50 border-t-2 border-l-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(45deg)' }}></div>
-          <p className="text-gray-800 text-sm leading-relaxed min-h-8">
+        <div className="bg-amber-50 rounded-2xl px-4 py-3 shadow-lg border-2 border-amber-200 relative min-h-32 flex flex-col">
+          <div className="absolute -top-2 left-1/2 w-3 h-3 bg-amber-50 border-t-2 border-l-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(45deg)' }}></div>
+          <p className="text-gray-800 text-sm leading-relaxed flex-1">
             {displayedText}<span className={displayedText.length < greeting.length ? "animate-pulse" : ""}>▌</span>
           </p>
           {displayedText.length === greeting.length && (
-            <button onClick={onClose} className="mt-2 text-xs text-amber-600 font-semibold hover:text-amber-700 cursor-pointer">
+            <button onClick={onClose} className="text-xs text-amber-600 font-semibold hover:text-amber-700 cursor-pointer self-start mt-auto">
               Понимаю →
             </button>
           )}
