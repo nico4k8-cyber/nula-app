@@ -348,19 +348,22 @@ export default function App() {
         {phase === "age-select" && (
           <div className="flex flex-col items-center justify-center flex-1 px-6 gap-8">
             <div className="text-center">
-              <button onClick={() => setDragonInfoOpen(true)}
-                className="text-[80px] text-center mb-4 hover:scale-110 transition-transform cursor-pointer animate-bounce"
-                title="Узнай о драконе"
-              >
-                🐉
-              </button>
+              <div className="mb-4 flex flex-col items-center gap-2">
+                <button onClick={() => setDragonInfoOpen(true)}
+                  className="text-[80px] hover:scale-110 transition-transform cursor-pointer animate-bounce"
+                  title="Узнай о драконе"
+                >
+                  🐉
+                </button>
+                <p className="text-[11px] text-gray-400">Нажми на дракона</p>
+              </div>
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 Разгадай загадки природы
               </h1>
               <div className="text-gray-500 text-[14px] mt-4 max-w-xs leading-relaxed">
-                <p className="font-semibold text-gray-700">Как инженеры учатся у природы</p>
-                <p className="text-[13px] mt-2">Природа уже решила проблемы, над которыми работают учёные. Сможешь ли ты найти решение?</p>
-                <p className="text-[12px] mt-2 text-gray-400">2–3 минуты на одну загадку. Начни с одной.</p>
+                <p className="font-semibold text-gray-700">Природа придумала это давно</p>
+                <p className="text-[13px] mt-2">Инженеры и изобретатели берут идеи из природы. Сможешь ли ты найти решение, которое природа хранила миллионы лет?</p>
+                <p className="text-[12px] mt-2 text-gray-400">2–3 минуты на одну загадку.</p>
               </div>
             </div>
             <div className="flex flex-col gap-3 w-full">
@@ -609,14 +612,19 @@ export default function App() {
                   {task.trick.name}
                 </div>
                 <div className="text-[13px] text-gray-600 mt-1">{task.trick.animalName}</div>
+                <p className="text-[13px] text-gray-700 mt-3">{methodDescription(task.trick.name)}</p>
               </div>
               <div className="w-full bg-gray-50 rounded-[16px] p-4 text-[15px] text-gray-700 leading-relaxed">
                 <p className="font-semibold text-gray-500 text-[12px] mb-2">ЕЩЁ ИНТЕРЕСНОЕ</p>
                 {task.puzzle.bonusFact}
               </div>
               {sessionStars > 0 && (
-                <div className="text-yellow-500 text-[16px] font-semibold">
-                  {"⭐".repeat(Math.min(sessionStars, 9))} +{sessionStars} к мышлению
+                <div className="text-center">
+                  <div className="text-yellow-500 text-[18px] font-bold mb-1">
+                    {"⭐".repeat(Math.min(sessionStars, 9))}
+                  </div>
+                  <p className="text-gray-600 text-[13px]">+{sessionStars} к инженерному мышлению</p>
+                  <p className="text-gray-400 text-[12px] mt-1">{debriefBingo ? "Решил быстро и точно!" : "Немного помощи — тоже результат"}</p>
                 </div>
               )}
               <div className="text-center text-gray-500 text-[14px] mt-2">
