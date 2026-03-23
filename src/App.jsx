@@ -213,9 +213,11 @@ export default function App() {
         {phase === "picker" && (
           <div className="flex flex-col flex-1 px-4 pb-6">
             <TopProgress collected={collected} current={-1} />
-            <h2 className="text-[20px] font-bold text-gray-900 mb-1 mt-2 text-center">Выбери задачу</h2>
-            <p className="text-gray-400 text-[13px] text-center mb-4">
-              {collected.length} из {TASKS.length} разгадано
+            <h2 className="text-[20px] font-bold text-gray-900 mb-2 mt-3 text-center">
+              🐉 Разгадай загадки природы
+            </h2>
+            <p className="text-gray-500 text-[13px] text-center mb-4">
+              Дракон ждёт • {collected.length} из {TASKS.length} разгадано
             </p>
             <div className="flex flex-col gap-3">
               {TASKS.map((t, i) => {
@@ -223,8 +225,8 @@ export default function App() {
                 return (
                   <button key={t.id}
                     onClick={() => startTask(i)}
-                    className={`w-full rounded-[18px] p-4 flex items-center gap-3 text-left border-2 active:scale-95 transition-transform
-                      ${done ? "border-green-200 bg-green-50" : "border-gray-100 bg-white hover:border-orange-300"}`}
+                    className={`w-full rounded-[18px] p-4 flex items-center gap-3 text-left border-2 active:scale-95 transition-all
+                      ${done ? "border-green-200 bg-green-50 shadow-sm" : "border-gray-100 bg-white hover:border-orange-400 hover:shadow-md hover:scale-105"}`}
                   >
                     <span className="text-3xl">{t.puzzle.emoji}</span>
                     <div className="flex-1 min-w-0">
