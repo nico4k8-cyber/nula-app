@@ -78,21 +78,18 @@ export default function App() {
   }, [ageGroup, collected, totalStars]);
 
   /* ─── helpers ─── */
-  const inDialogPhases = ["dialog","start","debrief","twist","outcome"].includes(phase);
+  const inDialogPhases = ["dialog","debrief","twist","outcome"].includes(phase);
   const childMsgCount  = messages.filter(m => m.type === "child").length;
 
   function startTask(idx) {
+    const t = TASKS[idx];
     setTaskIdx(idx);
     setMessages([]);
     setPrizStep(0);
     setDebriefBingo(false);
     setTwistChoice(null);
     setSessionStars(0);
-    setPhase("start");
-  }
-
-  function startDialog() {
-    const hook = ageGroup === "senior" ? task.puzzle.hookSenior : task.puzzle.hookJunior;
+    const hook = ageGroup === "senior" ? t.puzzle.hookSenior : t.puzzle.hookJunior;
     setMessages([{ type: "bot", text: hook }]);
     setPhase("dialog");
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -255,29 +252,6 @@ export default function App() {
           </div>
         )}
 
-        {/* START */}
-        {phase === "start" && (
-          <div className="flex flex-col flex-1 px-5 pb-8">
-            <TopProgress collected={collected} current={taskIdx} />
-            <div className="flex flex-col items-center flex-1 justify-center gap-6">
-              <div className="text-6xl">{task.puzzle.emoji}</div>
-              <h2 className="text-[20px] font-bold text-gray-900 text-center leading-snug px-2">
-                {task.puzzle.question}
-              </h2>
-              <button onClick={startDialog}
-                className="bg-orange-500 text-white text-[19px] font-bold px-10 py-4 rounded-[20px] shadow-lg active:scale-95 transition-transform"
-              >
-                Начать расследование 🔍
-              </button>
-              <button onClick={() => setPhase("picker")}
-                className="text-gray-400 text-[14px]"
-              >
-                ← Другая задача
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* DIALOG */}
         {phase === "dialog" && (
           <div className="flex flex-col flex-1">
@@ -322,7 +296,7 @@ export default function App() {
               })}
               {isTyping && (
                 <div className="flex gap-2 items-center">
-                  <span className="text-xl">🔍</span>
+                  <span className="text-xl">🐉</span>
                   <div className="bg-gray-100 rounded-[16px] px-4 py-3 flex gap-1">
                     {[0,1,2].map(j => (
                       <div key={j} className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${j * 0.15}s` }} />
