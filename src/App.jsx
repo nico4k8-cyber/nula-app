@@ -127,16 +127,8 @@ function DragonInfo({ isOpen, onClose }) {
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full bg-white rounded-t-[24px] p-6 flex flex-col gap-4 shadow-lg max-h-[80vh] overflow-y-auto">
-        <style>{`
-          @keyframes dragonBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-12px); }
-          }
-          .dragon-bounce { animation: dragonBounce 2.5s ease-in-out infinite; }
-        `}</style>
-
         <div className="text-center mb-2">
-          <img src="./img/webp/ugolok.webp" alt="" className="w-48 h-48 mx-auto mb-3 object-contain dragon-bounce" />
+          <img src="./img/webp/ugolok.webp" alt="" className="w-48 h-48 mx-auto mb-3 object-contain" />
         </div>
 
         <div className="border-t border-gray-100 pt-4 flex flex-col gap-4">
