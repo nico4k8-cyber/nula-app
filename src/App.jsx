@@ -122,7 +122,7 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
 /* ═══ DragonsGreeting ═══ */
 function DragonsGreeting({ isVisible, onClose }) {
   const [displayedText, setDisplayedText] = useState("");
-  const greeting = "Привет! Я помогу тебе разгадать загадки природы. Выбери возраст и начинай!";
+  const greeting = "Я живу в генизе — месте, куда приносят книги, которые нельзя выбросить. Прочитал все их. Рядом со свитками стоят сломанные дроны и прототипы. Я задаю вопросы, потому что твой ответ интереснее моего.";
 
   useEffect(() => {
     if (!isVisible) {
@@ -137,23 +137,23 @@ function DragonsGreeting({ isVisible, onClose }) {
       } else {
         clearInterval(timer);
       }
-    }, 40);
+    }, 30);
     return () => clearInterval(timer);
   }, [isVisible]);
 
   if (!isVisible) return null;
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none">
-      <div className="mb-2 max-w-xs pointer-events-auto">
+    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center pointer-events-none pt-24">
+      <div className="max-w-xs pointer-events-auto">
         <div className="bg-amber-50 rounded-2xl px-4 py-3 shadow-lg border-2 border-amber-200 relative">
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-amber-50 border-b-2 border-r-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(-45deg)' }}></div>
+          <div className="absolute -bottom-2 left-12 w-3 h-3 bg-amber-50 border-b-2 border-r-2 border-amber-200" style={{ transform: 'rotate(-45deg)' }}></div>
           <p className="text-gray-800 text-sm leading-relaxed min-h-8">
             {displayedText}<span className={displayedText.length < greeting.length ? "animate-pulse" : ""}>▌</span>
           </p>
           {displayedText.length === greeting.length && (
             <button onClick={onClose} className="mt-2 text-xs text-amber-600 font-semibold hover:text-amber-700 cursor-pointer">
-              Закрыть →
+              Понимаю →
             </button>
           )}
         </div>
@@ -226,7 +226,8 @@ export default function App() {
 
   // dragon info
   const [dragonInfoOpen, setDragonInfoOpen] = useState(false);
-  const [dragonGreeting, setDragonGreeting] = useState(saved.dragonGreetingShown ? false : true);
+  const [dragonGreeting, setDragonGreeting] = useState(false);
+  const [dragonSpeechBubble, setDragonSpeechBubble] = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
@@ -401,12 +402,7 @@ export default function App() {
                   .dragon-float { animation: floatChar 3.5s ease-in-out infinite; }
                 `}</style>
                 <button onClick={() => {
-                  if (dragonGreeting) {
-                    setDragonGreeting(true);
-                    setTimeout(() => { setDragonGreeting(false); saveState({ ageGroup, collected, totalStars, dragonGreetingShown: true }); }, 100);
-                  } else {
-                    setDragonInfoOpen(true);
-                  }
+                  setDragonSpeechBubble(true);
                 }}
                   className="cursor-pointer"
                   title="Узнай о драконе"
@@ -417,7 +413,7 @@ export default function App() {
                     <img src="./img/webp/ugolok.webp" alt="Дракон" className="relative w-full h-full rounded-full object-cover shadow-2xl border-4 border-amber-500/50" style={{ boxShadow: '0 25px 50px -12px rgba(146, 64, 14, 0.4)' }} />
                   </div>
                 </button>
-                {dragonGreeting && <p className="text-[11px] text-gray-400">Нажми на дракона</p>}
+                <p className="text-[11px] text-gray-400">Нажми на дракона</p>
               </div>
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 Разгадай загадки природы
@@ -444,7 +440,7 @@ export default function App() {
                 <span className="text-[12px] text-gray-300">Найдёшь сам</span>
               </button>
             </div>
-            <DragonsGreeting isVisible={dragonGreeting} onClose={() => setDragonGreeting(false)} />
+            <DragonsGreeting isVisible={dragonSpeechBubble} onClose={() => setDragonSpeechBubble(false)} />
           </div>
         )}
 
