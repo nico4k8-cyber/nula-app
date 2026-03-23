@@ -291,32 +291,23 @@ export default function App() {
                 <TopProgress collected={collected} current={taskIdx} />
               </div>
             </div>
-            <div className="px-4 py-2 flex justify-center gap-1">
+            <div className="px-4 py-2 flex justify-center gap-2">
               {[
-                { letter: "П", label: "Проблема" },
-                { letter: "Р", label: "Разбор" },
-                { letter: "И", label: "Идеи" },
-                { letter: "З", label: "Заключение" },
-                { letter: "✨", label: "Завершено" }
+                { emoji: "❓", label: "Вопрос" },
+                { emoji: "🔍", label: "Разбор" },
+                { emoji: "💡", label: "Идеи" },
+                { emoji: "✓", label: "Решение" },
+                { emoji: "🎉", label: "Готово" }
               ].map((stage, i) => (
                 <div key={i}
                   title={stage.label}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all cursor-help
-                    ${i <= prizStep ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-400"}`}>
-                  {stage.letter}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all cursor-help
+                    ${i <= prizStep ? "bg-orange-500 text-white scale-110" : "bg-gray-200 text-gray-400"}`}>
+                  {stage.emoji}
                 </div>
               ))}
             </div>
             <div className="flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-3 pt-2" style={{ maxHeight: "calc(100vh - 160px)" }}>
-              {messages.length === 1 && (
-                <div className="flex justify-center py-6">
-                  <div className="text-center text-[13px] text-gray-500 max-w-[280px]">
-                    <div className="text-3xl mb-2">{task.trick.animal}</div>
-                    <p className="font-semibold text-gray-700 mb-1">Метод: {task.trick.name}</p>
-                    <p className="text-[12px] text-gray-400">Найди ответ, помогая дракону</p>
-                  </div>
-                </div>
-              )}
               {messages.map((m, i) => {
                 if (m.type === "bot") return (
                   <div key={i} className="flex gap-2 items-start">
@@ -373,7 +364,7 @@ export default function App() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleUserMessage()}
                 placeholder="Напиши свою версию..."
-                className="flex-1 bg-gray-100 rounded-[18px] px-4 py-3 text-[15px] outline-none"
+                className="flex-1 bg-gray-100 rounded-[18px] px-4 py-3 text-[15px] outline-none min-h-[48px] leading-relaxed"
                 disabled={isTyping}
               />
               <button
