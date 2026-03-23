@@ -164,6 +164,25 @@ function DragonsGreeting({ isVisible, onClose }) {
 
 /* ═══ DragonInfo ═══ */
 function DragonInfo({ isOpen, onClose }) {
+  const [displayedIndex, setDisplayedIndex] = useState(0);
+  const texts = [
+    "Привет! Я живу в генизе — месте, где хранятся древние знания и современные изобретения.",
+    "Я прочитал много книг, спорил с ними. Убедился — с идеями можно спорить, это правильно.",
+    "Рядом со мной сломанные дроны, старые платы, прототипы без названия. Я вижу, как прошлое и будущее работают вместе.",
+    "Я не даю ответы. Я задаю вопросы — потому что твой ответ всегда интереснее моего. Готов разгадывать загадки?"
+  ];
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDisplayedIndex(0);
+      return;
+    }
+    if (displayedIndex < texts.length) {
+      const timer = setTimeout(() => setDisplayedIndex(displayedIndex + 1), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, displayedIndex]);
+
   if (!isOpen) return null;
 
   return (
@@ -175,25 +194,24 @@ function DragonInfo({ isOpen, onClose }) {
         </div>
 
         <div className="border-t border-gray-100 pt-4 flex flex-col gap-4">
-          <p className="text-gray-700 text-[15px] leading-relaxed">
-            Я живу в <strong>генизе</strong> — месте, куда приносят книги, которые нельзя выбросить. Не потому что жалко бумагу, а потому что в словах остаётся <strong>что-то живое</strong>.
-          </p>
-          <p className="text-gray-700 text-[15px] leading-relaxed">
-            Я прочитал <strong>все эти книги</strong>. Спорил с ними. С книгами можно спорить — это нормально, даже <strong>правильно</strong>.
-          </p>
-          <p className="text-gray-700 text-[15px] leading-relaxed">
-            Рядом со свитками стоят <strong>сломанные дроны</strong>, старые платы, <strong>прототипы вещей без названия</strong>. Для меня нет границы между древней мудростью и современным изобретением.
-          </p>
-          <p className="text-gray-700 text-[15px] leading-relaxed">
-            Я не даю ответы. Я <strong>задаю вопросы</strong> — не потому что не знаю, а потому что твой ответ интереснее моего.
-          </p>
+          {texts.map((text, i) => (
+            i < displayedIndex && (
+              <p key={i} className="text-gray-700 text-[15px] leading-relaxed animate-fade-in">
+                {text.split('**').map((part, j) =>
+                  j % 2 === 0 ? part : <strong key={j}>{part}</strong>
+                )}
+              </p>
+            )
+          ))}
         </div>
 
-        <button onClick={onClose}
-          className="w-full mt-2 py-3 rounded-[14px] bg-gray-100 text-gray-700 font-semibold transition-all active:scale-95"
-        >
-          Закрыть
-        </button>
+        {displayedIndex === texts.length && (
+          <button onClick={onClose}
+            className="w-full mt-2 py-3 rounded-[14px] bg-gray-100 text-gray-700 font-semibold transition-all active:scale-95 animate-fade-in"
+          >
+            Закрыть
+          </button>
+        )}
       </div>
     </div>
   );
@@ -226,8 +244,6 @@ export default function App() {
 
   // dragon info
   const [dragonInfoOpen, setDragonInfoOpen] = useState(false);
-  const [dragonGreeting, setDragonGreeting] = useState(false);
-  const [dragonSpeechBubble, setDragonSpeechBubble] = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
@@ -402,7 +418,7 @@ export default function App() {
                   .dragon-float { animation: floatChar 3.5s ease-in-out infinite; }
                 `}</style>
                 <button onClick={() => {
-                  setDragonSpeechBubble(true);
+                  setDragonInfoOpen(true);
                 }}
                   className="cursor-pointer"
                   title="Узнай о драконе"
@@ -440,7 +456,6 @@ export default function App() {
                 <span className="text-[12px] text-gray-300">Найдёшь сам</span>
               </button>
             </div>
-            <DragonsGreeting isVisible={dragonSpeechBubble} onClose={() => setDragonSpeechBubble(false)} />
           </div>
         )}
 
@@ -665,6 +680,15 @@ export default function App() {
               <div className="text-center text-xl font-bold text-gray-800 mb-3">
                 {debriefBingo ? "Разгадано без подсказок!" : "Именно так!"}
               </div>
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-[16px] p-4 text-[15px] text-amber-900">
+                <div className="flex gap-3">
+                  <span className="text-2xl flex-shrink-0">🐉</span>
+                  <p>
+                    <span className="font-bold block mb-1">Вот видишь, что ты сделал?</span>
+                    Ты только что использовал <span className="font-semibold" style={{ color: task.trick.color }}>"{task.trick.name}"</span> — метод, которым природа решает сложные задачи миллионы лет. Теперь ты думаешь как инженер!
+                  </p>
+                </div>
+              </div>
               <div className="w-full rounded-[16px] p-4 border-2" style={{ borderColor: task.trick.color, backgroundColor: task.trick.color + "10" }}>
                 <p className="font-semibold text-[12px] mb-2" style={{ color: task.trick.color }}>🔑 ПРИРОДНЫЙ ТРЮК</p>
                 <div className="text-[18px] font-bold" style={{ color: task.trick.color }}>
@@ -796,6 +820,15 @@ export default function App() {
             <div className="text-center">
               <h2 className="text-[24px] font-bold text-gray-900 mb-2">Все 6 природных трюков открыты! 🌟</h2>
               <p className="text-gray-500 text-[15px]">Ты теперь видишь природу как инженер.</p>
+            </div>
+            <div className="w-full bg-gradient-to-r rounded-[16px] p-5 text-[15px] text-gray-900 leading-relaxed border-2 border-amber-300" style={{ backgroundImage: "linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.05))" }}>
+              <div className="flex gap-3">
+                <span className="text-3xl flex-shrink-0">🐉</span>
+                <div>
+                  <p className="font-bold mb-2">Отлично поработал! 👏</p>
+                  <p>Ты исследовал 6 методов, которыми природа решала проблемы. Теперь используй эти методы в своих идеях. Помни: всё уже придумано природой — нужно только посмотреть внимательнее!</p>
+                </div>
+              </div>
             </div>
             <div className="text-center">
               <div className="text-[40px] font-bold text-yellow-500 mb-1">{"⭐".repeat(Math.min(totalStars, 12))}</div>
