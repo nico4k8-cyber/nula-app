@@ -122,7 +122,7 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
 /* ═══ DragonsGreeting ═══ */
 function DragonsGreeting({ isVisible, onClose }) {
   const [displayedText, setDisplayedText] = useState("");
-  const greeting = "Я живу в генизе — месте, куда приносят книги, которые нельзя выбросить. Прочитал все их. Рядом со свитками стоят сломанные дроны и прототипы. Я задаю вопросы, потому что твой ответ интереснее моего.";
+  const greeting = "Я живу в генизе с древними книгами и прототипами. Я не даю ответы — задаю вопросы. Выбери свой возраст и начнём разгадывать загадки природы!";
 
   useEffect(() => {
     if (!isVisible) {
