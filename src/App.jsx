@@ -149,6 +149,15 @@ export default function App() {
     saveState({ ageGroup, collected: [], totalStars: 0 });
   }
 
+  function changeAgeGroup() {
+    setCollected([]);
+    setTotalStars(0);
+    setDebriefBingo(false);
+    setMessages([]);
+    setPhase("age-select");
+    saveState({ collected: [], totalStars: 0 });
+  }
+
   async function handleUserMessage() {
     const text = input.trim();
     if (!text || isTyping) return;
@@ -334,6 +343,11 @@ export default function App() {
                 Сбросить прогресс
               </button>
             )}
+            <button onClick={changeAgeGroup}
+              className="mt-2 text-gray-300 text-[13px] text-center w-full hover:text-gray-400"
+            >
+              Изменить возраст
+            </button>
           </div>
         )}
 
