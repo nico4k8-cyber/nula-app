@@ -119,6 +119,41 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
   );
 }
 
+/* ═══ DragonInfo ═══ */
+function DragonInfo({ isOpen, onClose }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full bg-white rounded-t-[24px] p-6 flex flex-col gap-4 shadow-lg">
+        <div className="text-center mb-2">
+          <div className="text-[64px] mb-3">🐉</div>
+          <h3 className="text-[20px] font-bold text-gray-900">Дракон Логики</h3>
+        </div>
+
+        <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">
+          <p className="text-gray-700 text-[15px] leading-relaxed">
+            Я страж древних манускриптов и хранитель природных секретов. Веками я собираю загадки, которые природа решила раньше, чем люди.
+          </p>
+          <p className="text-gray-700 text-[15px] leading-relaxed">
+            В моей пещере лежат сломанные изобретения людей и записи о том, как те же задачи решила сама природа. Я зову тебя учиться видеть так же, как видит природа.
+          </p>
+          <p className="text-gray-600 text-[14px] italic">
+            Сможешь ли ты найти решения, которые природа хранила для тебя миллионы лет?
+          </p>
+        </div>
+
+        <button onClick={onClose}
+          className="w-full mt-2 py-3 rounded-[14px] bg-gray-100 text-gray-700 font-semibold transition-all active:scale-95"
+        >
+          Закрыть
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ═══ Main App ═══ */
 export default function App() {
   const saved = loadState();
@@ -143,6 +178,9 @@ export default function App() {
 
   // menu
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // dragon info
+  const [dragonInfoOpen, setDragonInfoOpen] = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
@@ -310,7 +348,12 @@ export default function App() {
         {phase === "age-select" && (
           <div className="flex flex-col items-center justify-center flex-1 px-6 gap-8">
             <div className="text-center">
-              <div className="text-[72px] text-center mb-4">🐉</div>
+              <button onClick={() => setDragonInfoOpen(true)}
+                className="text-[80px] text-center mb-4 hover:scale-110 transition-transform cursor-pointer animate-bounce"
+                title="Узнай о драконе"
+              >
+                🐉
+              </button>
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 Разгадай загадки природы
               </h1>
@@ -322,18 +365,18 @@ export default function App() {
             </div>
             <div className="flex flex-col gap-3 w-full">
               <button
-                onClick={() => { setAgeGroup("senior"); setPhase("picker"); }}
-                className="w-full py-4 rounded-[18px] bg-gray-900 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-gray-900"
-              >
-                <span className="text-[16px] font-bold">🧠 13–16 лет</span>
-                <span className="text-[12px] text-gray-300">Сложные вопросы</span>
-              </button>
-              <button
                 onClick={() => { setAgeGroup("junior"); setPhase("picker"); }}
                 className="w-full py-4 rounded-[18px] bg-orange-500 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-orange-500"
               >
-                <span className="text-[16px] font-bold">🌟 10–12 лет</span>
-                <span className="text-[12px] text-orange-100">Простые вопросы</span>
+                <span className="text-[16px] font-bold">🌟 7–11 лет</span>
+                <span className="text-[12px] text-orange-100">Больше подсказок</span>
+              </button>
+              <button
+                onClick={() => { setAgeGroup("senior"); setPhase("picker"); }}
+                className="w-full py-4 rounded-[18px] bg-gray-900 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-gray-900"
+              >
+                <span className="text-[16px] font-bold">🧠 12–16 лет</span>
+                <span className="text-[12px] text-gray-300">Без подсказок</span>
               </button>
             </div>
           </div>
@@ -723,6 +766,12 @@ export default function App() {
         onChangeAge={changeAgeGroup}
         onResetProgress={resetProgress}
         collected={collected}
+      />
+
+      {/* Dragon Info Modal */}
+      <DragonInfo
+        isOpen={dragonInfoOpen}
+        onClose={() => setDragonInfoOpen(false)}
       />
     </div>
   );
