@@ -171,9 +171,18 @@ export default function App() {
     setSessionStars(0);
     const hook = ageGroup === "senior" ? t.puzzle.hookSenior : t.puzzle.hookJunior;
     // Age-personalized greeting + puzzle question
-    const greeting = ageGroup === "senior"
-      ? "Привет! 🐉 У меня есть интересная загадка для тебя:"
-      : "Привет! 🐉 Готов разгадать мою загадку? Это будет интересно! 😄";
+    const greetings = ageGroup === "senior"
+      ? [
+          "🐉 А вот и появилась интересная загадка!",
+          "🐉 Хм, у меня есть для тебя кое-что интересное...",
+          "🐉 Слушай внимательно! Вот мне нужен твой мозг для этого..."
+        ]
+      : [
+          "🐉 О! Готов разгадать мою загадку? 🔥",
+          "🐉 Вот это задачка! Сможешь её решить? 💪",
+          "🐉 Внимание! Вот загадка, которая заставит тебя подумать! 🧠"
+        ];
+    const greeting = greetings[Math.floor(Math.random() * greetings.length)];
     setMessages([
       { type: "bot", text: greeting },
       { type: "bot", text: hook }
