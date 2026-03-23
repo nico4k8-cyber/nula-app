@@ -314,8 +314,9 @@ export default function App() {
                 Разгадай загадки природы
               </h1>
               <div className="text-gray-500 text-[14px] mt-4 max-w-xs leading-relaxed">
-                <p>Как природа решает задачи, которые кажутся невозможными.</p>
-                <p className="text-[12px] mt-2 text-gray-400">Одна загадка займёт 2–3 минуты. Начни с одной — или разгадай всё.</p>
+                <p className="font-semibold text-gray-700">Как инженеры учатся у природы</p>
+                <p className="text-[13px] mt-2">Природа уже решила проблемы, над которыми работают учёные. Сможешь ли ты найти решение?</p>
+                <p className="text-[12px] mt-2 text-gray-400">2–3 минуты на одну загадку. Начни с одной.</p>
               </div>
             </div>
             <div className="flex flex-col gap-3 w-full">
