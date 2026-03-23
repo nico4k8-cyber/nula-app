@@ -183,27 +183,33 @@ export default function App() {
         {/* AGE SELECT */}
         {phase === "age-select" && (
           <div className="flex flex-col items-center justify-center flex-1 px-6 gap-8">
-            <div>
+            <div className="text-center">
               <div className="text-[72px] text-center mb-4">🐉</div>
-              <h1 className="text-[26px] font-bold text-gray-900 leading-snug text-center">
-                Природа решала это<br/>миллионы лет.
+              <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
+                Разгадай загадки природы
               </h1>
-              <p className="text-gray-400 text-center text-[16px] mt-2">
-                Разгадай — и узнай её секрет.
-              </p>
+              <div className="text-gray-500 text-[14px] mt-4 flex justify-center gap-4 text-center">
+                <span>6 задач</span>
+                <span>•</span>
+                <span>15 минут</span>
+                <span>•</span>
+                <span>Методы ТРИЗ</span>
+              </div>
             </div>
-            <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-col gap-3 w-full">
               <button
                 onClick={() => { setAgeGroup("senior"); setPhase("picker"); }}
-                className="w-full py-5 rounded-[20px] bg-gray-900 text-white text-[18px] font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                className="w-full py-4 rounded-[18px] bg-gray-900 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-gray-900"
               >
-                <span>🧠</span> 13–16 лет
+                <span className="text-[16px] font-bold">🧠 13–16 лет</span>
+                <span className="text-[12px] text-gray-300">Сложные вопросы</span>
               </button>
               <button
                 onClick={() => { setAgeGroup("junior"); setPhase("picker"); }}
-                className="w-full py-5 rounded-[20px] bg-orange-500 text-white text-[18px] font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                className="w-full py-4 rounded-[18px] bg-orange-500 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-orange-500"
               >
-                <span>🌟</span> 10–12 лет
+                <span className="text-[16px] font-bold">🌟 10–12 лет</span>
+                <span className="text-[12px] text-orange-100">Простые вопросы</span>
               </button>
             </div>
           </div>
@@ -234,11 +240,22 @@ export default function App() {
                         <span className="flex-1">{t.puzzle.question}</span>
                         {done && <span className="text-green-500 text-xs flex-shrink-0">✓</span>}
                       </div>
-                      {done && (
-                        <div className="text-[12px] mt-0.5" style={{ color: t.trick.color }}>
-                          {t.trick.animal} {t.trick.name}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="inline-block text-[11px] font-semibold px-2 py-1 rounded-full"
+                          style={{ backgroundColor: t.trick.color + "20", color: t.trick.color }}>
+                          {t.trick.name}
+                        </span>
+                        {done && (
+                          <>
+                            <span className="text-[12px]" style={{ color: t.trick.color }}>
+                              {t.trick.animal}
+                            </span>
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-200 text-green-700">
+                              Освоен
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </button>
                 );
@@ -276,7 +293,32 @@ export default function App() {
                 <TopProgress collected={collected} current={taskIdx} />
               </div>
             </div>
+            <div className="px-4 py-2 flex justify-center gap-1">
+              {[
+                { letter: "П", label: "Проблема" },
+                { letter: "Р", label: "Разбор" },
+                { letter: "И", label: "Идеи" },
+                { letter: "З", label: "Заключение" },
+                { letter: "✨", label: "Завершено" }
+              ].map((stage, i) => (
+                <div key={i}
+                  title={stage.label}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all cursor-help
+                    ${i <= prizStep ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-400"}`}>
+                  {stage.letter}
+                </div>
+              ))}
+            </div>
             <div className="flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-3 pt-2" style={{ maxHeight: "calc(100vh - 160px)" }}>
+              {messages.length === 1 && (
+                <div className="flex justify-center py-6">
+                  <div className="text-center text-[13px] text-gray-500 max-w-[280px]">
+                    <div className="text-3xl mb-2">{task.trick.animal}</div>
+                    <p className="font-semibold text-gray-700 mb-1">Метод: {task.trick.name}</p>
+                    <p className="text-[12px] text-gray-400">Найди ответ, помогая дракону</p>
+                  </div>
+                </div>
+              )}
               {messages.map((m, i) => {
                 if (m.type === "bot") return (
                   <div key={i} className="flex gap-2 items-start">
@@ -356,6 +398,13 @@ export default function App() {
               <div className="text-center text-xl font-bold text-gray-800 mb-3">
                 {debriefBingo ? "Разгадано без подсказок!" : "Именно так!"}
               </div>
+              <div className="w-full rounded-[16px] p-4 border-2" style={{ borderColor: task.trick.color, backgroundColor: task.trick.color + "10" }}>
+                <p className="font-semibold text-[12px] mb-2" style={{ color: task.trick.color }}>🎯 ПРИЁМ ТРИЗ</p>
+                <div className="text-[18px] font-bold" style={{ color: task.trick.color }}>
+                  {task.trick.name}
+                </div>
+                <div className="text-[13px] text-gray-600 mt-1">{task.trick.animalName}</div>
+              </div>
               <div className="w-full bg-gray-50 rounded-[16px] p-4 text-[15px] text-gray-700 leading-relaxed">
                 <p className="font-semibold text-gray-500 text-[12px] mb-2">ЕЩЁ ИНТЕРЕСНОЕ</p>
                 {task.puzzle.bonusFact}
@@ -433,21 +482,24 @@ export default function App() {
         {phase === "outcome" && (
           <div className="flex flex-col flex-1 px-5 pb-8">
             <TopProgress collected={collected} current={-1} />
-            <div className="flex flex-col flex-1 justify-center items-center gap-5">
-              <div className="text-6xl">{task.trick.animal}</div>
+            <div className="flex flex-col flex-1 justify-center items-center gap-6">
+              <div className="text-7xl animate-bounce">{task.trick.animal}</div>
               <div className="text-center">
-                <div className="text-[13px] text-gray-400 uppercase tracking-wide mb-1">🔓 Открыт приём</div>
-                <div className="text-[24px] font-bold" style={{ color: task.trick.color }}>
+                <div className="text-[13px] text-gray-400 uppercase tracking-wide mb-2">✨ Метод открыт</div>
+                <div className="text-[28px] font-bold" style={{ color: task.trick.color }}>
                   {task.trick.name}
                 </div>
-                <div className="text-[14px] text-gray-500 mt-1">{task.trick.animalName}</div>
+                <div className="text-[14px] text-gray-600 mt-2">{task.trick.animalName}</div>
               </div>
-              <div className="bg-gray-50 rounded-[16px] px-5 py-4 text-center text-[15px] text-gray-700 italic">
+              <div className="bg-gradient-to-r rounded-[16px] px-5 py-4 text-center text-[16px] italic font-medium text-gray-800" style={{ backgroundImage: `linear-gradient(135deg, ${task.trick.color}20, ${task.trick.color}05)` }}>
                 «{task.trick.motto}»
               </div>
-              <div className="text-center text-[13px] text-gray-400">
-                Мышление: {thinkingType(totalStars).emoji} {thinkingType(totalStars).label}<br/>
-                Всего звёзд: {totalStars} ⭐
+              <div className="text-center">
+                <div className="text-[14px] text-gray-600 mb-2">Твой прогресс в игре:</div>
+                <div className="text-center text-[15px] font-semibold text-gray-800">
+                  {thinkingType(totalStars).emoji} {thinkingType(totalStars).label}<br/>
+                  <span className="text-xl text-yellow-500">{"⭐".repeat(Math.min(totalStars, 9))}</span> {totalStars} звёзд
+                </div>
               </div>
               <button onClick={nextPuzzle}
                 className="w-full py-4 rounded-[18px] bg-orange-500 text-white font-bold text-[16px] active:scale-95 transition-transform"
@@ -461,26 +513,32 @@ export default function App() {
         {/* FINAL */}
         {phase === "final" && (
           <div className="flex flex-col flex-1 px-5 pb-8 items-center justify-center gap-6">
-            <div className="text-[60px]">🏆</div>
-            <h2 className="text-[22px] font-bold text-center text-gray-900">Карта природы открыта! 🗺️</h2>
+            <div className="text-[72px] animate-bounce">🏆</div>
             <div className="text-center">
-              <div className="text-[32px] font-bold text-orange-500">{totalStars} ⭐</div>
-              <div className="text-gray-500 text-[15px]">{thinkingType(totalStars).emoji} {thinkingType(totalStars).label} тип мышления</div>
+              <h2 className="text-[24px] font-bold text-gray-900 mb-2">Все 6 методов ТРИЗ открыты!</h2>
+              <p className="text-gray-500 text-[15px]">Ты теперь видишь природу как инженер.</p>
+            </div>
+            <div className="text-center">
+              <div className="text-[40px] font-bold text-yellow-500 mb-1">{"⭐".repeat(Math.min(totalStars, 12))}</div>
+              <div className="text-[16px] font-semibold text-gray-800">{totalStars} звёзд мышления</div>
+              <div className="text-gray-500 text-[14px] mt-1">{thinkingType(totalStars).emoji} {thinkingType(totalStars).label}</div>
             </div>
             <div className="w-full bg-gray-50 rounded-[16px] p-4 flex flex-col gap-2">
               {TASKS.map(t => (
                 <div key={t.id} className="flex items-center gap-3 text-[14px] text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  <span className="text-xl">{t.trick.animal}</span>
-                  <span className="font-semibold">{t.trick.name}</span>
-                  <span className="text-gray-400 text-[12px]">— {t.trick.animalName}</span>
+                  <span className="text-green-500 text-lg">✓</span>
+                  <span className="text-2xl">{t.trick.animal}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold">{t.trick.name}</div>
+                    <div className="text-gray-400 text-[12px]">{t.trick.animalName}</div>
+                  </div>
                 </div>
               ))}
             </div>
             <button onClick={resetProgress}
-              className="w-full py-4 rounded-[18px] border-2 border-gray-200 text-gray-600 font-semibold text-[16px] active:scale-95 transition-transform"
+              className="w-full py-4 rounded-[18px] border-2 border-orange-500 text-orange-500 font-semibold text-[16px] active:scale-95 transition-transform"
             >
-              Начать заново
+              Переиграть →
             </button>
           </div>
         )}
