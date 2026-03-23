@@ -144,10 +144,10 @@ function DragonsGreeting({ isVisible, onClose }) {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center pointer-events-none pt-24">
-      <div className="max-w-xs pointer-events-auto">
+    <div className="fixed inset-0 z-40 flex flex-col items-center justify-start pointer-events-none">
+      <div className="mt-56 max-w-xs pointer-events-auto">
         <div className="bg-amber-50 rounded-2xl px-4 py-3 shadow-lg border-2 border-amber-200 relative">
-          <div className="absolute -bottom-2 left-12 w-3 h-3 bg-amber-50 border-b-2 border-r-2 border-amber-200" style={{ transform: 'rotate(-45deg)' }}></div>
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-amber-50 border-t-2 border-l-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(45deg)' }}></div>
           <p className="text-gray-800 text-sm leading-relaxed min-h-8">
             {displayedText}<span className={displayedText.length < greeting.length ? "animate-pulse" : ""}>▌</span>
           </p>
