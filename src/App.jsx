@@ -313,12 +313,9 @@ export default function App() {
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 Разгадай загадки природы
               </h1>
-              <div className="text-gray-500 text-[14px] mt-4 flex justify-center gap-4 text-center">
-                <span>6 задач</span>
-                <span>•</span>
-                <span>15 минут</span>
-                <span>•</span>
-                <span>Методы ТРИЗ</span>
+              <div className="text-gray-500 text-[14px] mt-4 max-w-xs leading-relaxed">
+                <p>Как природа решает задачи, которые кажутся невозможными.</p>
+                <p className="text-[12px] mt-2 text-gray-400">Одна загадка займёт 2–3 минуты. Начни с одной — или разгадай всё.</p>
               </div>
             </div>
             <div className="flex flex-col gap-3 w-full">
@@ -562,7 +559,7 @@ export default function App() {
                 {debriefBingo ? "Разгадано без подсказок!" : "Именно так!"}
               </div>
               <div className="w-full rounded-[16px] p-4 border-2" style={{ borderColor: task.trick.color, backgroundColor: task.trick.color + "10" }}>
-                <p className="font-semibold text-[12px] mb-2" style={{ color: task.trick.color }}>🎯 ПРИЁМ ТРИЗ</p>
+                <p className="font-semibold text-[12px] mb-2" style={{ color: task.trick.color }}>🔑 ПРИРОДНЫЙ ТРЮК</p>
                 <div className="text-[18px] font-bold" style={{ color: task.trick.color }}>
                   {task.trick.name}
                 </div>
@@ -578,8 +575,8 @@ export default function App() {
                 </div>
               )}
               <div className="text-center text-gray-500 text-[14px] mt-2">
-                <p>Вы открыли <span className="font-semibold text-gray-700">{collected.length + 1} из {TASKS.length}</span> методов ТРИЗ</p>
-                <p className="text-[12px] mt-1">{TASKS.length - collected.length - 1} задач осталось</p>
+                <p>Ты открыл <span className="font-semibold text-gray-700">{collected.length + 1} из {TASKS.length}</span> природных трюков</p>
+                <p className="text-[12px] mt-1">{TASKS.length - collected.length - 1} загадок осталось</p>
               </div>
               <button onClick={goTwist}
                 className="w-full bg-gray-900 text-white text-[16px] font-bold py-4 rounded-[18px] active:scale-95 transition-transform"
@@ -685,7 +682,7 @@ export default function App() {
           <div className="flex flex-col flex-1 px-5 pb-8 items-center justify-center gap-6">
             <div className="text-[72px] animate-bounce">🏆</div>
             <div className="text-center">
-              <h2 className="text-[24px] font-bold text-gray-900 mb-2">Все 6 методов ТРИЗ открыты!</h2>
+              <h2 className="text-[24px] font-bold text-gray-900 mb-2">Все 6 природных трюков открыты! 🌟</h2>
               <p className="text-gray-500 text-[15px]">Ты теперь видишь природу как инженер.</p>
             </div>
             <div className="text-center">
