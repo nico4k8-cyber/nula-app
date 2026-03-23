@@ -36,10 +36,10 @@ function TopProgress({ collected, current }) {
 
 /* ═══ thinkingType ═══ */
 function thinkingType(stars) {
-  if (stars >= 28) return { label: "Изобретательское", emoji: "🔬" };
-  if (stars >= 16) return { label: "Системное",        emoji: "⚡" };
-  if (stars >= 7)  return { label: "Аналитическое",    emoji: "🔍" };
-  return               { label: "Любопытное",          emoji: "🌱" };
+  if (stars >= 28) return { label: "Гений природы",    emoji: "🧠" };
+  if (stars >= 16) return { label: "Мастер решений",   emoji: "⚡" };
+  if (stars >= 7)  return { label: "Юный детектив",    emoji: "🔍" };
+  return               { label: "Любознайка",          emoji: "🌱" };
 }
 
 /* ═══ Main App ═══ */
@@ -352,7 +352,7 @@ export default function App() {
                 {debriefBingo ? "Разгадано без подсказок!" : "Именно так!"}
               </div>
               <div className="w-full bg-gray-50 rounded-[16px] p-4 text-[15px] text-gray-700 leading-relaxed">
-                <p className="font-semibold text-gray-500 text-[12px] mb-2">БОНУСНЫЙ ФАКТ</p>
+                <p className="font-semibold text-gray-500 text-[12px] mb-2">ЕЩЁ ИНТЕРЕСНОЕ</p>
                 {task.puzzle.bonusFact}
               </div>
               {sessionStars > 0 && (
@@ -363,7 +363,7 @@ export default function App() {
               <button onClick={goTwist}
                 className="w-full bg-gray-900 text-white text-[16px] font-bold py-4 rounded-[18px] active:scale-95 transition-transform"
               >
-                А инженеры решили то же самое →
+                Как это решили инженеры? →
               </button>
             </div>
           </div>
@@ -417,7 +417,7 @@ export default function App() {
                   className="w-full py-4 rounded-[18px] font-bold text-[16px] active:scale-95 transition-transform text-white"
                   style={{ backgroundColor: task.trick.color }}
                 >
-                  Получить приём {task.trick.animal} →
+                  Открыть принцип {task.trick.animal} ✨
                 </button>
               )}
             </div>
@@ -431,7 +431,7 @@ export default function App() {
             <div className="flex flex-col flex-1 justify-center items-center gap-5">
               <div className="text-6xl">{task.trick.animal}</div>
               <div className="text-center">
-                <div className="text-[13px] text-gray-400 uppercase tracking-wide mb-1">Приём природы</div>
+                <div className="text-[13px] text-gray-400 uppercase tracking-wide mb-1">🔓 Открыт приём</div>
                 <div className="text-[24px] font-bold" style={{ color: task.trick.color }}>
                   {task.trick.name}
                 </div>
@@ -457,7 +457,7 @@ export default function App() {
         {phase === "final" && (
           <div className="flex flex-col flex-1 px-5 pb-8 items-center justify-center gap-6">
             <div className="text-[60px]">🏆</div>
-            <h2 className="text-[22px] font-bold text-center text-gray-900">Все задачи разгаданы!</h2>
+            <h2 className="text-[22px] font-bold text-center text-gray-900">Карта природы открыта! 🗺️</h2>
             <div className="text-center">
               <div className="text-[32px] font-bold text-orange-500">{totalStars} ⭐</div>
               <div className="text-gray-500 text-[15px]">{thinkingType(totalStars).emoji} {thinkingType(totalStars).label} тип мышления</div>
