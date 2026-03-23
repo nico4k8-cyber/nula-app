@@ -127,23 +127,30 @@ function DragonInfo({ isOpen, onClose }) {
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full bg-white rounded-t-[24px] p-6 flex flex-col gap-4 shadow-lg max-h-[80vh] overflow-y-auto">
+        <style>{`
+          @keyframes dragonBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+          }
+          .dragon-bounce { animation: dragonBounce 2.5s ease-in-out infinite; }
+        `}</style>
+
         <div className="text-center mb-2">
-          <div className="text-[64px] mb-3">🐉</div>
-          <h3 className="text-[20px] font-bold text-gray-900">Уголёк</h3>
+          <img src="./img/webp/ugolok.webp" alt="" className="w-48 h-48 mx-auto mb-3 object-contain dragon-bounce" />
         </div>
 
-        <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">
+        <div className="border-t border-gray-100 pt-4 flex flex-col gap-4">
           <p className="text-gray-700 text-[15px] leading-relaxed">
-            Я живу в генизе — месте, куда приносят книги, которые нельзя выбросить. Не потому что жалко бумагу, а потому что в словах остаётся что-то живое.
+            Я живу в <strong>генизе</strong> — месте, куда приносят книги, которые нельзя выбросить. Не потому что жалко бумагу, а потому что в словах остаётся <strong>что-то живое</strong>.
           </p>
           <p className="text-gray-700 text-[15px] leading-relaxed">
-            Я прочитал все эти книги. Спорил с ними. С книгами можно спорить — это нормально, даже правильно.
+            Я прочитал <strong>все эти книги</strong>. Спорил с ними. С книгами можно спорить — это нормально, даже <strong>правильно</strong>.
           </p>
           <p className="text-gray-700 text-[15px] leading-relaxed">
-            Рядом со свитками стоят сломанные дроны, старые платы, прототипы вещей без названия. Для меня нет границы между древней мудростью и современным изобретением.
+            Рядом со свитками стоят <strong>сломанные дроны</strong>, старые платы, <strong>прототипы вещей без названия</strong>. Для меня нет границы между древней мудростью и современным изобретением.
           </p>
           <p className="text-gray-700 text-[15px] leading-relaxed">
-            Я не даю ответы. Я задаю вопросы — не потому что не знаю, а потому что твой ответ интереснее моего.
+            Я не даю ответы. Я <strong>задаю вопросы</strong> — не потому что не знаю, а потому что твой ответ интереснее моего.
           </p>
         </div>
 
@@ -353,10 +360,17 @@ export default function App() {
             <div className="text-center">
               <div className="mb-4 flex flex-col items-center gap-2">
                 <button onClick={() => setDragonInfoOpen(true)}
-                  className="text-[80px] hover:scale-110 transition-transform cursor-pointer animate-bounce"
+                  className="hover:scale-110 transition-transform cursor-pointer"
                   title="Узнай о драконе"
                 >
-                  🐉
+                  <style>{`
+                    @keyframes dragonBounce {
+                      0%, 100% { transform: translateY(0); }
+                      50% { transform: translateY(-10px); }
+                    }
+                    .dragon-main { animation: dragonBounce 2.2s ease-in-out infinite; }
+                  `}</style>
+                  <img src="./img/webp/ugolok.webp" alt="Дракон" className="w-40 h-40 object-contain dragon-main" />
                 </button>
                 <p className="text-[11px] text-gray-400">Нажми на дракона</p>
               </div>
@@ -374,15 +388,15 @@ export default function App() {
                 onClick={() => { setAgeGroup("junior"); setPhase("picker"); }}
                 className="w-full py-4 rounded-[18px] bg-orange-500 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-orange-500"
               >
-                <span className="text-[16px] font-bold">🌟 7–11 лет</span>
-                <span className="text-[12px] text-orange-100">Больше подсказок</span>
+                <span className="text-[16px] font-bold">🌟 9–11 лет</span>
+                <span className="text-[12px] text-orange-100">Помогу разобраться</span>
               </button>
               <button
                 onClick={() => { setAgeGroup("senior"); setPhase("picker"); }}
                 className="w-full py-4 rounded-[18px] bg-gray-900 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-gray-900"
               >
-                <span className="text-[16px] font-bold">🧠 12–16 лет</span>
-                <span className="text-[12px] text-gray-300">Без подсказок</span>
+                <span className="text-[16px] font-bold">🧠 12–14 лет</span>
+                <span className="text-[12px] text-gray-300">Найдёшь сам</span>
               </button>
             </div>
           </div>
