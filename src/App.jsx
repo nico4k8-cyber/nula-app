@@ -444,11 +444,9 @@ export default function App() {
                 <span className="text-[12px] text-gray-300">Найдёшь сам</span>
               </button>
             </div>
+            <DragonsGreeting isVisible={dragonGreeting} onClose={() => setDragonGreeting(false)} />
           </div>
         )}
-
-        {/* DRAGON GREETING */}
-        <DragonsGreeting isVisible={dragonGreeting} onClose={() => setDragonGreeting(false)} />
 
         {/* PICKER */}
         {phase === "picker" && (
