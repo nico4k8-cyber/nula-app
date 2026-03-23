@@ -42,6 +42,19 @@ function thinkingType(stars) {
   return               { label: "Любознайка",          emoji: "🌱" };
 }
 
+/* ═══ methodDescription ═══ */
+function methodDescription(methodName) {
+  const descriptions = {
+    "Наоборот": "Ты узнал, что иногда нужно противоположное решение. Переверни проблему — и ответ станет очевидным.",
+    "Дробление": "Ты открыл, как природа использует части для решения. Маленькие кусочки работают лучше, чем целое.",
+    "Посредник": "Ты увидел, как промежуточный помощник решает конфликт. Добавь посредника — и противоречие исчезнет.",
+    "Фазовый переход": "Ты заметил, как смена состояния (жидкое ↔ твёрдое) решает задачу. Фаза вещества — мощный инструмент.",
+    "Эхо": "Ты услышал отражение и повтор. Когда система сама себе помогает, проблема решается элегантно.",
+    "Слои": "Ты разглядел скрытые слои и оболочки. Природа кладёт решение слой за слоем."
+  };
+  return descriptions[methodName] || "";
+}
+
 /* ═══ Main App ═══ */
 export default function App() {
   const saved = loadState();
@@ -483,6 +496,9 @@ export default function App() {
               <div className="bg-gradient-to-r rounded-[16px] px-5 py-4 text-center text-[16px] italic font-medium text-gray-800" style={{ backgroundImage: `linear-gradient(135deg, ${task.trick.color}20, ${task.trick.color}05)` }}>
                 «{task.trick.motto}»
               </div>
+              <div className="text-center text-[14px] text-gray-700 leading-relaxed max-w-sm">
+                {methodDescription(task.trick.name)}
+              </div>
               <div className="text-center">
                 <div className="text-[14px] text-gray-600 mb-2">Твой прогресс в игре:</div>
                 <div className="text-center text-[15px] font-semibold text-gray-800">
@@ -511,6 +527,7 @@ export default function App() {
               <div className="text-[40px] font-bold text-yellow-500 mb-1">{"⭐".repeat(Math.min(totalStars, 12))}</div>
               <div className="text-[16px] font-semibold text-gray-800">{totalStars} звёзд мышления</div>
               <div className="text-gray-500 text-[14px] mt-1">{thinkingType(totalStars).emoji} {thinkingType(totalStars).label}</div>
+              <div className="text-gray-400 text-[12px] mt-3">⭐ = быстрое и точное решение</div>
             </div>
             <div className="w-full bg-gray-50 rounded-[16px] p-4 flex flex-col gap-2">
               {TASKS.map(t => (
