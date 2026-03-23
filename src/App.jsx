@@ -244,6 +244,11 @@ export default function App() {
                 );
               })}
             </div>
+            {collected.length === 0 && (
+              <p className="text-center text-gray-400 text-[13px] mt-8 leading-relaxed">
+                💡 Нажми на любую задачу, чтобы начать расследование с драконом
+              </p>
+            )}
             {collected.length > 0 && (
               <button onClick={resetProgress}
                 className="mt-4 text-gray-300 text-[13px] text-center w-full hover:text-gray-400"
