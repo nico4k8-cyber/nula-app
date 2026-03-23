@@ -119,6 +119,49 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
   );
 }
 
+/* ═══ DragonsGreeting ═══ */
+function DragonsGreeting({ isVisible, onClose }) {
+  const [displayedText, setDisplayedText] = useState("");
+  const greeting = "Привет! Я помогу тебе разгадать загадки природы. Выбери возраст и начинай!";
+
+  useEffect(() => {
+    if (!isVisible) {
+      setDisplayedText("");
+      return;
+    }
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index < greeting.length) {
+        setDisplayedText(greeting.substring(0, index + 1));
+        index++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 40);
+    return () => clearInterval(timer);
+  }, [isVisible]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-end pointer-events-none">
+      <div className="absolute bottom-80 left-1/2 -translate-x-1/2 max-w-xs pointer-events-auto">
+        <div className="bg-white rounded-3xl rounded-bl-none px-4 py-3 shadow-lg border-2 border-amber-200 relative">
+          <div className="absolute -bottom-3 left-8 w-4 h-4 bg-white border-b-2 border-r-2 border-amber-200 transform rotate-45"></div>
+          <p className="text-gray-800 text-sm leading-relaxed min-h-8">
+            {displayedText}<span className={displayedText.length < greeting.length ? "animate-pulse" : ""}>▌</span>
+          </p>
+          {displayedText.length === greeting.length && (
+            <button onClick={onClose} className="mt-2 text-xs text-amber-600 font-semibold hover:text-amber-700">
+              Закрыть →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ═══ DragonInfo ═══ */
 function DragonInfo({ isOpen, onClose }) {
   if (!isOpen) return null;
@@ -183,6 +226,7 @@ export default function App() {
 
   // dragon info
   const [dragonInfoOpen, setDragonInfoOpen] = useState(false);
+  const [dragonGreeting, setDragonGreeting] = useState(saved.dragonGreetingShown ? false : true);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
@@ -358,13 +402,20 @@ export default function App() {
                   }
                   .dragon-main { animation: dragonBounce 2.2s ease-in-out infinite; }
                 `}</style>
-                <button onClick={() => setDragonInfoOpen(true)}
+                <button onClick={() => {
+                  if (dragonGreeting) {
+                    setDragonGreeting(true);
+                    setTimeout(() => { setDragonGreeting(false); saveState({ ageGroup, collected, totalStars, dragonGreetingShown: true }); }, 100);
+                  } else {
+                    setDragonInfoOpen(true);
+                  }
+                }}
                   className="dragon-main transition-transform cursor-pointer"
                   title="Узнай о драконе"
                 >
                   <img src="./img/webp/ugolok.webp" alt="Дракон" className="w-48 h-48 object-contain drop-shadow-lg" />
                 </button>
-                <p className="text-[11px] text-gray-400">Нажми на дракона</p>
+                {dragonGreeting && <p className="text-[11px] text-gray-400">Нажми на дракона</p>}
               </div>
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 Разгадай загадки природы
@@ -393,6 +444,9 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* DRAGON GREETING */}
+        <DragonsGreeting isVisible={dragonGreeting} onClose={() => setDragonGreeting(false)} />
 
         {/* PICKER */}
         {phase === "picker" && (
