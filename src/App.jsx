@@ -400,6 +400,9 @@ export default function App() {
                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-200 text-green-700">
                             Освоен
                           </span>
+                          <span className="text-[10px] text-gray-500 px-1.5 py-0.5">
+                            {questionLength < 8 ? "Легко" : questionLength < 12 ? "Средне" : "Сложно"}
+                          </span>
                         </div>
                       )}
                     </div>
