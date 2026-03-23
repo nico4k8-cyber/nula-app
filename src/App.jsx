@@ -23,10 +23,10 @@ function TopProgress({ collected, current }) {
         const active = current === i;
         return (
           <div key={t.id}
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all
-              ${done ? "bg-green-500 text-white" : active ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-400"}`}
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold transition-all
+              ${done ? "bg-green-500 text-white" : active ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-400"}`}
           >
-            {done ? "✓" : active ? "?" : t.puzzle.emoji}
+            {done ? "✓" : active ? t.puzzle.emoji : i + 1}
           </div>
         );
       })}
@@ -185,26 +185,29 @@ export default function App() {
 
         {/* AGE SELECT */}
         {phase === "age-select" && (
-          <div className="flex flex-col items-center justify-center flex-1 px-6 py-10 gap-6">
-            <div className="text-5xl">🔍</div>
-            <h1 className="text-[24px] font-bold text-gray-900 leading-snug text-center px-2">
-              Природа решала это<br/>миллионы лет. И оставила подсказки.
-            </h1>
-            <p className="text-gray-500 text-center text-[15px]">
-              Ты — детектив. Следак поможет разгадать загадки природы.
-            </p>
-            <div className="flex flex-col gap-3 w-full">
-              {[
-                { id: "senior", label: "13–16 лет",  emoji: "🧠" },
-                { id: "junior", label: "10–12 лет",  emoji: "🌟" },
-              ].map(ag => (
-                <button key={ag.id}
-                  onClick={() => { setAgeGroup(ag.id); setPhase("picker"); }}
-                  className="w-full py-4 rounded-[18px] border-2 border-gray-200 text-[18px] font-semibold text-gray-800 flex items-center justify-center gap-3 active:scale-95 transition-transform hover:border-orange-400 hover:bg-orange-50"
-                >
-                  <span>{ag.emoji}</span>{ag.label}
-                </button>
-              ))}
+          <div className="flex flex-col items-center justify-center flex-1 px-6 gap-8">
+            <div>
+              <div className="text-[72px] text-center mb-4">🐉</div>
+              <h1 className="text-[26px] font-bold text-gray-900 leading-snug text-center">
+                Природа решала это<br/>миллионы лет.
+              </h1>
+              <p className="text-gray-400 text-center text-[16px] mt-2">
+                Разгадай — и узнай её секрет.
+              </p>
+            </div>
+            <div className="flex flex-col gap-4 w-full">
+              <button
+                onClick={() => { setAgeGroup("senior"); setPhase("picker"); }}
+                className="w-full py-5 rounded-[20px] bg-gray-900 text-white text-[18px] font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform"
+              >
+                <span>🧠</span> 13–16 лет
+              </button>
+              <button
+                onClick={() => { setAgeGroup("junior"); setPhase("picker"); }}
+                className="w-full py-5 rounded-[20px] bg-orange-500 text-white text-[18px] font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform"
+              >
+                <span>🌟</span> 10–12 лет
+              </button>
             </div>
           </div>
         )}
@@ -259,9 +262,6 @@ export default function App() {
               <h2 className="text-[20px] font-bold text-gray-900 text-center leading-snug px-2">
                 {task.puzzle.question}
               </h2>
-              <p className="text-[14px] text-gray-400 text-center px-4">
-                {ageGroup === "senior" ? task.puzzle.hookSenior : task.puzzle.hookJunior}
-              </p>
               <button onClick={startDialog}
                 className="bg-orange-500 text-white text-[19px] font-bold px-10 py-4 rounded-[20px] shadow-lg active:scale-95 transition-transform"
               >
@@ -298,8 +298,8 @@ export default function App() {
                 if (m.type === "bot") return (
                   <div key={i} className="flex gap-2 items-start">
                     <div className="flex flex-col items-center flex-shrink-0">
-                      <span className="text-xl">🔍</span>
-                      <span className="text-[10px] text-gray-400">Следак</span>
+                      <span className="text-xl">🐉</span>
+                      <span className="text-[10px] text-gray-400">Дракон</span>
                     </div>
                     <div className="bg-gray-100 rounded-[16px] rounded-tl-[4px] px-4 py-3 text-[15px] text-gray-800 max-w-[80%]">
                       {m.text}
