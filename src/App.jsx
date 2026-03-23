@@ -103,7 +103,11 @@ export default function App() {
     setTwistChoice(null);
     setSessionStars(0);
     const hook = ageGroup === "senior" ? t.puzzle.hookSenior : t.puzzle.hookJunior;
-    setMessages([{ type: "bot", text: hook }]);
+    // Greeting + puzzle question
+    setMessages([
+      { type: "bot", text: "Привет! 🐉 Вот для тебя загадка:" },
+      { type: "bot", text: hook }
+    ]);
     setPhase("dialog");
     setTimeout(() => inputRef.current?.focus(), 100);
   }
@@ -439,6 +443,10 @@ export default function App() {
                   {"⭐".repeat(Math.min(sessionStars, 9))} +{sessionStars} к мышлению
                 </div>
               )}
+              <div className="text-center text-gray-500 text-[14px] mt-2">
+                <p>Вы открыли <span className="font-semibold text-gray-700">{collected.length + 1} из {TASKS.length}</span> методов ТРИЗ</p>
+                <p className="text-[12px] mt-1">{TASKS.length - collected.length - 1} задач осталось</p>
+              </div>
               <button onClick={goTwist}
                 className="w-full bg-gray-900 text-white text-[16px] font-bold py-4 rounded-[18px] active:scale-95 transition-transform"
               >
