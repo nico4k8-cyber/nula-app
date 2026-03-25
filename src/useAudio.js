@@ -70,28 +70,10 @@ export function useAudio(tracks = []) {
       }
     };
 
-    const handleFocus = () => {
-      // Window regained focus - resume if enabled
-      if (isEnabled && audioRef.current && audioRef.current.paused && audioRef.current.src) {
-        audioRef.current.play().catch(() => {});
-      }
-    };
-
-    const handleBlur = () => {
-      // Window lost focus - pause music
-      if (audioRef.current && !audioRef.current.paused) {
-        audioRef.current.pause();
-      }
-    };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
     };
   }, [isEnabled]);
 

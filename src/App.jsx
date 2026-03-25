@@ -292,14 +292,15 @@ export default function App() {
     { name: "Adventurous & Inviting 2", path: "/audio/adventurous-&-inviting 2.mp3" },
   ];
 
-  const audio = useAudio(audioTracks);
-
   const [ageGroup,    setAgeGroup]    = useState(saved.ageGroup || "senior");
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(saved.hasSeenOnboarding || false);
   const [hasSeenDragonSplash, setHasSeenDragonSplash] = useState(saved.hasSeenDragonSplash || false);
   const [phase,       setPhase]       = useState(
     !hasSeenDragonSplash ? "dragon-splash" : !hasSeenOnboarding ? "dragon-bubble" : saved.ageGroup ? "picker" : "age-select"
   );
+
+  // Only initialize audio after onboarding is complete (to avoid overlap with dragon-splash music)
+  const audio = useAudio(hasSeenOnboarding ? audioTracks : []);
   const [taskIdx,     setTaskIdx]     = useState(0);
   const [collected,   setCollected]   = useState(saved.collected || []);
   const [totalStars,  setTotalStars]  = useState(saved.totalStars || 0);
