@@ -1,38 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 
 export default function DragonSplashScreen({ onAnimationEnd }) {
-  const [currentFrame, setCurrentFrame] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
   const audioRef = useRef(null);
   const touchStartX = useRef(0);
   const lastSwipeTime = useRef(0);
 
-  const TOTAL_FRAMES = 240;
-  const FRAME_DURATION = 50; // мс на кадр (240 кадров ≈ 12 сек) - увеличено для загрузки на медленных соединениях
-  const PAUSE_AT_END = 200; // остановиться на этом кадре в конце для паузы
-  const PAUSE_DURATION = 2000; // пауза на 2 секунды
-
-  // Автоматическая анимация с паузой в конце
+  // Simple splash: show first frame for 3 seconds
   useEffect(() => {
-    let interval;
-
-    const startAnimation = () => {
-      interval = setInterval(() => {
-        setCurrentFrame((prev) => {
-          const next = prev + 1;
-          if (next >= PAUSE_AT_END) {
-            clearInterval(interval);
-            // Пауза перед переходом
-            setTimeout(() => onAnimationEnd?.(), PAUSE_DURATION);
-            return PAUSE_AT_END;
-          }
-          return next;
-        });
-      }, FRAME_DURATION);
-    };
-
-    startAnimation();
-    return () => clearInterval(interval);
+    const timer = setTimeout(() => onAnimationEnd?.(), 3000);
+    return () => clearTimeout(timer);
   }, [onAnimationEnd]);
 
   // Музыка - размучить при первом взаимодействии
@@ -95,8 +72,7 @@ export default function DragonSplashScreen({ onAnimationEnd }) {
   };
 
   // Вычисляем номер кадра (от 001 до 240)
-  const frameNum = String(currentFrame + 1).padStart(3, "0");
-  const frameUrl = `/dragon/ezgif-frame-${frameNum}.jpg`;
+  const frameUrl = `/dragon/ezgif-frame-001.jpg`; // Always show first frame
 
   // Трансформация дракона в зависимости от свайпа
   const dragonStyle = {
@@ -121,16 +97,6 @@ export default function DragonSplashScreen({ onAnimationEnd }) {
         />
 
         {/* Индикатор прогресса анимации */}
-        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1">
-          {[...Array(Math.ceil(TOTAL_FRAMES / 20))].map((_, i) => (
-            <div
-              key={i}
-              className={`h-1 rounded-full transition-all ${
-                currentFrame >= i * 20 ? "bg-white w-3" : "bg-white/30 w-2"
-              }`}
-            />
-          ))}
-        </div>
 
       </div>
 
