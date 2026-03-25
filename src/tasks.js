@@ -220,4 +220,46 @@ export const TASKS = [
       realSolution: "Все шлемы мира устроены как череп дятла: твёрдый пластик снаружи + пенопласт внутри. Пенопласт — тысячи ячеек, каждая поглощает крошечную часть удара. Дятел изобрёл это 25 миллионов лет назад.",
     },
   },
+
+  {
+    id: 7,
+    trick: {
+      name: "Периодичность",
+      animal: "🦗",
+      animalName: "Кузнечик",
+      motto: "Ритм и повтор решают самые сложные задачи",
+      color: "#a78bfa",
+      difficulty: 1,
+    },
+    puzzle: null,
+    contradiction: null,
+  },
+
+  {
+    id: 8,
+    trick: {
+      name: "Объединение",
+      animal: "🦓",
+      animalName: "Зебра",
+      motto: "Вместе мы сильнее — группа побеждает хищника",
+      color: "#ec4899",
+      difficulty: 2,
+    },
+    puzzle: null,
+    contradiction: null,
+  },
+
+  {
+    id: 9,
+    trick: {
+      name: "Асимметрия",
+      animal: "🦑",
+      animalName: "Осьминог",
+      motto: "Разные части делают целое совершенным",
+      color: "#6366f1",
+      difficulty: 2,
+    },
+    puzzle: null,
+    contradiction: null,
+  },
 ];
