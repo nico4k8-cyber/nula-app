@@ -7,6 +7,7 @@ export const TASKS = [
       animalName: "Рыба-брызгун",
       motto: "Переверни — и невозможное станет возможным",
       color: "#ff6b35",
+      difficulty: 1,
     },
     puzzle: {
       emoji: "🍅",
@@ -43,6 +44,7 @@ export const TASKS = [
       animalName: "Ящерица",
       motto: "Отдай часть — сохрани целое",
       color: "#2ec4b6",
+      difficulty: 1,
     },
     puzzle: {
       emoji: "🦎",
@@ -79,6 +81,7 @@ export const TASKS = [
       animalName: "Рыба-клоун",
       motto: "Нужен третий — и враги станут союзниками",
       color: "#f4a261",
+      difficulty: 2,
     },
     puzzle: {
       emoji: "🪸",
@@ -115,6 +118,7 @@ export const TASKS = [
       animalName: "Жук-бомбардир",
       motto: "Измени состояние вещества — и обычное станет оружием",
       color: "#8338ec",
+      difficulty: 2,
     },
     puzzle: {
       emoji: "💥",
@@ -151,6 +155,7 @@ export const TASKS = [
       animalName: "Летучая мышь",
       motto: "Отправь сигнал — и мир сам расскажет о себе",
       color: "#0ea5e9",
+      difficulty: 3,
     },
     puzzle: {
       emoji: "🦇",
@@ -187,6 +192,7 @@ export const TASKS = [
       animalName: "Дятел",
       motto: "Раздели удар на части — и каждая часть переживёт его",
       color: "#16a34a",
+      difficulty: 3,
     },
     puzzle: {
       emoji: "🐦",

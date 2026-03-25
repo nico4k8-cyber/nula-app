@@ -1,5 +1,5 @@
 /**
- * Browser-side AI bridge for "Разгадай".
+ * Browser-side AI bridge for "SHARIEL".
  * In dev: calls /api/ai-chat (Vite middleware proxy → Anthropic)
  * In prod: calls /api/ai-chat (Vercel serverless → Anthropic)
  */

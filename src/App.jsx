@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { TASKS } from "./tasks";
 import { askAI } from "./ai";
+import City from "./City";
+import DragonBubbleScreen from "./DragonBubbleScreen";
+import UnlockAnimation from "./UnlockAnimation";
+import TaskGenerator from "./TaskGenerator";
+import DragonSplashScreen from "./DragonSplashScreen";
+import { useAudio } from "./useAudio";
 
 /* ═══ localStorage ═══ */
 const STORAGE_KEY = "razgadai_v1";
@@ -56,7 +62,7 @@ function methodDescription(methodName) {
 }
 
 /* ═══ SettingsMenu ═══ */
-function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress, collected }) {
+function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress, collected, audio, audioTracks }) {
   if (!isOpen) return null;
 
   return (
@@ -68,6 +74,60 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
         </div>
 
         <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">
+          {/* Audio toggle */}
+          <button onClick={() => { audio.toggle(); }}
+            className="w-full text-left px-4 py-3 rounded-[14px] hover:bg-gray-50 flex items-center gap-3 transition-all"
+          >
+            <span className="text-xl">{audio.isEnabled ? "🔊" : "🔇"}</span>
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900 text-[15px]">Музыка</div>
+              <div className="text-gray-500 text-[13px]">
+                {audio.isEnabled ? "Включено" : "Отключено"}
+              </div>
+            </div>
+            <span className="text-gray-400">›</span>
+          </button>
+
+          {/* Track selection */}
+          {audio.isEnabled && (
+            <div className="px-4 py-3 rounded-[14px] bg-gray-50 flex flex-col gap-3">
+              <div className="text-[13px] font-semibold text-gray-700">
+                🎵 {audio.currentTrack?.name || "Загрузка..."}
+              </div>
+              <div className="flex items-center gap-2 justify-between">
+                <button onClick={() => audio.prevTrack()}
+                  className="flex-1 py-2 px-3 rounded-[10px] bg-white border border-gray-200 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 active:scale-95 transition-all"
+                >
+                  ← Пред.
+                </button>
+                <div className="text-[12px] text-gray-500 px-2">
+                  {audio.currentTrackIndex + 1}/{audioTracks.length}
+                </div>
+                <button onClick={() => audio.nextTrack()}
+                  className="flex-1 py-2 px-3 rounded-[10px] bg-white border border-gray-200 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 active:scale-95 transition-all"
+                >
+                  След. →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* City */}
+          <button onClick={() => {
+            // Signal to App that city was clicked
+            window.__openCity = true;
+            onClose();
+          }}
+            className="w-full text-left px-4 py-3 rounded-[14px] hover:bg-gray-50 flex items-center gap-3 transition-all"
+          >
+            <span className="text-xl">🏙️</span>
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900 text-[15px]">Мой город</div>
+              <div className="text-gray-500 text-[13px]">Посмотри свой прогресс</div>
+            </div>
+            <span className="text-gray-400">›</span>
+          </button>
+
           {/* Age selection */}
           <button onClick={() => { onChangeAge(); onClose(); }}
             className="w-full text-left px-4 py-3 rounded-[14px] hover:bg-gray-50 flex items-center gap-3 transition-all"
@@ -76,7 +136,7 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
             <div className="flex-1">
               <div className="font-semibold text-gray-900 text-[15px]">Выбрать возраст</div>
               <div className="text-gray-500 text-[13px]">
-                {ageGroup === "junior" ? "10–12 лет" : "13–16 лет"}
+                {ageGroup === "junior" ? "8–11 лет" : "12–15+ лет"}
               </div>
             </div>
             <span className="text-gray-400">›</span>
@@ -122,7 +182,7 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
 /* ═══ DragonsGreeting ═══ */
 function DragonsGreeting({ isVisible, onClose }) {
   const [displayedText, setDisplayedText] = useState("");
-  const greeting = "Я живу в генизе с древними книгами и прототипами. Я не даю ответы — задаю вопросы. Выбери свой возраст и начнём разгадывать загадки природы!";
+  const greeting = "Привет! Я помогу тебе увидеть скрытые закономерности в природе. Когда ты их найдёшь, сможешь разгадать любую задачу — вот как это работает в науке и технике. Выбери возраст и поехали!";
 
   useEffect(() => {
     if (!isVisible) {
@@ -144,8 +204,8 @@ function DragonsGreeting({ isVisible, onClose }) {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col items-center justify-start pointer-events-none">
-      <div className="mt-80 w-72 pointer-events-auto">
+    <div className="fixed inset-0 z-40 flex flex-col items-center justify-end pointer-events-none pb-64">
+      <div className="w-72 pointer-events-auto">
         <div className="bg-amber-50 rounded-2xl px-4 py-3 shadow-lg border-2 border-amber-200 relative min-h-32 flex flex-col">
           <div className="absolute -top-2 left-1/2 w-3 h-3 bg-amber-50 border-t-2 border-l-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(45deg)' }}></div>
           <p className="text-gray-800 text-sm leading-relaxed flex-1">
@@ -221,11 +281,29 @@ function DragonInfo({ isOpen, onClose }) {
 export default function App() {
   const saved = loadState();
 
+  // Audio tracks
+  const audioTracks = [
+    { name: "Epic & Inspiring", path: "/audio/epic-&-inspiring.mp3" },
+    { name: "Magical & Calm", path: "/audio/magical-&-calm.mp3" },
+    { name: "Adventurous & Inviting", path: "/audio/adventurous-&-inviting.mp3" },
+    { name: "Epic & Inspiring 2", path: "/audio/epic-&-inspiring 2.mp3" },
+    { name: "Magical & Calm 2", path: "/audio/magical-&-calm 2.mp3" },
+    { name: "Adventurous & Inviting 2", path: "/audio/adventurous-&-inviting 2.mp3" },
+  ];
+
+  const audio = useAudio(audioTracks);
+
   const [ageGroup,    setAgeGroup]    = useState(saved.ageGroup || "senior");
-  const [phase,       setPhase]       = useState(saved.ageGroup ? "picker" : "age-select");
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(saved.hasSeenOnboarding || false);
+  const [hasSeenDragonSplash, setHasSeenDragonSplash] = useState(saved.hasSeenDragonSplash || false);
+  const [phase,       setPhase]       = useState(
+    !hasSeenDragonSplash ? "dragon-splash" : !hasSeenOnboarding ? "dragon-bubble" : saved.ageGroup ? "picker" : "age-select"
+  );
   const [taskIdx,     setTaskIdx]     = useState(0);
   const [collected,   setCollected]   = useState(saved.collected || []);
   const [totalStars,  setTotalStars]  = useState(saved.totalStars || 0);
+  const [userTasks,   setUserTasks]   = useState(saved.userTasks || []);
+  const [solveCount,  setSolveCount]  = useState(saved.solveCount || {});
 
   // dialog
   const [messages,    setMessages]    = useState([]);
@@ -235,6 +313,7 @@ export default function App() {
   const [debriefBingo,setDebriefBingo]= useState(false);
   const [bingoFlash,  setBingoFlash]  = useState(false);
   const [sessionStars,setSessionStars]= useState(0);
+  const [unlockedBuildingId, setUnlockedBuildingId] = useState(null);
 
   // twist
   const [twistChoice, setTwistChoice] = useState(null);
@@ -244,6 +323,10 @@ export default function App() {
 
   // dragon greeting bubble on age-select
   const [dragonGreetingOpen, setDragonGreetingOpen] = useState(false);
+
+  // confirmation dialog for leaving task mid-way
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
@@ -255,8 +338,16 @@ export default function App() {
   }, [messages, isTyping, phase]);
 
   useEffect(() => {
-    saveState({ ageGroup, collected, totalStars });
-  }, [ageGroup, collected, totalStars]);
+    saveState({ ageGroup, collected, totalStars, hasSeenOnboarding, userTasks, solveCount, hasSeenDragonSplash });
+  }, [ageGroup, collected, totalStars, hasSeenOnboarding, userTasks, solveCount, hasSeenDragonSplash]);
+
+  useEffect(() => {
+    if (window.__openCity) {
+      window.__openCity = false;
+      setPhase("city");
+      setMenuOpen(false);
+    }
+  }, [menuOpen]);
 
   /* ─── helpers ─── */
   const inDialogPhases = ["dialog","debrief","twist","outcome"].includes(phase);
@@ -274,19 +365,19 @@ export default function App() {
     // Age-personalized greeting + puzzle question
     const greetings = ageGroup === "senior"
       ? [
-          "🐉 А вот и появилась интересная загадка!",
-          "🐉 Хм, у меня есть для тебя кое-что интересное...",
-          "🐉 Слушай внимательно! Вот мне нужен твой мозг для этого..."
+          "🐉 Вот интересная загадка!",
+          "🐉 Природа спрятала закономерность здесь...",
+          "🐉 Посмотри внимательно! Что происходит?"
         ]
       : [
-          "🐉 О! Готов разгадать мою загадку? 🔥",
-          "🐉 Вот это задачка! Сможешь её решить? 💪",
-          "🐉 Внимание! Вот загадка, которая заставит тебя подумать! 🧠"
+          "🐉 Вот интересная загадка!",
+          "🐉 Природа решила эту задачу очень хитро!",
+          "🐉 Посмотри! Что здесь необычного?"
         ];
     const greeting = greetings[Math.floor(Math.random() * greetings.length)];
     setMessages([
       { type: "bot", text: greeting },
-      { type: "bot", text: "🔍 Вот что произойдёт:" },
+      { type: "bot", text: "🔍 Прочитай загадку:" },
       { type: "bot", text: hook }
     ]);
     setPhase("dialog");
@@ -303,10 +394,25 @@ export default function App() {
 
   function goOutcome() {
     const newTotal = totalStars + sessionStars;
-    const newCollected = collected.includes(task.id) ? collected : [...collected, task.id];
+    const isNewUnlock = !collected.includes(task.id);
+    const newCollected = isNewUnlock ? [...collected, task.id] : collected;
+    const newSolveCount = { ...solveCount, [task.id]: (solveCount[task.id] || 0) + 1 };
     setTotalStars(newTotal);
     setCollected(newCollected);
-    setPhase("outcome");
+    setSolveCount(newSolveCount);
+
+    if (isNewUnlock) {
+      // Trigger unlock animation
+      setUnlockedBuildingId(task.id);
+      // After animation (2.5s), go to outcome
+      setTimeout(() => {
+        setUnlockedBuildingId(null);
+        setPhase("outcome");
+      }, 2500);
+    } else {
+      // If already collected, skip animation
+      setPhase("outcome");
+    }
   }
 
   function nextPuzzle() {
@@ -321,19 +427,21 @@ export default function App() {
   function resetProgress() {
     setCollected([]);
     setTotalStars(0);
+    setSolveCount({});
     setDebriefBingo(false);
     setMessages([]);
     setPhase("picker");
-    saveState({ ageGroup, collected: [], totalStars: 0 });
+    saveState({ ageGroup, collected: [], totalStars: 0, solveCount: {} });
   }
 
   function changeAgeGroup() {
     setCollected([]);
     setTotalStars(0);
+    setSolveCount({});
     setDebriefBingo(false);
     setMessages([]);
     setPhase("age-select");
-    saveState({ collected: [], totalStars: 0 });
+    saveState({ collected: [], totalStars: 0, solveCount: {} });
   }
 
   async function handleUserMessage() {
@@ -341,7 +449,8 @@ export default function App() {
     if (!text || isTyping) return;
 
     setInput("");
-    const newMessages = [...messages, { type: "child", text }];
+    const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    const newMessages = [...messages, { type: "child", text, timestamp }];
     setMessages(newMessages);
     setIsTyping(true);
 
@@ -368,22 +477,24 @@ export default function App() {
       let messageText = result.text;
       const stageMessages = {
         1: "🔍 Вижу противоречие!",
-        2: "💡 Нашёл идею!",
+        2: "💡 Переходим к идеям!",
         3: "✓ Решение найдено!",
         4: "🎉 Путь открыт!"
       };
 
       setMessages(prev => {
-        let updates = [...prev, { type: "bot", text: messageText, stars: result.stars }];
+        const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+        let updates = [...prev, { type: "bot", text: messageText, stars: result.stars, timestamp }];
         if (prizAdvanced && stageMessages[newPrizStep]) {
-          updates.push({ type: "bot", text: stageMessages[newPrizStep], isStageMsg: true });
+          updates.push({ type: "bot", text: stageMessages[newPrizStep], isStageMsg: true, timestamp });
         }
         return updates;
       });
 
       if (isSolved) {
         setTimeout(() => {
-          setMessages(prev => [...prev, { type: "bot", text: `✨ Ты открыл метод: ${task.trick.name}`, isDiscovery: true }]);
+          const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+          setMessages(prev => [...prev, { type: "bot", text: `✨ Ты открыл метод: ${task.trick.name}`, isDiscovery: true, timestamp }]);
           setTimeout(goDebrief, 1200);
         }, 800);
       }
@@ -404,8 +515,35 @@ export default function App() {
 
   /* ─── render ─── */
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-      <div className="w-full max-w-md min-h-screen flex flex-col bg-white shadow-sm">
+    <div className={`min-h-screen flex flex-col items-center ${
+      phase === "age-select" ? "bg-gradient-to-b from-blue-500 to-white" :
+      phase === "picker" ? "bg-gradient-to-b from-indigo-50 to-white" :
+      "bg-gray-50"
+    }`}>
+      {/* Unlock Animation Overlay */}
+      {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} />}
+
+      <div className={`w-full max-w-md min-h-screen flex flex-col ${phase === "age-select" ? "" : "bg-white shadow-sm"}`}>
+
+        {/* DRAGON SPLASH SCREEN */}
+        {phase === "dragon-splash" && (
+          <DragonSplashScreen
+            onAnimationEnd={() => {
+              setHasSeenDragonSplash(true);
+              setPhase("dragon-bubble");
+            }}
+          />
+        )}
+
+        {/* DRAGON BUBBLE */}
+        {phase === "dragon-bubble" && (
+          <DragonBubbleScreen
+            onStart={() => {
+              setHasSeenOnboarding(true);
+              setPhase("age-select");
+            }}
+          />
+        )}
 
         {/* AGE SELECT */}
         {phase === "age-select" && (
@@ -429,31 +567,35 @@ export default function App() {
                     <img src="./img/webp/ugolok.webp" alt="Дракон" className="relative w-full h-full rounded-full object-cover shadow-2xl border-4 border-amber-500/50" style={{ boxShadow: '0 25px 50px -12px rgba(146, 64, 14, 0.4)' }} />
                   </div>
                 </button>
-                {!dragonGreetingOpen && <p className="text-[11px] text-gray-400">Нажми на дракона</p>}
+                {!dragonGreetingOpen && <p className="text-[11px] text-gray-400">Узнай больше о драконе</p>}
               </div>
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
-                Разгадай загадки природы
+                SHARIEL
               </h1>
-              <div className="text-gray-500 text-[14px] mt-4 max-w-xs leading-relaxed">
-                <p className="font-semibold text-gray-700">Природа придумала это давно</p>
-                <p className="text-[13px] mt-2">Инженеры и изобретатели берут идеи из природы. Сможешь ли ты найти решение, которое природа хранила миллионы лет?</p>
-                <p className="text-[12px] mt-2 text-gray-400">2–3 минуты на одну загадку.</p>
-              </div>
+              <p className="text-gray-600 text-[14px] mt-2">🧩 Решай загадки, открывай методы</p>
             </div>
+            <style>{`
+              @keyframes buttonPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+              }
+              .start-button {
+                animation: buttonPulse 2s ease-in-out infinite;
+              }
+              .start-button:hover {
+                animation: none;
+                transform: scale(1.08);
+              }
+              .start-button:active {
+                transform: scale(0.95);
+              }
+            `}</style>
             <div className="flex flex-col gap-3 w-full">
               <button
-                onClick={() => { setAgeGroup("junior"); setPhase("picker"); }}
-                className="w-full py-4 rounded-[18px] bg-orange-500 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-orange-500"
-              >
-                <span className="text-[16px] font-bold">🌟 9–11 лет</span>
-                <span className="text-[12px] text-orange-100">Помогу разобраться</span>
-              </button>
-              <button
                 onClick={() => { setAgeGroup("senior"); setPhase("picker"); }}
-                className="w-full py-4 rounded-[18px] bg-gray-900 text-white flex flex-col items-center gap-1 active:scale-95 transition-transform border-2 border-gray-900"
+                className="start-button w-full py-4 px-6 rounded-[14px] bg-orange-500 hover:bg-orange-600 text-white font-bold text-[20px] shadow-lg hover:shadow-xl active:scale-95 transition-all"
               >
-                <span className="text-[16px] font-bold">🧠 12–14 лет</span>
-                <span className="text-[12px] text-gray-300">Найдёшь сам</span>
+                НАЧАТЬ
               </button>
             </div>
           </div>
@@ -462,89 +604,200 @@ export default function App() {
         {/* PICKER */}
         {phase === "picker" && (
           <div className="flex flex-col flex-1 px-4 pb-6">
-            <div className="flex items-center justify-between pt-3 pb-2">
-              <div className="w-8" />
-              <TopProgress collected={collected} current={-1} />
-              <button onClick={() => setMenuOpen(true)}
-                className="w-8 h-8 flex items-center justify-center text-[24px] hover:bg-gray-100 rounded-[8px] transition-all"
-                title="Меню"
-              >
-                ☰
-              </button>
+            {/* Top bar with title and controls */}
+            <div className="flex items-center justify-between pt-3 pb-4 border-b border-gray-100">
+              <h2 className="text-[18px] font-bold text-gray-900 flex items-center gap-2">
+                <span>🐉</span> SHARIEL
+              </h2>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setPhase("city")}
+                  className="text-sm font-semibold px-3 py-2 rounded-[8px] hover:bg-orange-100 transition-all flex items-center gap-2 bg-orange-50"
+                  title="Открывай новые методы, решая задачи"
+                >
+                  <span className="text-lg">🏙️</span> <span className="text-[13px] font-bold text-orange-600">Город</span> <span className="text-[12px] text-orange-500">{collected.length}/6</span>
+                </button>
+                <button onClick={() => setMenuOpen(true)}
+                  className="w-8 h-8 flex items-center justify-center text-[24px] hover:bg-gray-100 rounded-[8px] transition-all"
+                  title="Меню"
+                >
+                  ☰
+                </button>
+              </div>
             </div>
-            <h2 className="text-[20px] font-bold text-gray-900 mb-2 mt-1 text-center">
-              🐉 Разгадай загадки природы
-            </h2>
-            <p className="text-gray-500 text-[13px] text-center mb-3">
-              Дракон ждёт • {collected.length} из {TASKS.length} разгадано
+            <div className="flex items-center justify-center gap-1 mb-3 pt-3">
+              <p className="text-gray-600 text-[12px] text-center font-semibold">
+                💡 Решай задачи и открывай методы
+              </p>
+            </div>
+            <p className="text-gray-600 text-[13px] text-center mb-3 font-medium">
+              {collected.length === 0
+                ? "👉 Выбери загадку и раскрой секреты природы"
+                : `⭐ ${collected.length} из ${TASKS.length} методов открыто`
+              }
             </p>
             {/* Progress bar */}
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-4 flex items-center gap-3">
               <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-orange-500 transition-all duration-300"
                   style={{ width: `${(collected.length / TASKS.length) * 100}%` }}
                 />
               </div>
-              <span className="text-[12px] font-semibold text-gray-600">{Math.round((collected.length / TASKS.length) * 100)}%</span>
+              <span className="text-[12px] font-bold text-orange-600 whitespace-nowrap">{collected.length}/{TASKS.length}</span>
             </div>
-            {/* Motivational message at 50% */}
-            {collected.length === 3 && (
-              <div className="mb-4 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-[12px] text-center text-[13px] text-yellow-700 font-medium">
-                🌟 Половина пути! Ты уже видишь, как думают инженеры
-              </div>
-            )}
-            <div className="flex flex-col gap-3">
-              {TASKS.map((t, i) => {
-                const done = collected.includes(t.id);
-                const questionLength = t.puzzle.question.split(" ").length;
-                const difficultyLevel = questionLength < 8 ? 1 : questionLength < 12 ? 2 : 3;
-                const difficultyColor = difficultyLevel === 1 ? "text-green-500" : difficultyLevel === 2 ? "text-amber-500" : "text-red-500";
-                return (
-                  <button key={t.id}
-                    onClick={() => startTask(i)}
-                    className={`w-full rounded-[18px] p-4 flex items-start gap-3 text-left border-2 active:scale-95 transition-all
-                      ${done ? "border-green-200 bg-green-50 shadow-sm" : "border-gray-100 bg-white hover:border-orange-400 hover:shadow-md hover:scale-105"}`}
-                  >
-                    <span className="text-4xl flex-shrink-0">{t.puzzle.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-800 text-[14px] leading-snug line-clamp-2 flex gap-1 items-start">
-                        <span className="flex-1">{t.puzzle.question}</span>
-                        {done && <span className="text-green-500 text-xs flex-shrink-0 mt-1">✓</span>}
-                      </div>
-                      {!done && (
-                        <div className={`text-[13px] font-semibold mt-2 ${difficultyColor}`}>
-                          {"⭐".repeat(difficultyLevel)}
-                        </div>
-                      )}
-                      {done && (
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <span className="inline-block text-[11px] font-semibold px-2 py-1 rounded-full"
-                            style={{ backgroundColor: t.trick.color + "20", color: t.trick.color }}>
-                            {t.trick.name}
-                          </span>
-                          <span className="text-[12px]" style={{ color: t.trick.color }}>
-                            {t.trick.animal}
-                          </span>
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-200 text-green-700">
-                            Освоен
-                          </span>
-                          <span className={`text-[12px] font-semibold ${difficultyColor}`}>
-                            {"⭐".repeat(difficultyLevel)}
-                          </span>
-                        </div>
-                      )}
+            {/* 3-уровневая структура */}
+            <div className="flex-1 overflow-y-auto space-y-5 pb-4">
+              {/* УРОВЕНЬ 1: Простые (⭐) */}
+              <div className="bg-gradient-to-r from-green-50 to-green-50 rounded-[16px] p-4 border-2 border-green-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">⭐</span>
+                    <div>
+                      <div className="font-bold text-gray-900 text-[14px]">Простые задачи</div>
+                      <div className="text-[11px] text-gray-600">Начни здесь</div>
                     </div>
-                  </button>
-                );
-              })}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[12px] font-semibold text-green-700">Доступно! ✓</div>
+                    <div className="text-[11px] text-gray-600">у тебя {totalStars} XP</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {[0, 1].map((i) => {
+                    const t = TASKS[i];
+                    const done = collected.includes(t.id);
+                    return (
+                      <button key={t.id}
+                        onClick={() => startTask(i)}
+                        className={`w-full rounded-[14px] p-3 flex items-start gap-2 text-left transition-all active:scale-95
+                          ${done ? "bg-green-200 border-2 border-green-400" : "bg-white border-2 border-gray-100 hover:border-green-400"}`}
+                      >
+                        <span className="text-3xl flex-shrink-0">{t.puzzle.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold text-gray-800 line-clamp-2">{t.puzzle.question}</div>
+                          {done && <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-green-300 text-green-700">✓ Решено</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* УРОВЕНЬ 2: Средние (⭐⭐) */}
+              <div className={`rounded-[16px] p-4 border-2 transition-all ${
+                totalStars >= 20
+                  ? "bg-gradient-to-r from-amber-50 to-amber-50 border-amber-200"
+                  : "bg-gray-50 border-gray-200 opacity-60"
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">⭐⭐</span>
+                    <div>
+                      <div className="font-bold text-gray-900 text-[14px]">Средние задачи</div>
+                      <div className="text-[11px] text-gray-600">
+                        {totalStars >= 20 ? "Открыто!" : `Нужно ${20 - totalStars} XP`}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[12px] font-semibold text-amber-700">
+                      {totalStars >= 20 ? "Откроется ✓" : "Откроется при 20 XP"}
+                    </div>
+                    <div className="text-[11px] text-gray-600">
+                      {totalStars >= 20 ? `у тебя ${totalStars} XP` : `нужно ещё ${20 - totalStars}`}
+                    </div>
+                  </div>
+                </div>
+                {totalStars >= 20 ? (
+                  <div className="space-y-2">
+                    {[2, 3].map((i) => {
+                      const t = TASKS[i];
+                      const done = collected.includes(t.id);
+                      return (
+                        <button key={t.id}
+                          onClick={() => startTask(i)}
+                          className={`w-full rounded-[14px] p-3 flex items-start gap-2 text-left transition-all active:scale-95
+                            ${done ? "bg-amber-200 border-2 border-amber-400" : "bg-white border-2 border-gray-100 hover:border-amber-400"}`}
+                        >
+                          <span className="text-3xl flex-shrink-0">{t.puzzle.emoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold text-gray-800 line-clamp-2">{t.puzzle.question}</div>
+                            {done && <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-300 text-amber-700">✓ Решено</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-3 text-gray-500 text-[12px]">
+                    🔒 Решай простые задачи, чтобы открыть этот уровень
+                  </div>
+                )}
+              </div>
+
+              {/* УРОВЕНЬ 3: Сложные (⭐⭐⭐) */}
+              <div className={`rounded-[16px] p-4 border-2 transition-all ${
+                totalStars >= 50
+                  ? "bg-gradient-to-r from-red-50 to-red-50 border-red-200"
+                  : "bg-gray-50 border-gray-200 opacity-60"
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">⭐⭐⭐</span>
+                    <div>
+                      <div className="font-bold text-gray-900 text-[14px]">Сложные задачи</div>
+                      <div className="text-[11px] text-gray-600">
+                        {totalStars >= 50 ? "Открыто!" : `Нужно ${50 - totalStars} XP`}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[12px] font-semibold text-red-700">
+                      {totalStars >= 50 ? "Откроется ✓" : "Откроется при 50 XP"}
+                    </div>
+                    <div className="text-[11px] text-gray-600">
+                      {totalStars >= 50 ? `у тебя ${totalStars} XP` : `нужно ещё ${50 - totalStars}`}
+                    </div>
+                  </div>
+                </div>
+                {totalStars >= 50 ? (
+                  <div className="space-y-2">
+                    {[4, 5].map((i) => {
+                      const t = TASKS[i];
+                      const done = collected.includes(t.id);
+                      return (
+                        <button key={t.id}
+                          onClick={() => startTask(i)}
+                          className={`w-full rounded-[14px] p-3 flex items-start gap-2 text-left transition-all active:scale-95
+                            ${done ? "bg-red-200 border-2 border-red-400" : "bg-white border-2 border-gray-100 hover:border-red-400"}`}
+                        >
+                          <span className="text-3xl flex-shrink-0">{t.puzzle.emoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold text-gray-800 line-clamp-2">{t.puzzle.question}</div>
+                            {done && <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-red-300 text-red-700">✓ Решено</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-3 text-gray-500 text-[12px]">
+                    🔒 Стань мастером средних задач, чтобы открыть этот уровень
+                  </div>
+                )}
+              </div>
             </div>
-            {collected.length === 0 && (
-              <p className="text-center text-gray-400 text-[13px] mt-8 leading-relaxed">
-                💡 Нажми на любую задачу, чтобы начать расследование с драконом
-              </p>
-            )}
           </div>
+        )}
+
+        {/* CITY */}
+        {phase === "city" && (
+          <City
+            collected={collected}
+            solveCount={solveCount}
+            onBack={() => setPhase("picker")}
+            onSelectTask={(idx) => startTask(idx)}
+          />
         )}
 
         {/* DIALOG */}
@@ -553,8 +806,12 @@ export default function App() {
             <div className="flex items-center px-4 pt-2">
               <button
                 onClick={() => {
-                  if (messages.length > 1 && !window.confirm("Выйти из расследования? Прогресс в этой задаче не сохранится.")) return;
-                  setPhase("picker");
+                  if (messages.length > 1) {
+                    setShowConfirmDialog(true);
+                    setPendingAction("leave-task");
+                  } else {
+                    setPhase("picker");
+                  }
                 }}
                 className="text-gray-400 text-[13px] flex items-center gap-1 py-1"
               >
@@ -601,20 +858,27 @@ export default function App() {
                       </div>
                     );
                   }
+                  const isLastBotMsg = i === messages.length - 1 || messages[i+1]?.type !== 'bot';
                   return (
-                    <div key={i} className="flex gap-2 items-start">
-                      <span className="text-2xl flex-shrink-0 mt-1">🐉</span>
-                      <div className="bg-gray-100 rounded-[16px] rounded-tl-[4px] px-4 py-3 text-[15px] text-gray-800 max-w-[80%]">
-                        {m.text}
-                        {m.stars > 0 && <span className="ml-2 text-yellow-500">{"⭐".repeat(m.stars)}</span>}
+                    <div key={i} className="flex gap-2 items-end">
+                      {isLastBotMsg && <img src="./img/webp/ugolok.webp" alt="SHARIEL" className="w-8 h-8 flex-shrink-0 rounded-full object-cover" />}
+                      <div className={`flex flex-col gap-0.5 ${!isLastBotMsg ? 'ml-10' : ''}`}>
+                        <div className={`bg-gray-100 rounded-[16px] ${isLastBotMsg ? 'rounded-bl-[4px]' : ''} px-4 py-3 text-[15px] text-gray-800 max-w-[80%]`}>
+                          {m.text}
+                          {m.stars > 0 && <span className="ml-2 text-yellow-500">{"⭐".repeat(m.stars)}</span>}
+                        </div>
+                        {isLastBotMsg && <span className="text-[12px] text-gray-400 ml-2">{m.timestamp}</span>}
                       </div>
                     </div>
                   );
                 }
                 if (m.type === "child") return (
-                  <div key={i} className="flex justify-end">
-                    <div className={`bg-orange-500 text-white rounded-[16px] rounded-tr-[4px] px-4 py-3 text-[15px] max-w-[85%] ${bingoFlash ? "animate-pulse" : ""}`}>
-                      {m.text}
+                  <div key={i} className="flex justify-end gap-2 items-end">
+                    <div className="flex flex-col gap-0.5 items-end">
+                      <div className={`bg-orange-500 text-white rounded-[16px] rounded-tr-[4px] px-4 py-3 text-[15px] max-w-[85%] ${bingoFlash ? "animate-pulse" : ""}`}>
+                        {m.text}
+                      </div>
+                      <span className="text-[12px] text-gray-400 mr-1">{m.timestamp}</span>
                     </div>
                   </div>
                 );
@@ -626,9 +890,9 @@ export default function App() {
                 return null;
               })}
               {isTyping && (
-                <div className="flex gap-2 items-center">
-                  <span className="text-xl">🐉</span>
-                  <div className="bg-gray-100 rounded-[16px] px-4 py-3 flex gap-1">
+                <div className="flex gap-2 items-end">
+                  <img src="./img/webp/ugolok.webp" alt="SHARIEL" className="w-8 h-8 flex-shrink-0 rounded-full object-cover" />
+                  <div className="bg-gray-100 rounded-[16px] rounded-bl-[4px] px-4 py-3 flex gap-1">
                     {[0,1,2].map(j => (
                       <div key={j} className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${j * 0.15}s` }} />
                     ))}
@@ -682,15 +946,15 @@ export default function App() {
               </div>
               <div className="bg-amber-50 border-2 border-amber-200 rounded-[16px] p-4 text-[15px] text-amber-900">
                 <div className="flex gap-3">
-                  <span className="text-2xl flex-shrink-0">🐉</span>
+                  <img src="./img/webp/ugolok.webp" alt="SHARIEL" className="w-10 h-10 flex-shrink-0 rounded-full object-cover" />
                   <p>
-                    <span className="font-bold block mb-1">Вот видишь, что ты сделал?</span>
-                    Ты только что использовал <span className="font-semibold" style={{ color: task.trick.color }}>"{task.trick.name}"</span> — метод, которым природа решает сложные задачи миллионы лет. Теперь ты думаешь как инженер!
+                    <span className="font-bold block mb-1">Видишь закономерность?</span>
+                    Этот мир разгадан! Ты открыл <span className="font-semibold" style={{ color: task.trick.color }}>"{task.trick.name}"</span> — метод, которым природа решала эту задачу миллионы лет. Теперь ты знаешь, как она это делает.
                   </p>
                 </div>
               </div>
               <div className="w-full rounded-[16px] p-4 border-2" style={{ borderColor: task.trick.color, backgroundColor: task.trick.color + "10" }}>
-                <p className="font-semibold text-[12px] mb-2" style={{ color: task.trick.color }}>🔑 ПРИРОДНЫЙ ТРЮК</p>
+                <p className="font-semibold text-[12px] mb-2" style={{ color: task.trick.color }}>🔑 ТРИЗ МЕТОД</p>
                 <div className="text-[18px] font-bold" style={{ color: task.trick.color }}>
                   {task.trick.name}
                 </div>
@@ -711,8 +975,8 @@ export default function App() {
                 </div>
               )}
               <div className="text-center text-gray-500 text-[14px] mt-2">
-                <p>Ты открыл <span className="font-semibold text-gray-700">{collected.length + 1} из {TASKS.length}</span> природных трюков</p>
-                <p className="text-[12px] mt-1">{TASKS.length - collected.length - 1} загадок осталось</p>
+                <p>Ты открыл <span className="font-semibold text-gray-700">{collected.length + 1} из {TASKS.length}</span> методов</p>
+                <p className="text-[12px] mt-1">{TASKS.length - collected.length - 1} методов осталось разгадать</p>
               </div>
               <button onClick={goTwist}
                 className="w-full bg-gray-900 text-white text-[16px] font-bold py-4 rounded-[18px] active:scale-95 transition-transform"
@@ -818,15 +1082,15 @@ export default function App() {
           <div className="flex flex-col flex-1 px-5 pb-8 items-center justify-center gap-6">
             <div className="text-[72px] animate-bounce">🏆</div>
             <div className="text-center">
-              <h2 className="text-[24px] font-bold text-gray-900 mb-2">Все 6 природных трюков открыты! 🌟</h2>
-              <p className="text-gray-500 text-[15px]">Ты теперь видишь природу как инженер.</p>
+              <h2 className="text-[24px] font-bold text-gray-900 mb-2">6 методов открыты! 🌟</h2>
+              <p className="text-gray-500 text-[15px]">Это только начало. Впереди ещё 34 метода ТРИЗ и путь к настоящему изобретателю.</p>
             </div>
             <div className="w-full bg-gradient-to-r rounded-[16px] p-5 text-[15px] text-gray-900 leading-relaxed border-2 border-amber-300" style={{ backgroundImage: "linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.05))" }}>
               <div className="flex gap-3">
-                <span className="text-3xl flex-shrink-0">🐉</span>
+                <img src="./img/webp/ugolok.webp" alt="SHARIEL" className="w-12 h-12 flex-shrink-0 rounded-full object-cover" />
                 <div>
-                  <p className="font-bold mb-2">Отлично поработал! 👏</p>
-                  <p>Ты исследовал 6 методов, которыми природа решала проблемы. Теперь используй эти методы в своих идеях. Помни: всё уже придумано природой — нужно только посмотреть внимательнее!</p>
+                  <p className="font-bold mb-2">Первый этап пройден! 🔍</p>
+                  <p>Ты овладел 6 методами. Дальше — три пути: 1️⃣ создавай задачи для других; 2️⃣ учись выбирать нужный метод на сложных задачах; 3️⃣ найди противоречия в реальных проблемах. И в конце — станешь настоящим изобретателем.</p>
                 </div>
               </div>
             </div>
@@ -848,12 +1112,32 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <button onClick={resetProgress}
-              className="w-full py-4 rounded-[18px] border-2 border-orange-500 text-orange-500 font-semibold text-[16px] active:scale-95 transition-transform"
-            >
-              Переиграть →
-            </button>
+            <div className="w-full flex flex-col gap-3">
+              <button
+                onClick={() => setPhase("ugc")}
+                className="w-full py-4 rounded-[18px] bg-orange-500 text-white font-semibold text-[16px] active:scale-95 transition-transform hover:bg-orange-600"
+              >
+                🚀 Создавай свои загадки
+              </button>
+              <button onClick={resetProgress}
+                className="w-full py-4 rounded-[18px] border-2 border-gray-300 text-gray-700 font-semibold text-[16px] active:scale-95 transition-transform"
+              >
+                Переиграть →
+              </button>
+            </div>
           </div>
+        )}
+
+        {/* UGC */}
+        {phase === "ugc" && (
+          <TaskGenerator
+            onBack={() => setPhase("final")}
+            onSubmit={(newTask) => {
+              setUserTasks([...userTasks, { ...newTask, id: Date.now() }]);
+              alert("✨ Спасибо! Твоя загадка отправлена на проверку. Если она понравится, её смогут решать другие дети!");
+              setPhase("final");
+            }}
+          />
         )}
 
       </div>
@@ -866,6 +1150,8 @@ export default function App() {
         onChangeAge={changeAgeGroup}
         onResetProgress={resetProgress}
         collected={collected}
+        audio={audio}
+        audioTracks={audioTracks}
       />
 
       {/* Dragon Greeting Bubble */}
@@ -873,6 +1159,40 @@ export default function App() {
         isVisible={dragonGreetingOpen}
         onClose={() => setDragonGreetingOpen(false)}
       />
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-end">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setShowConfirmDialog(false)} />
+          <div className="relative w-full bg-white rounded-t-[24px] p-6 flex flex-col gap-4 shadow-lg">
+            <div className="text-center mb-2">
+              <h3 className="text-[18px] font-bold text-gray-900">Выйти из загадки?</h3>
+            </div>
+            <div className="text-gray-600 text-[15px] text-center">
+              Прогресс в этой загадке не сохранится. Ты уверен?
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 py-3 rounded-[14px] border-2 border-gray-300 text-gray-700 font-semibold active:scale-95 transition-transform"
+              >
+                Продолжить решать
+              </button>
+              <button onClick={() => {
+                setShowConfirmDialog(false);
+                setPhase("picker");
+                setMessages([]);
+                setPrizStep(0);
+                setTwistChoice(null);
+                setSessionStars(0);
+              }}
+                className="flex-1 py-3 rounded-[14px] bg-orange-500 text-white font-semibold active:scale-95 transition-transform"
+              >
+                Выйти
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
