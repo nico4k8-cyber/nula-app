@@ -615,59 +615,24 @@ export default function App() {
 
         {/* AGE SELECT */}
         {phase === "age-select" && (
-          <div className="flex flex-col items-center justify-center flex-1 px-6 gap-8">
+          <div className="flex flex-col items-center justify-center flex-1 px-6 gap-6">
             <div className="text-center">
-              <div className="mb-4 flex flex-col items-center gap-2">
-                <style>{`
-                  @keyframes floatChar { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
-                  @keyframes glowPulse { 0%, 100% { filter: blur(28px) opacity(0.6); } 50% { filter: blur(28px) opacity(0.9); } }
-                  .dragon-float { animation: floatChar 3.5s ease-in-out infinite; }
-                `}</style>
-                <button onClick={() => {
-                  setDragonGreetingOpen(true);
-                }}
-                  className="cursor-pointer"
-                  title="Узнай о драконе"
-                >
-                  <div className="relative w-48 h-48 dragon-float">
-                    <div className="absolute rounded-full blur-3xl pointer-events-none bg-amber-500/25" style={{ inset: '-28px', animation: '3.5s ease-in-out 0s infinite normal none running glowPulse' }}></div>
-                    <div className="absolute rounded-full blur-xl pointer-events-none bg-orange-600/15" style={{ inset: '-14px' }}></div>
-                    <img src="./img/webp/ugolok.webp" alt="Дракон" className="relative w-full h-full rounded-full object-cover shadow-2xl border-4 border-amber-500/50" style={{ boxShadow: '0 25px 50px -12px rgba(146, 64, 14, 0.4)' }} />
-                  </div>
-                </button>
-                {!dragonGreetingOpen && <p className="text-[11px] text-gray-400">Узнай больше о драконе</p>}
-              </div>
-              <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
-                SHARIEL
+              <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">
+                🐉 SHARIEL
               </h1>
-              <p className="text-gray-600 text-[14px] mt-2">🧩 Решай загадки, открывай здания</p>
+              <p className="text-gray-600 text-[15px]">🧩 Решай загадки, открывай здания</p>
             </div>
-            <style>{`
-              @keyframes buttonPulse {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.05); }
-              }
-              .start-button {
-                animation: buttonPulse 2s ease-in-out infinite;
-              }
-              .start-button:hover {
-                animation: none;
-                transform: scale(1.08);
-              }
-              .start-button:active {
-                transform: scale(0.95);
-              }
-            `}</style>
-            <div className="flex flex-col gap-3 w-full">
+
+            <div className="w-full max-w-xs">
               <button
                 onClick={() => {
                   trackEvent(EVENTS.AGE_GROUP_SELECTED, { ageGroup: "senior" });
                   setAgeGroup("senior");
                   setPhase("picker");
                 }}
-                className="start-button w-full py-4 px-6 rounded-[14px] bg-orange-500 hover:bg-orange-600 text-white font-bold text-[20px] shadow-lg hover:shadow-xl active:scale-95 transition-all"
+                className="w-full py-4 px-6 rounded-[14px] bg-orange-500 hover:bg-orange-600 text-white font-bold text-[18px] shadow-lg hover:shadow-xl active:scale-95 transition-all"
               >
-                НАЧАТЬ
+                ✨ НАЧАТЬ ✨
               </button>
             </div>
           </div>
