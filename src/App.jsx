@@ -626,13 +626,13 @@ export default function App() {
             </div>
             <div className="flex items-center justify-center gap-1 mb-3 pt-3">
               <p className="text-gray-600 text-[12px] text-center font-semibold">
-                💡 Решай задачи и открывай методы
+                💡 Решай задачи и открывай здания
               </p>
             </div>
             <p className="text-gray-600 text-[13px] text-center mb-3 font-medium">
               {collected.length === 0
                 ? "👉 Выбери загадку и раскрой секреты природы"
-                : `⭐ ${collected.length} из ${TASKS.length} методов открыто`
+                : `⭐ ${collected.length} из ${TASKS.length} зданий открыто`
               }
             </p>
             {/* Progress bar */}

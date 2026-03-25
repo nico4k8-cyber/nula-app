@@ -20,10 +20,10 @@ export default function City({ collected, solveCount = {}, onBack, onSelectTask 
         >
           ← Назад
         </button>
-        <h1 className="text-xl font-bold text-gray-800">🏙️ Мой город методов</h1>
+        <h1 className="text-xl font-bold text-gray-800">🏙️ Мой город</h1>
         <div className="text-sm text-gray-600 text-right">
-          <div className="font-semibold text-base">{collected.length}</div>
-          <div>методов открыто</div>
+          <div className="font-semibold text-base">{collected.length}/{methods.length}</div>
+          <div>зданий открыто</div>
         </div>
       </div>
 
@@ -77,8 +77,9 @@ export default function City({ collected, solveCount = {}, onBack, onSelectTask 
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-5xl font-bold text-gray-300">
-                    ?
+                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center relative">
+                    <div className="text-5xl opacity-40">{method.building}</div>
+                    <div className="absolute text-3xl">🔒</div>
                   </div>
                 )}
               </div>
