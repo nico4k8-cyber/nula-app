@@ -63,7 +63,7 @@ function methodDescription(methodName) {
 }
 
 /* ═══ SettingsMenu ═══ */
-function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress, collected, audio, audioTracks }) {
+function SettingsMenu({ isOpen, onClose, onResetProgress, collected, audio, audioTracks }) {
   if (!isOpen) return null;
 
   return (
@@ -129,20 +129,6 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
             <span className="text-gray-400">›</span>
           </button>
 
-          {/* Age selection */}
-          <button onClick={() => { onChangeAge(); onClose(); }}
-            className="w-full text-left px-4 py-3 rounded-[14px] hover:bg-gray-50 flex items-center gap-3 transition-all"
-          >
-            <span className="text-xl">🧠</span>
-            <div className="flex-1">
-              <div className="font-semibold text-gray-900 text-[15px]">Выбрать возраст</div>
-              <div className="text-gray-500 text-[13px]">
-                {ageGroup === "junior" ? "8–11 лет" : "12–15+ лет"}
-              </div>
-            </div>
-            <span className="text-gray-400">›</span>
-          </button>
-
           {/* Profile (future auth) */}
           <button className="w-full text-left px-4 py-3 rounded-[14px] hover:bg-gray-50 flex items-center gap-3 transition-all opacity-50 cursor-not-allowed"
             disabled
@@ -183,7 +169,7 @@ function SettingsMenu({ isOpen, onClose, ageGroup, onChangeAge, onResetProgress,
 /* ═══ DragonsGreeting ═══ */
 function DragonsGreeting({ isVisible, onClose }) {
   const [displayedText, setDisplayedText] = useState("");
-  const greeting = "Привет! Я помогу тебе увидеть скрытые закономерности в природе. Когда ты их найдёшь, сможешь разгадать любую задачу — вот как это работает в науке и технике. Выбери возраст и поехали!";
+  const greeting = "Привет! Я помогу тебе увидеть скрытые закономерности в природе. Когда ты их найдёшь, сможешь разгадать любую задачу — вот как это работает в науке и технике. Поехали!";
 
   useEffect(() => {
     if (!isVisible) {
@@ -296,7 +282,7 @@ export default function App() {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(saved.hasSeenOnboarding || false);
   const [hasSeenDragonSplash, setHasSeenDragonSplash] = useState(saved.hasSeenDragonSplash || false);
   const [phase,       setPhase]       = useState(
-    !hasSeenDragonSplash ? "dragon-splash" : !hasSeenOnboarding ? "dragon-bubble" : saved.ageGroup ? "picker" : "age-select"
+    !hasSeenDragonSplash ? "dragon-splash" : !hasSeenOnboarding ? "dragon-bubble" : "picker"
   );
 
   // Only initialize audio after onboarding is complete (to avoid overlap with dragon-splash music)
@@ -467,17 +453,6 @@ export default function App() {
     saveState({ ageGroup, collected: [], totalStars: 0, solveCount: {} });
   }
 
-  function changeAgeGroup() {
-    trackEvent(EVENTS.AGE_CHANGED, { previousAgeGroup: ageGroup });
-    setCollected([]);
-    setTotalStars(0);
-    setSolveCount({});
-    setDebriefBingo(false);
-    setMessages([]);
-    setPhase("age-select");
-    saveState({ collected: [], totalStars: 0, solveCount: {} });
-  }
-
   function handleDebugReset() {
     trackEvent(EVENTS.DEBUG_RESET_TRIGGERED);
     localStorage.clear();
@@ -617,30 +592,6 @@ export default function App() {
         )}
 
         {/* AGE SELECT */}
-        {phase === "age-select" && (
-          <div className="flex flex-col items-center justify-center flex-1 px-6 gap-6">
-            <div className="text-center">
-              <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">
-                🐉 SHARIEL
-              </h1>
-              <p className="text-gray-600 text-[15px]">🧩 Решай загадки, открывай здания</p>
-            </div>
-
-            <div className="w-full max-w-xs">
-              <button
-                onClick={() => {
-                  trackEvent(EVENTS.AGE_GROUP_SELECTED, { ageGroup: "senior" });
-                  setAgeGroup("senior");
-                  setPhase("picker");
-                }}
-                className="w-full py-4 px-6 rounded-[14px] bg-orange-500 hover:bg-orange-600 text-white font-bold text-[18px] shadow-lg hover:shadow-xl active:scale-95 transition-all"
-              >
-                ✨ НАЧАТЬ ✨
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* PICKER */}
         {phase === "picker" && (
           <div className="flex flex-col flex-1 px-4 pb-6">
@@ -1207,8 +1158,6 @@ export default function App() {
           trackEvent(EVENTS.MENU_CLOSED);
           setMenuOpen(false);
         }}
-        ageGroup={ageGroup}
-        onChangeAge={changeAgeGroup}
         onResetProgress={resetProgress}
         collected={collected}
         audio={audio}
