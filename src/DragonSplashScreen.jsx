@@ -8,7 +8,7 @@ export default function DragonSplashScreen({ onAnimationEnd }) {
   const lastSwipeTime = useRef(0);
 
   const TOTAL_FRAMES = 240;
-  const FRAME_DURATION = 30; // мс на кадр (240 кадров ≈ 7 сек)
+  const FRAME_DURATION = 50; // мс на кадр (240 кадров ≈ 12 сек) - увеличено для загрузки на медленных соединениях
   const PAUSE_AT_END = 200; // остановиться на этом кадре в конце для паузы
   const PAUSE_DURATION = 2000; // пауза на 2 секунды
 
