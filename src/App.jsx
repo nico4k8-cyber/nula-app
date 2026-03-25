@@ -614,7 +614,7 @@ export default function App() {
                   className="text-sm font-semibold px-3 py-2 rounded-[8px] hover:bg-orange-100 transition-all flex items-center gap-2 bg-orange-50"
                   title="Открывай новые методы, решая задачи"
                 >
-                  <span className="text-lg">🏙️</span> <span className="text-[13px] font-bold text-orange-600">Город</span> <span className="text-[12px] text-orange-500">{collected.length}/6</span>
+                  <span className="text-lg">🏙️</span> <span className="text-[13px] font-bold text-orange-600">Город</span> <span className="text-[12px] text-orange-500">{collected.length}</span>
                 </button>
                 <button onClick={() => setMenuOpen(true)}
                   className="w-8 h-8 flex items-center justify-center text-[24px] hover:bg-gray-100 rounded-[8px] transition-all"
