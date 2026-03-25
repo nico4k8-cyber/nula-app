@@ -1,7 +1,10 @@
 /**
  * Analytics Event Tracking System
- * Sends events to tracking backend
+ * Sends events to Yandex Metrica and backend
  */
+
+// Yandex Metrica configuration
+const METRICA_ID = import.meta.env.VITE_METRICA_ID || null;
 
 export const EVENTS = {
   // ONBOARDING
@@ -49,14 +52,24 @@ export function trackEvent(eventName, properties = {}) {
   };
 
   // Log to console in development
-  if (process.env.NODE_ENV === "development") {
+  if (import.meta.env.MODE === "development") {
     console.log("[Analytics]", event);
   }
 
-  // TODO: Send to backend
+  // Send to Yandex Metrica
+  if (window.ym && METRICA_ID) {
+    try {
+      // Format: ym(ID, 'reachGoal', 'eventName', properties)
+      window.ym(METRICA_ID, 'reachGoal', eventName, properties);
+    } catch (e) {
+      console.error("Failed to send event to Yandex Metrica:", e);
+    }
+  }
+
+  // Send to backend API (when ready)
   // fetch('/api/events', { method: 'POST', body: JSON.stringify(event) });
 
-  // For now, store in sessionStorage for debugging
+  // Store in sessionStorage for debugging
   try {
     const events = JSON.parse(sessionStorage.getItem("analytics_events") || "[]");
     events.push(event);
