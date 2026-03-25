@@ -572,7 +572,7 @@ export default function App() {
               <h1 className="text-[28px] font-bold text-gray-900 leading-tight">
                 SHARIEL
               </h1>
-              <p className="text-gray-600 text-[14px] mt-2">🧩 Решай загадки, открывай методы</p>
+              <p className="text-gray-600 text-[14px] mt-2">🧩 Решай загадки, открывай здания</p>
             </div>
             <style>{`
               @keyframes buttonPulse {
