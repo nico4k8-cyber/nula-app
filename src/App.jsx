@@ -7,6 +7,7 @@ import UnlockAnimation from "./UnlockAnimation";
 import TaskGenerator from "./TaskGenerator";
 import DragonSplashScreen from "./DragonSplashScreen";
 import { useAudio } from "./useAudio";
+import { trackEvent, EVENTS } from "./analytics";
 
 /* ═══ localStorage ═══ */
 const STORAGE_KEY = "razgadai_v1";
@@ -318,6 +319,10 @@ export default function App() {
   // twist
   const [twistChoice, setTwistChoice] = useState(null);
 
+  // debug reset (10 clicks on logo)
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const logoClickTimer = useRef(null);
+
   // menu
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -348,6 +353,15 @@ export default function App() {
       setMenuOpen(false);
     }
   }, [menuOpen]);
+
+  // Track onboarding screen views
+  useEffect(() => {
+    if (phase === "dragon-splash") {
+      trackEvent(EVENTS.ONBOARDING_SPLASH_VIEWED);
+    } else if (phase === "dragon-bubble") {
+      trackEvent(EVENTS.ONBOARDING_BUBBLE_VIEWED);
+    }
+  }, [phase]);
 
   /* ─── helpers ─── */
   const inDialogPhases = ["dialog","debrief","twist","outcome"].includes(phase);
@@ -401,7 +415,22 @@ export default function App() {
     setCollected(newCollected);
     setSolveCount(newSolveCount);
 
+    // Track task completion
+    trackEvent(EVENTS.TASK_COMPLETED, {
+      taskId: task.id,
+      taskName: task.trick.name,
+      earnedXP: sessionStars,
+      isNewUnlock,
+      solveCount: newSolveCount[task.id],
+    });
+
     if (isNewUnlock) {
+      // Track building unlock
+      trackEvent(EVENTS.BUILDING_UNLOCKED, {
+        buildingId: task.id,
+        buildingName: task.trick.buildingName,
+        totalUnlocked: newCollected.length,
+      });
       // Trigger unlock animation
       setUnlockedBuildingId(task.id);
       // After animation (2.5s), go to outcome
@@ -425,6 +454,7 @@ export default function App() {
   }
 
   function resetProgress() {
+    trackEvent(EVENTS.PROGRESS_RESET, { previousProgress: collected.length });
     setCollected([]);
     setTotalStars(0);
     setSolveCount({});
@@ -435,6 +465,7 @@ export default function App() {
   }
 
   function changeAgeGroup() {
+    trackEvent(EVENTS.AGE_CHANGED, { previousAgeGroup: ageGroup });
     setCollected([]);
     setTotalStars(0);
     setSolveCount({});
@@ -442,6 +473,42 @@ export default function App() {
     setMessages([]);
     setPhase("age-select");
     saveState({ collected: [], totalStars: 0, solveCount: {} });
+  }
+
+  function handleDebugReset() {
+    trackEvent(EVENTS.DEBUG_RESET_TRIGGERED);
+    localStorage.clear();
+    setLogoClickCount(0);
+    setHasSeenDragonSplash(false);
+    setHasSeenOnboarding(false);
+    setPhase("dragon-splash");
+    setCollected([]);
+    setTotalStars(0);
+    setSolveCount({});
+    setMessages([]);
+    setDebriefBingo(false);
+    alert("✨ Приложение перезагружено! Заставка показана заново.");
+  }
+
+  function handleLogoClick() {
+    const newCount = logoClickCount + 1;
+    setLogoClickCount(newCount);
+
+    // Clear existing timer
+    if (logoClickTimer.current) clearTimeout(logoClickTimer.current);
+
+    // Show feedback when approaching 10 clicks
+    if (newCount === 8) console.log("🔮 Ещё 2 клика для сброса...");
+    if (newCount === 9) console.log("🔮 Последний клик!");
+
+    if (newCount >= 10) {
+      handleDebugReset();
+    } else {
+      // Reset counter after 5 seconds of inactivity
+      logoClickTimer.current = setTimeout(() => {
+        setLogoClickCount(0);
+      }, 5000);
+    }
   }
 
   async function handleUserMessage() {
@@ -539,6 +606,7 @@ export default function App() {
         {phase === "dragon-bubble" && (
           <DragonBubbleScreen
             onStart={() => {
+              trackEvent(EVENTS.ONBOARDING_COMPLETED);
               setHasSeenOnboarding(true);
               setPhase("age-select");
             }}
@@ -592,7 +660,11 @@ export default function App() {
             `}</style>
             <div className="flex flex-col gap-3 w-full">
               <button
-                onClick={() => { setAgeGroup("senior"); setPhase("picker"); }}
+                onClick={() => {
+                  trackEvent(EVENTS.AGE_GROUP_SELECTED, { ageGroup: "senior" });
+                  setAgeGroup("senior");
+                  setPhase("picker");
+                }}
                 className="start-button w-full py-4 px-6 rounded-[14px] bg-orange-500 hover:bg-orange-600 text-white font-bold text-[20px] shadow-lg hover:shadow-xl active:scale-95 transition-all"
               >
                 НАЧАТЬ
@@ -606,17 +678,29 @@ export default function App() {
           <div className="flex flex-col flex-1 px-4 pb-6">
             {/* Top bar with title and controls */}
             <div className="flex items-center justify-between pt-3 pb-4 border-b border-gray-100">
-              <h2 className="text-[18px] font-bold text-gray-900 flex items-center gap-2">
+              <h2
+                onClick={handleLogoClick}
+                className="text-[18px] font-bold text-gray-900 flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity"
+                title={logoClickCount > 0 ? `Клики: ${logoClickCount}/10` : ""}
+              >
                 <span>🐉</span> SHARIEL
               </h2>
               <div className="flex items-center gap-2">
-                <button onClick={() => setPhase("city")}
+                <button
+                  onClick={() => {
+                    trackEvent(EVENTS.CITY_OPENED, { collectedCount: collected.length });
+                    setPhase("city");
+                  }}
                   className="text-sm font-semibold px-3 py-2 rounded-[8px] hover:bg-orange-100 transition-all flex items-center gap-2 bg-orange-50"
                   title="Открывай новые методы, решая задачи"
                 >
                   <span className="text-lg">🏙️</span> <span className="text-[13px] font-bold text-orange-600">Город</span> <span className="text-[12px] text-orange-500">{collected.length}</span>
                 </button>
-                <button onClick={() => setMenuOpen(true)}
+                <button
+                  onClick={() => {
+                    trackEvent(EVENTS.MENU_OPENED);
+                    setMenuOpen(true);
+                  }}
                   className="w-8 h-8 flex items-center justify-center text-[24px] hover:bg-gray-100 rounded-[8px] transition-all"
                   title="Меню"
                 >
@@ -795,8 +879,14 @@ export default function App() {
           <City
             collected={collected}
             solveCount={solveCount}
-            onBack={() => setPhase("picker")}
-            onSelectTask={(idx) => startTask(idx)}
+            onBack={() => {
+              trackEvent(EVENTS.CITY_CLOSED);
+              setPhase("picker");
+            }}
+            onSelectTask={(idx) => {
+              trackEvent(EVENTS.TASK_STARTED, { taskIndex: idx });
+              startTask(idx);
+            }}
           />
         )}
 
@@ -1145,7 +1235,10 @@ export default function App() {
       {/* Settings Menu */}
       <SettingsMenu
         isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
+        onClose={() => {
+          trackEvent(EVENTS.MENU_CLOSED);
+          setMenuOpen(false);
+        }}
         ageGroup={ageGroup}
         onChangeAge={changeAgeGroup}
         onResetProgress={resetProgress}
