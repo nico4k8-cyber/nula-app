@@ -300,7 +300,9 @@ export default function App() {
   );
 
   // Only initialize audio after onboarding is complete (to avoid overlap with dragon-splash music)
-  const audio = useAudio(hasSeenOnboarding ? audioTracks : []);
+  // Pass empty array during splash/bubble to prevent any music playback
+  const shouldPlayMusic = hasSeenOnboarding && phase !== "dragon-bubble";
+  const audio = useAudio(shouldPlayMusic ? audioTracks : []);
   const [taskIdx,     setTaskIdx]     = useState(0);
   const [collected,   setCollected]   = useState(saved.collected || []);
   const [totalStars,  setTotalStars]  = useState(saved.totalStars || 0);

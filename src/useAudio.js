@@ -42,6 +42,15 @@ export function useAudio(tracks = []) {
       localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify(isEnabled));
     } catch {}
 
+    // Stop music completely if no tracks (e.g., during splash screen)
+    if (tracks.length === 0) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+      return;
+    }
+
     // Auto-play if enabled, don't stop if disabled (just mute it)
     if (isEnabled && tracks.length > 0) {
       if (audioRef.current && !audioRef.current.src) {
