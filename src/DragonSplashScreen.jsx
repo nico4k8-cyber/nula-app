@@ -132,10 +132,6 @@ export default function DragonSplashScreen({ onAnimationEnd }) {
           ))}
         </div>
 
-        {/* Подсказка по управлению */}
-        <div className="absolute top-8 left-0 right-0 text-center text-white/60 text-sm">
-          👈 Води пальцем, чтобы направить дракона 👉
-        </div>
       </div>
 
       {/* Музыка */}
