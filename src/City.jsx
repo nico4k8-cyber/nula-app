@@ -58,28 +58,46 @@ export default function City({ collected, solveCount = {}, onBack, onSelectTask 
                   isCollected ? "hover:scale-105 cursor-pointer shadow-lg hover:shadow-xl" : "cursor-default"
                 }`}
               >
-                {isCollected ? (
-                  <>
-                    <img
-                      src={method.image}
-                      alt={method.building}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                    {level > 0 && (
-                      <div className="absolute top-2 right-2 flex gap-0.5">
-                        {[...Array(Math.min(level, 3))].map((_, i) => (
-                          <span key={i} className="text-lg">⭐</span>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center relative">
-                    <div className="text-5xl opacity-40">{method.building}</div>
-                    <div className="absolute text-3xl">🔒</div>
+                {/* Building image - shown for both locked and unlocked */}
+                <img
+                  src={method.image}
+                  alt={method.building}
+                  className={`w-full h-full object-cover transition-all ${
+                    isCollected ? "opacity-100" : "opacity-50 grayscale"
+                  }`}
+                  onError={(e) => {
+                    // If image fails to load, show fallback gradient
+                    e.target.style.display = "none";
+                  }}
+                />
+
+                {/* Fallback for when image fails to load */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center"
+                  style={{ display: 'none' }}
+                  ref={(el) => {
+                    const img = el?.parentElement?.querySelector('img');
+                    if (img && img.style.display === 'none') {
+                      el.style.display = 'flex';
+                    }
+                  }}
+                >
+                  <div className="text-4xl">{method.building}</div>
+                </div>
+
+                {/* Stars for unlocked buildings with multiple solves */}
+                {isCollected && level > 0 && (
+                  <div className="absolute top-2 right-2 flex gap-0.5">
+                    {[...Array(Math.min(level, 3))].map((_, i) => (
+                      <span key={i} className="text-lg">⭐</span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Lock icon for locked buildings */}
+                {!isCollected && (
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                    <div className="text-5xl">🔒</div>
                   </div>
                 )}
               </div>

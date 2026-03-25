@@ -54,6 +54,47 @@ export function useAudio(tracks = []) {
     }
   }, [isEnabled, currentTrackIndex, tracks]);
 
+  // Pause music when tab is not focused
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is hidden - pause music
+        if (audioRef.current && !audioRef.current.paused) {
+          audioRef.current.pause();
+        }
+      } else {
+        // Tab is visible - resume music if enabled
+        if (isEnabled && audioRef.current && audioRef.current.paused && audioRef.current.src) {
+          audioRef.current.play().catch(() => {});
+        }
+      }
+    };
+
+    const handleFocus = () => {
+      // Window regained focus - resume if enabled
+      if (isEnabled && audioRef.current && audioRef.current.paused && audioRef.current.src) {
+        audioRef.current.play().catch(() => {});
+      }
+    };
+
+    const handleBlur = () => {
+      // Window lost focus - pause music
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [isEnabled]);
+
   // Update track source when index changes (but keep playing smoothly)
   useEffect(() => {
     if (tracks.length > 0 && audioRef.current) {
