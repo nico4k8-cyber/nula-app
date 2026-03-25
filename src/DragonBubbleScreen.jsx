@@ -1,23 +1,24 @@
 import { useState, useEffect } from "react";
 
 export default function DragonBubbleScreen({ onStart }) {
-  const [textVisible, setTextVisible] = useState(false);
-  const [buttonVisible, setButtonVisible] = useState(false);
+  const [displayedText, setDisplayedText] = useState("");
+  const fullText = "Я вижу, что в мире полный хаос.\n\nЕсть способ всё это пофиксить, и я научу тебя!\n\nБуду тебя сопровождать в каждой загадке.\n\nНачнём?";
 
   useEffect(() => {
-    // Текст появляется через 300ms
-    const textTimer = setTimeout(() => setTextVisible(true), 300);
-    // Кнопка появляется через 2000ms (после текста)
-    const buttonTimer = setTimeout(() => setButtonVisible(true), 2000);
-
-    return () => {
-      clearTimeout(textTimer);
-      clearTimeout(buttonTimer);
-    };
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index < fullText.length) {
+        setDisplayedText(fullText.substring(0, index + 1));
+        index++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 20);
+    return () => clearInterval(timer);
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center p-6 gap-6">
+    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center p-6">
       <style>{`
         @keyframes floatChar {
           0%, 100% { transform: translateY(0px); }
@@ -31,7 +32,7 @@ export default function DragonBubbleScreen({ onStart }) {
       `}</style>
 
       {/* Дракончик Оринс амбер свечением */}
-      <div className="mb-4 relative">
+      <div className="mb-8 relative">
         <div className="relative w-40 h-40 dragon-float">
           <div className="absolute rounded-full blur-3xl pointer-events-none bg-amber-500/25" style={{ inset: '-28px', animation: '3.5s ease-in-out 0s infinite normal none running glowPulse' }}></div>
           <div className="absolute rounded-full blur-xl pointer-events-none bg-orange-600/15" style={{ inset: '-14px' }}></div>
@@ -40,35 +41,27 @@ export default function DragonBubbleScreen({ onStart }) {
       </div>
 
       {/* Баббл с текстом */}
-      <div
-        className={`max-w-md bg-white rounded-3xl px-8 py-6 shadow-2xl border-4 border-gray-200 transition-all duration-500 ${
-          textVisible ? "opacity-100 scale-100" : "opacity-0 scale-75"
-        }`}
-      >
-        {/* Текст */}
-        <p className="text-center text-gray-800 text-base leading-relaxed font-medium">
-          Я вижу, что в мире полный хаос.
-          <br />
-          <br />
-          Есть способ всё это пофиксить, и я научу тебя!
-          <br />
-          <br />
-          Буду тебя сопровождать в каждой загадке.
-          <br />
-          <br />
-          <span className="text-lg font-bold">Начнём?</span>
-        </p>
-      </div>
+      <div className="w-80 pointer-events-auto">
+        <div className="bg-amber-50 rounded-2xl px-6 py-5 shadow-lg border-2 border-amber-200 relative min-h-48 flex flex-col">
+          {/* Стрелка баббла, указывающая на дракона */}
+          <div className="absolute -top-2 left-1/2 w-3 h-3 bg-amber-50 border-t-2 border-l-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(45deg)' }}></div>
 
-      {/* Кнопка */}
-      {buttonVisible && (
-        <button
-          onClick={onStart}
-          className="mt-4 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-lg font-bold rounded-full hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 animate-pulse"
-        >
-          ✨ НАЧАТЬ ✨
-        </button>
-      )}
+          {/* Текст с типографией */}
+          <p className="text-gray-800 text-sm leading-relaxed flex-1 whitespace-pre-line">
+            {displayedText}<span className={displayedText.length < fullText.length ? "animate-pulse" : ""}>▌</span>
+          </p>
+
+          {/* Кнопка */}
+          {displayedText.length === fullText.length && (
+            <button
+              onClick={onStart}
+              className="mt-4 px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-full hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 self-start"
+            >
+              ✨ Начать ✨
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
