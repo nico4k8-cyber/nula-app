@@ -41,26 +41,26 @@ export default function DragonBubbleScreen({ onStart }) {
       </div>
 
       {/* Баббл с текстом */}
-      <div className="w-80 pointer-events-auto">
-        <div className="bg-amber-50 rounded-2xl px-6 py-5 shadow-lg border-2 border-amber-200 relative min-h-48 flex flex-col">
+      <div className="w-80 pointer-events-auto flex flex-col items-center gap-4">
+        <div className="bg-amber-50 rounded-2xl px-6 py-5 shadow-lg border-2 border-amber-200 relative min-h-48 flex flex-col w-full">
           {/* Стрелка баббла, указывающая на дракона */}
           <div className="absolute -top-2 left-1/2 w-3 h-3 bg-amber-50 border-t-2 border-l-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(45deg)' }}></div>
 
           {/* Текст с типографией */}
-          <p className="text-gray-800 text-sm leading-relaxed flex-1 whitespace-pre-line">
+          <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
             {displayedText}<span className={displayedText.length < fullText.length ? "animate-pulse" : ""}>▌</span>
           </p>
-
-          {/* Кнопка */}
-          {displayedText.length === fullText.length && (
-            <button
-              onClick={onStart}
-              className="mt-4 px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-full hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 self-start"
-            >
-              ✨ Начать ✨
-            </button>
-          )}
         </div>
+
+        {/* Кнопка снаружи баббла */}
+        {displayedText.length === fullText.length && (
+          <button
+            onClick={onStart}
+            className="px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-full hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300"
+          >
+            ✨ Начать ✨
+          </button>
+        )}
       </div>
     </div>
   );
