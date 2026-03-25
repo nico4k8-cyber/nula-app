@@ -93,8 +93,11 @@ export function useAudio(tracks = []) {
       // Only change track if it's different
       if (audioRef.current.src !== track.path) {
         const wasPlaying = !audioRef.current.paused;
+        const currentTime = audioRef.current.currentTime;
         audioRef.current.src = track.path;
+        // Restore position if track was playing
         if (wasPlaying && isEnabled) {
+          audioRef.current.currentTime = Math.min(currentTime, 10); // Don't jump too far
           audioRef.current.play().catch(() => {});
         }
       }
