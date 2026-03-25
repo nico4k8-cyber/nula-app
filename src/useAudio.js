@@ -35,13 +35,8 @@ export function useAudio(tracks = []) {
     }
   });
 
-  // Handle audio enable/disable without stopping playback
+  // Initialize music and handle track changes (don't change on isEnabled)
   useEffect(() => {
-    // Save preference
-    try {
-      localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify(isEnabled));
-    } catch {}
-
     // Stop music completely if no tracks (e.g., during splash screen)
     if (tracks.length === 0) {
       if (audioRef.current) {
@@ -51,17 +46,23 @@ export function useAudio(tracks = []) {
       return;
     }
 
-    // Auto-play if enabled, don't stop if disabled (just mute it)
-    if (isEnabled && tracks.length > 0) {
-      if (audioRef.current && !audioRef.current.src) {
-        playTrack(currentTrackIndex);
-      } else if (audioRef.current && audioRef.current.paused) {
+    // Auto-play music for current track
+    if (tracks.length > 0 && audioRef.current) {
+      const track = tracks[currentTrackIndex];
+      if (!audioRef.current.src) {
+        // First load - play from start
+        audioRef.current.src = track.path;
         audioRef.current.play().catch(() => {});
       }
-    } else if (!isEnabled && audioRef.current) {
-      audioRef.current.pause();
     }
-  }, [isEnabled, currentTrackIndex, tracks]);
+  }, [currentTrackIndex, tracks]);
+
+  // Handle enable/disable toggle (save preference only, don't interrupt music)
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify(isEnabled));
+    } catch {}
+  }, [isEnabled]);
 
   // Pause music when tab is not focused
   useEffect(() => {
