@@ -860,6 +860,45 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              {/* УРОВЕНЬ 4: TRIZ Тренер (🧠) */}
+              <div className="bg-gradient-to-r from-blue-50 to-blue-50 rounded-[16px] p-4 border-2 border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🧠</span>
+                    <div>
+                      <div className="font-bold text-gray-900 text-[14px]">ТРИЗ Тренер</div>
+                      <div className="text-[11px] text-gray-600">Анализируй идеи и находи решения</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[12px] font-semibold text-blue-700">Всегда доступно ✓</div>
+                    <div className="text-[11px] text-gray-600">открывай в любой момент</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {TASKS.filter(t => t.id === "solomon-hall").map((t) => {
+                    const done = collected.includes(t.id);
+                    return (
+                      <button key={t.id}
+                        onClick={() => {
+                          const idx = TASKS.findIndex(task => task.id === "solomon-hall");
+                          startTask(idx);
+                        }}
+                        className={`w-full rounded-[14px] p-3 flex items-start gap-2 text-left transition-all active:scale-95
+                          ${done ? "bg-blue-200 border-2 border-blue-400" : "bg-white border-2 border-gray-100 hover:border-blue-400"}`}
+                      >
+                        <span className="text-3xl flex-shrink-0">{t.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold text-gray-800">{t.title}</div>
+                          <div className="text-[11px] text-gray-600">{t.teaser}</div>
+                          {done && <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-300 text-blue-700">✓ Решено</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         )}
