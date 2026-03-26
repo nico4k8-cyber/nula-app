@@ -1,24 +1,38 @@
 import { useState, useRef, useEffect } from "react";
 import { TASKS } from "./tasks";
-import { askAI } from "./ai";
+import { askAI, askTriz } from "./ai";
+import { createNewState } from "./bot/engine.js";
 import City from "./City";
 import DragonBubbleScreen from "./DragonBubbleScreen";
 import UnlockAnimation from "./UnlockAnimation";
 import TaskGenerator from "./TaskGenerator";
 import DragonSplashScreen from "./DragonSplashScreen";
+import PhaseIndicator from "./components/PhaseIndicator";
+import ResourceButtons from "./components/ResourceButtons";
 import { useAudio } from "./useAudio";
 import { trackEvent, EVENTS } from "./analytics";
 
 /* ═══ localStorage ═══ */
 const STORAGE_KEY = "razgadai_v1";
+const TRIZ_STATE_KEY = "razgadai_triz_state";
+
 function loadState() {
   try {
     const s = localStorage.getItem(STORAGE_KEY);
-    return s ? JSON.parse(s) : {};
+    const appState = s ? JSON.parse(s) : {};
+    const trizState = localStorage.getItem(TRIZ_STATE_KEY);
+    return { ...appState, trizState: trizState ? JSON.parse(trizState) : null };
   } catch { return {}; }
 }
+
 function saveState(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+  try {
+    const { trizState, ...rest } = data;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
+    if (trizState) {
+      localStorage.setItem(TRIZ_STATE_KEY, JSON.stringify(trizState));
+    }
+  } catch {}
 }
 
 /* ═══ TopProgress ═══ */
@@ -28,12 +42,13 @@ function TopProgress({ collected, current }) {
       {TASKS.map((t, i) => {
         const done = collected.includes(t.id);
         const active = current === i;
+        const emoji = t.puzzle?.emoji || (t.icon || "🔹");
         return (
           <div key={t.id}
             className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold transition-all
               ${done ? "bg-green-500 text-white" : active ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-400"}`}
           >
-            {done ? "✓" : active ? t.puzzle.emoji : i + 1}
+            {done ? "✓" : active ? emoji : i + 1}
           </div>
         );
       })}
@@ -295,6 +310,9 @@ export default function App() {
   const [userTasks,   setUserTasks]   = useState(saved.userTasks || []);
   const [solveCount,  setSolveCount]  = useState(saved.solveCount || {});
 
+  // Detect task type: TRIZ (new) vs Mystery (old)
+  const isTriz = (t) => t?.core_problem && t?.ikr && t?.resources;
+
   // dialog
   const [messages,    setMessages]    = useState([]);
   const [input,       setInput]       = useState("");
@@ -304,6 +322,9 @@ export default function App() {
   const [bingoFlash,  setBingoFlash]  = useState(false);
   const [sessionStars,setSessionStars]= useState(0);
   const [unlockedBuildingId, setUnlockedBuildingId] = useState(null);
+
+  // TRIZ mode: 7-phase state machine
+  const [trizState, setTrizState] = useState(null); // Will be set to createNewState() when starting TRIZ task
 
   // twist
   const [twistChoice, setTwistChoice] = useState(null);
@@ -332,8 +353,8 @@ export default function App() {
   }, [messages, isTyping, phase]);
 
   useEffect(() => {
-    saveState({ ageGroup, collected, totalStars, hasSeenOnboarding, userTasks, solveCount, hasSeenDragonSplash });
-  }, [ageGroup, collected, totalStars, hasSeenOnboarding, userTasks, solveCount, hasSeenDragonSplash]);
+    saveState({ ageGroup, collected, totalStars, hasSeenOnboarding, userTasks, solveCount, hasSeenDragonSplash, trizState });
+  }, [ageGroup, collected, totalStars, hasSeenOnboarding, userTasks, solveCount, hasSeenDragonSplash, trizState]);
 
   useEffect(() => {
     if (window.__openCity) {
@@ -364,25 +385,47 @@ export default function App() {
     setDebriefBingo(false);
     setTwistChoice(null);
     setSessionStars(0);
-    const hook = ageGroup === "senior" ? t.puzzle.hookSenior : t.puzzle.hookJunior;
-    // Age-personalized greeting + puzzle question
-    const greetings = ageGroup === "senior"
-      ? [
-          "🐉 Вот интересная загадка!",
-          "🐉 Природа спрятала закономерность здесь...",
-          "🐉 Посмотри внимательно! Что происходит?"
-        ]
-      : [
-          "🐉 Вот интересная загадка!",
-          "🐉 Природа решила эту задачу очень хитро!",
-          "🐉 Посмотри! Что здесь необычного?"
-        ];
-    const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-    setMessages([
-      { type: "bot", text: greeting },
-      { type: "bot", text: "🔍 Прочитай загадку:" },
-      { type: "bot", text: hook }
-    ]);
+
+    if (isTriz(t)) {
+      // TRIZ mode: 7-phase engine
+      const newState = createNewState(t.id);
+      setTrizState(newState);
+
+      // Opening message for TRIZ task
+      const greetings = [
+        "🐉 Давай решим эту задачу вместе!",
+        "🐉 У тебя есть отличная идея? Расскажи!",
+        "🐉 Посмотри внимательно — что можно улучшить?"
+      ];
+      const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+      const hook = ageGroup === "senior" ? t.puzzle.hookSenior : t.puzzle.hookJunior;
+
+      setMessages([
+        { type: "bot", text: greeting },
+        { type: "bot", text: hook }
+      ]);
+    } else {
+      // Mystery mode: old detective game
+      const hook = ageGroup === "senior" ? t.puzzle.hookSenior : t.puzzle.hookJunior;
+      const greetings = ageGroup === "senior"
+        ? [
+            "🐉 Вот интересная загадка!",
+            "🐉 Природа спрятала закономерность здесь...",
+            "🐉 Посмотри внимательно! Что происходит?"
+          ]
+        : [
+            "🐉 Вот интересная загадка!",
+            "🐉 Природа решила эту задачу очень хитро!",
+            "🐉 Посмотри! Что здесь необычного?"
+          ];
+      const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+      setMessages([
+        { type: "bot", text: greeting },
+        { type: "bot", text: "🔍 Прочитай загадку:" },
+        { type: "bot", text: hook }
+      ]);
+    }
+
     setPhase("dialog");
     setTimeout(() => inputRef.current?.focus(), 100);
   }
@@ -501,49 +544,71 @@ export default function App() {
 
     try {
       const history = newMessages.map(m => ({ role: m.type === "bot" ? "bot" : "user", text: m.text }));
-      const result = await askAI(text, history.slice(0, -1), task.puzzle, ageGroup);
 
-      const isSolved = result.prizStep === 4 || result.text.toLowerCase().includes("задача решена");
-      const isBingo  = isSolved && !messages.some(m => m.type === "show-answer");
-      const prizAdvanced = result.prizStep > prizStep;
+      if (isTriz(task)) {
+        // TRIZ mode: 7-phase engine
+        const result = await askTriz(text, task, trizState, history.slice(0, -1));
 
-      if (result.stars > 0) setSessionStars(s => s + result.stars);
-      const newPrizStep = result.prizStep || 0;
-      setPrizStep(newPrizStep);
+        // Update TRIZ state
+        if (result.newState) setTrizState(result.newState);
+        if (result.stars > 0) setSessionStars(s => s + result.stars);
 
-      if (isBingo) {
-        setDebriefBingo(true);
-        setBingoFlash(true);
-        if (navigator.vibrate) navigator.vibrate([40, 30, 80]);
-        setTimeout(() => setBingoFlash(false), 700);
-      }
-
-      // Add stage advancement message if ПРИЗ progressed
-      let messageText = result.text;
-      const stageMessages = {
-        1: "🔍 Вижу противоречие!",
-        2: "💡 Переходим к идеям!",
-        3: "✓ Решение найдено!",
-        4: "🎉 Путь открыт!"
-      };
-
-      setMessages(prev => {
         const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-        let updates = [...prev, { type: "bot", text: messageText, stars: result.stars, timestamp }];
-        if (prizAdvanced && stageMessages[newPrizStep]) {
-          updates.push({ type: "bot", text: stageMessages[newPrizStep], isStageMsg: true, timestamp });
-        }
-        return updates;
-      });
+        setMessages(prev => [...prev, { type: "bot", text: result.reply, stars: result.stars, timestamp }]);
 
-      if (isSolved) {
-        setTimeout(() => {
+        // Check if session complete (phase 7 + user said no to continue)
+        if (result.resultType === "session_complete") {
+          setTimeout(() => {
+            setMessages(prev => [...prev, { type: "bot", text: `✨ Отлично! Ты выполнил задачу`, isDiscovery: true, timestamp: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) }]);
+            setTimeout(goDebrief, 1200);
+          }, 800);
+        }
+      } else {
+        // Mystery mode: old detective game
+        const result = await askAI(text, history.slice(0, -1), task.puzzle, ageGroup);
+
+        const isSolved = result.prizStep === 4 || result.text.toLowerCase().includes("задача решена");
+        const isBingo  = isSolved && !messages.some(m => m.type === "show-answer");
+        const prizAdvanced = result.prizStep > prizStep;
+
+        if (result.stars > 0) setSessionStars(s => s + result.stars);
+        const newPrizStep = result.prizStep || 0;
+        setPrizStep(newPrizStep);
+
+        if (isBingo) {
+          setDebriefBingo(true);
+          setBingoFlash(true);
+          if (navigator.vibrate) navigator.vibrate([40, 30, 80]);
+          setTimeout(() => setBingoFlash(false), 700);
+        }
+
+        let messageText = result.text;
+        const stageMessages = {
+          1: "🔍 Вижу противоречие!",
+          2: "💡 Переходим к идеям!",
+          3: "✓ Решение найдено!",
+          4: "🎉 Путь открыт!"
+        };
+
+        setMessages(prev => {
           const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-          setMessages(prev => [...prev, { type: "bot", text: `✨ Ты открыл метод: ${task.trick.name}`, isDiscovery: true, timestamp }]);
-          setTimeout(goDebrief, 1200);
-        }, 800);
+          let updates = [...prev, { type: "bot", text: messageText, stars: result.stars, timestamp }];
+          if (prizAdvanced && stageMessages[newPrizStep]) {
+            updates.push({ type: "bot", text: stageMessages[newPrizStep], isStageMsg: true, timestamp });
+          }
+          return updates;
+        });
+
+        if (isSolved) {
+          setTimeout(() => {
+            const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+            setMessages(prev => [...prev, { type: "bot", text: `✨ Ты открыл метод: ${task.trick.name}`, isDiscovery: true, timestamp }]);
+            setTimeout(goDebrief, 1200);
+          }, 800);
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error("handleUserMessage error:", err);
       setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз." }]);
     } finally {
       setIsTyping(false);
@@ -556,6 +621,12 @@ export default function App() {
       setMessages(prev => [...prev, { type: "bot", text: "Задача решена! 🎉 " + (task.puzzle.bonusFact || "") }]);
       setTimeout(goDebrief, 1800);
     }, 800);
+  }
+
+  function handleResourceSelect(resourceId) {
+    // Append selected resource to input field
+    setInput(prev => prev ? `${prev} ${resourceId}` : resourceId);
+    inputRef.current?.focus();
   }
 
   /* ─── render ─── */
@@ -586,7 +657,7 @@ export default function App() {
             onStart={() => {
               trackEvent(EVENTS.ONBOARDING_COMPLETED);
               setHasSeenOnboarding(true);
-              setPhase("age-select");
+              setPhase("picker");
             }}
           />
         )}
@@ -830,22 +901,7 @@ export default function App() {
                 <TopProgress collected={collected} current={taskIdx} />
               </div>
             </div>
-            <div className="px-4 py-2 flex justify-center gap-2">
-              {[
-                { emoji: "❓", label: "Вопрос" },
-                { emoji: "🔍", label: "Разбор" },
-                { emoji: "💡", label: "Идеи" },
-                { emoji: "✓", label: "Решение" },
-                { emoji: "🎉", label: "Готово" }
-              ].map((stage, i) => (
-                <div key={i}
-                  title={stage.label}
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all cursor-help
-                    ${i <= prizStep ? "bg-orange-500 text-white scale-110" : "bg-gray-200 text-gray-400"}`}>
-                  {stage.emoji}
-                </div>
-              ))}
-            </div>
+            <PhaseIndicator isTriz={isTriz(task)} trizPhase={trizState?.phase ?? -1} prizStep={prizStep} cycleCount={trizState?.cycleCount ?? 0} />
             <div className="flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-3 pt-2" style={{ maxHeight: "calc(100vh - 160px)" }}>
               {messages.map((m, i) => {
                 if (m.type === "bot") {
@@ -919,6 +975,18 @@ export default function App() {
                 >
                   Показать ответ
                 </button>
+              </div>
+            )}
+
+            {/* Resource Buttons (TRIZ Phase 3-4) */}
+            {task && isTriz(task) && task.resources && trizState && (trizState.phase === 3 || trizState.phase === 4) && (
+              <div className="px-4 pb-2">
+                <ResourceButtons
+                  resources={task.resources}
+                  currentResource={trizState.currentResource}
+                  onSelectResource={handleResourceSelect}
+                  disabled={isTyping}
+                />
               </div>
             )}
 

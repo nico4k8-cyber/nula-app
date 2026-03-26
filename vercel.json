@@ -9,6 +9,9 @@
     "api/chat.js": {
       "maxDuration": 25
     },
+    "api/engine.js": {
+      "maxDuration": 25
+    },
     "api/re-engagement.js": {
       "maxDuration": 10
     },
