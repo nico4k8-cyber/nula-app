@@ -1,0 +1,28 @@
+{
+  "workflow": {
+    "granularity": "standard",
+    "execution": "parallel",
+    "research": true,
+    "yolo_mode": false,
+    "auto_advance": false,
+    "discuss_mode": "discuss",
+    "nyquist_validation": true,
+    "plan_checker": true,
+    "commit_docs": true,
+    "ui_phase": false,
+    "ui_safety_gate": false
+  },
+  "models": {
+    "researcher": "sonnet",
+    "planner": "opus",
+    "checker": "sonnet",
+    "synthesizer": "sonnet",
+    "roadmapper": "sonnet"
+  },
+  "project": {
+    "name": "ПАРАДОКС",
+    "type": "mobile-game",
+    "platform": "ios-android-web",
+    "initialized": "2026-03-27"
+  }
+}
