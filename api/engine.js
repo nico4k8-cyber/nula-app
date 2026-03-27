@@ -13,14 +13,19 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { userMessage, task, state, history } = req.body;
+  const { userMessage, task, state, history, ageGroup } = req.body;
 
   if (!userMessage || !task || !state) {
     return res.status(400).json({ error: "userMessage, task, and state are required" });
   }
 
+  // Map ageGroup to numeric age for ПРИЗ version selection
+  let age = 10; // default
+  if (ageGroup === "junior") age = 10;    // ПРИЗ-стандарт (8-13)
+  else if (ageGroup === "senior") age = 14; // ПРИЗ-про (13+)
+
   try {
-    const result = await processUserMessage(userMessage, task, state, history || []);
+    const result = await processUserMessage(userMessage, task, state, history || [], null, age);
     return res.status(200).json(result);
   } catch (err) {
     console.error("[engine API]", err.message);

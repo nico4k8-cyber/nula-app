@@ -387,8 +387,9 @@ export default function App() {
     setSessionStars(0);
 
     if (isTriz(t)) {
-      // TRIZ mode: 7-phase engine
-      const newState = createNewState(t.id);
+      // TRIZ mode: 7-phase engine with adaptive ПРИЗ version
+      const age = ageGroup === "senior" ? 14 : 10; // Map ageGroup to numeric age
+      const newState = createNewState(t.id, age);
       setTrizState(newState);
 
       // Opening message for TRIZ task
@@ -546,8 +547,8 @@ export default function App() {
       const history = newMessages.map(m => ({ role: m.type === "bot" ? "bot" : "user", text: m.text }));
 
       if (isTriz(task)) {
-        // TRIZ mode: 7-phase engine
-        const result = await askTriz(text, task, trizState, history.slice(0, -1));
+        // TRIZ mode: 7-phase engine with adaptive ПРИЗ version
+        const result = await askTriz(text, task, trizState, history.slice(0, -1), ageGroup);
 
         // Update TRIZ state
         if (result.newState) setTrizState(result.newState);

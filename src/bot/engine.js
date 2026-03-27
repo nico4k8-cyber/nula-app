@@ -1,3 +1,31 @@
+/**
+ * ПРИЗ Engine V3 — Adaptive TRIZ Problem-Solving System
+ *
+ * Supports 3 age-adaptive versions of ПРИЗ methodology:
+ *
+ * 1. ПРИЗ-базовый (ages 6-8): 3 phases
+ *    П (Prepare): Propose idea
+ *    Р (Research): Good/Bad analysis
+ *    И (Ideas) + З (Validate): Resources → finish
+ *    ✨ (Insight): Implicit
+ *
+ * 2. ПРИЗ-стандарт (ages 8-13): 5 steps across 7 phases (current v2)
+ *    П: Propose idea
+ *    Р: Good/Bad + Contradiction
+ *    И: Resources (show + test)
+ *    З: IKR + Improve
+ *    ✨: Cycle or end
+ *
+ * 3. ПРИЗ-про (ages 13+): 7 phases with contradiction analysis
+ *    Same as стандарт, but phase 2 detects:
+ *    - Technical contradictions (need X but obstacle Y)
+ *    - Physical contradictions (param should be X but also Y)
+ *    Used to guide solution principles selection
+ *
+ * Version: 3 (adaptive ПРИЗ + contradiction analysis)
+ * Backward-compatible with v2 state files
+ */
+
 import { isSafe } from "./safety.js";
 import TASKS_DATA from "./tasks.js";
 import { generateUgolokResponse } from "./ai.js";
@@ -12,18 +40,32 @@ export const normalize = (s) => {
 export const PICK = (a) => a[Math.floor(Math.random() * a.length)];
 
 /**
- * New state structure for 7-phase engine
- * Replaces old guessing model with open-ended idea analysis
+ * Determine ПРИЗ version based on age group
+ * @param {number} age - Child's age
+ * @returns {'base'|'standard'|'pro'} ПРИЗ version
  */
-export function createNewState(taskId) {
+export function getPRIZVersion(age) {
+  if (age < 8) return "base"; // ПРИЗ-базовый
+  if (age < 13) return "standard"; // ПРИЗ-стандарт
+  return "pro"; // ПРИЗ-про (с противоречиями)
+}
+
+/**
+ * New state structure for adaptive ПРИЗ engine
+ * Supports ПРИЗ-базовый (3 steps), ПРИЗ-стандарт (5 steps), ПРИЗ-про (7 steps + contradictions)
+ */
+export function createNewState(taskId, age = 10) {
+  const prizVersion = getPRIZVersion(age);
+
   return {
-    phase: 0, // 0-7
+    phase: 0, // phase numbering depends on ПРИЗ version
     subPhase: null, // 'ask_good' | 'ask_bad' for phase 1
 
     currentIdea: null, // { text, normalized }
     goodPoints: [], // collected "what's good"
     badPoints: [], // collected "what's bad"
-    contradiction: null, // { need, but }
+    contradiction: null, // { need, but, type: 'technical'|'physical'|'admin' } — added for ПРИЗ-про
+    physicalContradiction: null, // { param, shouldBe, butMust } — for ПРИЗ-3
 
     resourceQueue: [], // resources to check
     currentResource: null,
@@ -38,7 +80,9 @@ export function createNewState(taskId) {
     messageCount: 0,
 
     taskId,
-    version: 2,
+    version: 3, // V3 supports adaptive ПРИЗ
+    age,
+    prizVersion, // 'base'|'standard'|'pro'
   };
 }
 
@@ -153,17 +197,129 @@ async function handleGoodBadAnalysis(txt, task, state, history, onError) {
 }
 
 /**
- * Phase 2: Formulate contradiction
+ * Phase 2: Formulate contradiction (ПРИЗ-стандарт/про) OR test resources (ПРИЗ-базовый)
+ * For ПРИЗ-базовый: Show resources and collect answers
+ * For ПРИЗ-стандарт: Formulate contradiction
+ * For ПРИЗ-про: Formulate contradiction + detect type (technical/physical)
  */
 async function handleContradiction(txt, task, state, history, onError) {
+  // ПРИЗ-базовый at phase 2: This is resources phase
+  if (state.prizVersion === "base") {
+    const resourceIds = task.resources?.map((r) => r.id) || [];
+    const resourceQueue = resourceIds.slice(0, 2);
+    const currentResource = state.currentResource || resourceQueue[0];
+
+    // If no resources yet, show them
+    if (!state.currentResource) {
+      const newState = {
+        ...state,
+        phase: 2,
+        resourceQueue,
+        currentResource,
+      };
+
+      const { text: aiReply, model } = await generateUgolokResponse(
+        txt,
+        history,
+        task,
+        onError,
+        2
+      );
+
+      return {
+        reply: aiReply,
+        model,
+        newState,
+        stars: 0,
+        prizStep: 2,
+      };
+    }
+
+    // Test current resource
+    const remaining = resourceQueue.filter((r) => r !== currentResource);
+    if (remaining.length > 0) {
+      // More resources to test
+      const newState = {
+        ...state,
+        phase: 2,
+        currentResource: remaining[0],
+        resourceIdeas: {
+          ...state.resourceIdeas,
+          [currentResource]: txt,
+        },
+      };
+
+      const { text: aiReply, model } = await generateUgolokResponse(
+        txt,
+        history,
+        task,
+        onError,
+        2
+      );
+
+      return {
+        reply: aiReply,
+        model,
+        newState,
+        stars: 0,
+        prizStep: 2,
+      };
+    } else {
+      // All resources tested, finish
+      const newState = {
+        ...state,
+        phase: 3, // Move to cycle_or_end
+        resourceIdeas: {
+          ...state.resourceIdeas,
+          [currentResource]: txt,
+        },
+      };
+
+      const { text: aiReply, model } = await generateUgolokResponse(
+        txt,
+        history,
+        task,
+        onError,
+        2
+      );
+
+      return {
+        reply: aiReply,
+        model,
+        newState,
+        stars: 2, // базовый gets 2 stars by default
+        prizStep: 2,
+      };
+    }
+  }
+
+  // ПРИЗ-стандарт/про: Normal contradiction handling
   const newState = {
     ...state,
     phase: 2,
     contradiction: {
       need: task.core_problem?.need || "найти решение",
       but: task.core_problem?.obstacle || "есть препятствие",
+      type: "technical", // technical|physical|admin — for ПРИЗ-про
     },
   };
+
+  // ПРИЗ-про (13+): Add contradiction type detection
+  if (state.prizVersion === "pro") {
+    // Detect if it's a physical contradiction (param should be X but also Y)
+    const hasPhysical = txt.toLowerCase().includes("одновременно") ||
+                        txt.toLowerCase().includes("и") ||
+                        txt.toLowerCase().includes("противор");
+
+    if (hasPhysical) {
+      newState.contradiction.type = "physical";
+      newState.physicalContradiction = {
+        param: task.core_problem?.param || "параметр",
+        shouldBe: "одна величина",
+        butMust: "другая величина",
+      };
+    }
+  }
 
   const { text: aiReply, model } = await generateUgolokResponse(
     txt,
@@ -183,11 +339,12 @@ async function handleContradiction(txt, task, state, history, onError) {
 }
 
 /**
- * Phase 3: Show resources
+ * Phase 3: Show resources (ПРИЗ-стандарт/про only)
+ * ПРИЗ-базовый handles resources inline in handleContradiction
  */
 async function handleResources(txt, task, state, history, onError) {
   const resourceIds = task.resources?.map((r) => r.id) || [];
-  const resourceQueue = resourceIds.slice(0, 3); // Pick first 3 for testing
+  const resourceQueue = resourceIds.slice(0, 3); // стандарт/про have 3 resources
 
   const newState = {
     ...state,
@@ -214,7 +371,8 @@ async function handleResources(txt, task, state, history, onError) {
 }
 
 /**
- * Phase 4: Test each resource — can you use it?
+ * Phase 4: Test each resource — can you use it? (ПРИЗ-стандарт/про only)
+ * ПРИЗ-базовый handles resource testing inline in handleContradiction
  */
 async function handleTestResources(txt, task, state, history, onError) {
   const currentResource = state.currentResource;
@@ -414,14 +572,52 @@ async function handleCycleOrEnd(txt, task, state, history, onError) {
 }
 
 /**
- * Main dispatcher — routes to appropriate phase handler
+ * Router function for adaptive ПРИЗ phases
+ * Maps phase numbers to handlers based on ПРИЗ version
+ */
+function mapPhaseToHandler(state) {
+  const { phase, prizVersion } = state;
+
+  // ПРИЗ-базовый (4-phase): 0 → 1 → 2 (contradiction skipped, goes to resources) → 3 (cycle/end)
+  if (prizVersion === "base") {
+    if (phase === 0) return "propose";
+    if (phase === 1) return "good_bad";
+    if (phase === 2) return "contradiction"; // This will skip contradiction and show resources instead
+    if (phase === 3) return "cycle_or_end"; // Finish
+    return "cycle_or_end";
+  }
+
+  // ПРИЗ-стандарт & ПРИЗ-про (7-phase): 0→1→2→3→4→5→6→7
+  if (phase === 0) return "propose";
+  if (phase === 1) return "good_bad";
+  if (phase === 2) return "contradiction";
+  if (phase === 3) return "resources";
+  if (phase === 4) return "test_resources";
+  if (phase === 5) return "ikr";
+  if (phase === 6) return "improve";
+  if (phase === 7) return "cycle_or_end";
+
+  return "cycle_or_end";
+}
+
+/**
+ * Main dispatcher — routes to appropriate phase handler based on ПРИЗ version
+ *
+ * @param {string} txt - User's message
+ * @param {object} task - Task definition (from tasks.json)
+ * @param {object} state - Current session state
+ * @param {array} history - Conversation history
+ * @param {function} onError - Error callback
+ * @param {number} age - User's age (determines ПРИЗ version: <8→base, 8-13→standard, 13+→pro)
+ * @returns {object} Result with reply, newState, stars, and metadata
  */
 export async function processUserMessage(
   txt,
   task,
   state,
   history = [],
-  onError = null
+  onError = null,
+  age = 10
 ) {
   // Safety check
   if (!isSafe(txt)) {
@@ -433,18 +629,25 @@ export async function processUserMessage(
   }
 
   // Ensure state is initialized
-  if (!state || state.version !== 2) {
-    state = createNewState(task?.id);
+  if (!state || (state.version && state.version < 3)) {
+    state = createNewState(task?.id, age);
+  }
+
+  // Verify/update age-based version
+  if (age && (!state.age || state.age !== age)) {
+    state = { ...state, age, prizVersion: getPRIZVersion(age) };
   }
 
   let result;
 
   try {
-    switch (state.phase) {
-      case 0:
+    const handler = mapPhaseToHandler(state);
+
+    switch (handler) {
+      case "propose":
         result = await handleProposeIdea(txt, task, state, history, onError);
         break;
-      case 1:
+      case "good_bad":
         result = await handleGoodBadAnalysis(
           txt,
           task,
@@ -453,33 +656,33 @@ export async function processUserMessage(
           onError
         );
         break;
-      case 2:
+      case "contradiction":
         result = await handleContradiction(txt, task, state, history, onError);
         break;
-      case 3:
+      case "resources":
         result = await handleResources(txt, task, state, history, onError);
         break;
-      case 4:
+      case "test_resources":
         result = await handleTestResources(txt, task, state, history, onError);
         break;
-      case 5:
+      case "ikr":
         result = await handleIKR(txt, task, state, history, onError);
         break;
-      case 6:
+      case "improve":
         result = await handleImprove(txt, task, state, history, onError);
         break;
-      case 7:
+      case "cycle_or_end":
         result = await handleCycleOrEnd(txt, task, state, history, onError);
         break;
       default:
         result = {
           reply: "Что-то пошло не так. Давай начнём заново!",
-          newState: createNewState(task?.id),
+          newState: createNewState(task?.id, age),
           stars: 0,
         };
     }
   } catch (err) {
-    console.error(`Engine error (phase ${state.phase}):`, err);
+    console.error(`Engine error (phase ${state.phase}, version ${state.prizVersion}):`, err);
     if (onError) onError(err);
     result = {
       reply: "Ошибка в обработке. Попробуем ещё раз?",

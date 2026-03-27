@@ -40,8 +40,8 @@ export async function askAI(userMessage, history, puzzle, ageGroup = "senior") {
   }
 }
 
-// New system: TRIZ 7-phase engine
-export async function askTriz(userMessage, task, state, history = []) {
+// New system: TRIZ 7-phase engine with adaptive age-based ПРИЗ version
+export async function askTriz(userMessage, task, state, history = [], ageGroup = "senior") {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
 
@@ -53,7 +53,8 @@ export async function askTriz(userMessage, task, state, history = []) {
         userMessage,
         task,
         state,
-        history
+        history,
+        ageGroup
       }),
       signal: controller.signal,
     });
