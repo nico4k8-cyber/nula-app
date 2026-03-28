@@ -277,11 +277,55 @@ const TASKS_DATA = [
       realSolution: "Все 10 способов — валидные! Разные города выбирают разные решения. Венеция использовала барьеры и каналы. Нидерланды — дренаж и подготовку. Природные озёра работают через испарение и впитывание. Твой выбор сейчас — какое решение тебе нравится? Красивое или срочное?",
     },
   },
+  {
+    id: 8,
+    trick: {
+      name: "Объединение",
+      animal: "🦓",
+      animalName: "Зебра",
+      motto: "Вместе мы сильнее",
+      color: "#ec4899",
+      difficulty: 2,
+      building: "🏘️",
+      buildingName: "Деревня Единства",
+    },
+    puzzle: {
+      emoji: "🦓",
+      question: "Почему зебры стоят стадом против льва, но разбегаются в разные стороны при атаке?",
+      hookSenior: "Враг один. Зебр много. Какая стратегия работает?",
+      hookJunior: "Враг видит полосатое стадо, двигающееся в разные стороны. Что он видит?",
+      witnesses: [
+        { name: "Лев", avatar: "🦁", fact: "Одна — это добыча. Стадо — это матрица полосок, которую я не могу понять!" },
+        { name: "Зебра", avatar: "🦓", fact: "Наши полосы создают эффект дизориентации. Лев не может выбрать одну цель." },
+      ],
+      answer: "Эффект дизориентации: полосы зебры при движении в разные стороны запутывают хищника. Это называется дизруптивный камуфляж в действии.",
+      bonusFact: "Корабли раскрашивают в полосы (дизруптивный камуфляж) чтобы врагу было трудно определить расстояние. Рыбы в косяке используют тот же принцип.",
+    },
+    contradiction: {
+      intro: "Одна зебра — слаба. Но вместе? Вот это сила! 🦓",
+      fact1: "Каждая зебра одна — слабее льва",
+      fact2: "Вместе зебры сильнее и выживают",
+      buddyQuestion: "Как из слабых сделать сильное? 🤔",
+      options: [
+        { text: "Бежать одной в сторону", icon: "🏃", temp: "cold", class_id: "unity_solo", principles: [2], elegance: "⭐", problem: "⚠️ Лев меня поймает" },
+        { text: "Стоять вместе и защищаться", icon: "⚔️", temp: "warm", class_id: "unity_defend", principles: [5, 10], elegance: "⭐⭐", problem: "⚠️ Всё равно слабее" },
+        { text: "Убегать вместе в разные стороны", icon: "💨", temp: "bingo", class_id: "unity_scatter", principles: [1, 4], elegance: "⭐⭐⭐", advantage: "✨ Лев не знает кого поймать!" },
+        { text: "Издавать громкие звуки", icon: "📢", temp: "warm", class_id: "unity_sound", principles: [18], elegance: "⭐⭐", problem: "⚠️ Может привлечь других врагов" },
+        { text: "Создать облако пыли при беге", icon: "🌪️", temp: "warm", class_id: "unity_dust", principles: [31, 32], elegance: "⭐⭐", problem: "⚠️ Может испугать и нас" },
+        { text: "Менять направление синхронно", icon: "🔀", temp: "warm", class_id: "unity_sync", principles: [15, 23], elegance: "⭐⭐", problem: "⚠️ Нужна точная координация" },
+        { text: "Положить слабую в центр крепкими", icon: "🎯", temp: "warm", class_id: "unity_protect", principles: [7, 28], elegance: "⭐⭐", problem: "⚠️ Остальные могут не справиться" },
+        { text: "Бежать к воде где лев не может", icon: "💧", temp: "bingo", class_id: "unity_water", principles: [21, 35], elegance: "⭐⭐⭐", advantage: "✨ Лев не плывет как мы!" },
+        { text: "Использовать ночь для побега", icon: "🌙", temp: "bingo", class_id: "unity_night", principles: [31, 32], elegance: "⭐⭐⭐", advantage: "✨ Ночью враг слеп!" },
+        { text: "Отвлечь льва добычей в другом месте", icon: "🥩", temp: "warm", class_id: "unity_distract", principles: [24, 26], elegance: "⭐⭐", problem: "⚠️ Нужна приманка" },
+      ],
+      realSolution: "Зебры используют несколько стратегий: полосы дезориентируют, стадо защищает, разброс в разные стороны запутывает. Вместе это победа!",
+    },
+  },
 ];
 
-// Dynamically generate tasks 8-40 (placeholders with proper structure)
+// Dynamically generate tasks 9-40 (placeholders with proper structure)
 const taskLoader = require('./load-tasks');
-const generatedTasks = taskLoader.generatePlaceholderTasks(8, 40);
+const generatedTasks = taskLoader.generatePlaceholderTasks(9, 40);
 TASKS_DATA.push(...generatedTasks);
 
 // Weight mapping for scoring
