@@ -1,0 +1,16 @@
+{
+  "name": "shariel-backend",
+  "version": "1.0.0",
+  "description": "SHARIEL Backend API - TRIZ Game for Kids",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  }
+}

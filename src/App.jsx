@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { TASKS } from "./tasks";
 import { askAI, askTriz } from "./ai";
 import { createNewState } from "./bot/engine.js";
+import { getSourceFromUrl, validateAnswer, logAnswer } from "./api-client.js";
 import City from "./City";
 import DragonBubbleScreen from "./DragonBubbleScreen";
 import UnlockAnimation from "./UnlockAnimation";
@@ -15,19 +16,55 @@ import { trackEvent, EVENTS } from "./analytics";
 /* ═══ localStorage ═══ */
 const STORAGE_KEY = "razgadai_v1";
 const TRIZ_STATE_KEY = "razgadai_triz_state";
+const USER_KEY = "razgadai_user_id";
+const SESSION_KEY = "razgadai_session_id";
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 function loadState() {
   try {
     const s = localStorage.getItem(STORAGE_KEY);
     const appState = s ? JSON.parse(s) : {};
     const trizState = localStorage.getItem(TRIZ_STATE_KEY);
-    return { ...appState, trizState: trizState ? JSON.parse(trizState) : null };
-  } catch { return {}; }
+
+    // Load or generate userId and sessionId
+    let userId = localStorage.getItem(USER_KEY);
+    if (!userId) {
+      userId = generateUUID();
+      localStorage.setItem(USER_KEY, userId);
+    }
+
+    let sessionId = localStorage.getItem(SESSION_KEY);
+    if (!sessionId) {
+      sessionId = generateUUID();
+      localStorage.setItem(SESSION_KEY, sessionId);
+    }
+
+    return {
+      ...appState,
+      trizState: trizState ? JSON.parse(trizState) : null,
+      userId,
+      sessionId,
+      source: getSourceFromUrl(), // Track which channel brought user
+    };
+  } catch {
+    return {
+      userId: generateUUID(),
+      sessionId: generateUUID(),
+      source: getSourceFromUrl(),
+    };
+  }
 }
 
 function saveState(data) {
   try {
-    const { trizState, ...rest } = data;
+    const { trizState, userId, sessionId, source, ...rest } = data;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
     if (trizState) {
       localStorage.setItem(TRIZ_STATE_KEY, JSON.stringify(trizState));
@@ -310,6 +347,11 @@ export default function App() {
   const [userTasks,   setUserTasks]   = useState(saved.userTasks || []);
   const [solveCount,  setSolveCount]  = useState(saved.solveCount || {});
 
+  // User tracking for analytics
+  const [userId, setUserId] = useState(saved.userId);
+  const [sessionId, setSessionId] = useState(saved.sessionId);
+  const [source, setSource] = useState(saved.source);
+
   // Detect task type: TRIZ (new) vs Mystery (old)
   const isTriz = (t) => t?.core_problem && t?.ikr && t?.resources;
 
@@ -565,10 +607,31 @@ export default function App() {
           }, 800);
         }
       } else {
-        // Mystery mode: old detective game
-        const result = await askAI(text, history.slice(0, -1), task.puzzle, ageGroup);
+        // Mystery mode with backend validation
+        // Try to validate answer against backend API
+        let result;
+        try {
+          const backendResult = await validateAnswer(task.id, text, userId, sessionId, source);
 
-        const isSolved = result.prizStep === 4 || result.text.toLowerCase().includes("задача решена");
+          // Map backend response to old format for UI compatibility
+          result = {
+            text: backendResult.feedback,
+            stars: backendResult.score,
+            prizStep: backendResult.earnsCrystal ? 4 : 1,
+            trizInsight: backendResult.trizInsight,
+            realSolution: backendResult.realSolution,
+            bonusFact: backendResult.bonusFact,
+          };
+
+          // Log to analytics
+          logAnswer(userId, task.id, backendResult.score, source).catch(() => {});
+        } catch (err) {
+          console.warn("Backend validation failed, falling back to askAI:", err);
+          // Fallback to old askAI if backend is down
+          result = await askAI(text, history.slice(0, -1), task.puzzle, ageGroup);
+        }
+
+        const isSolved = result.prizStep === 4 || result.earnsCrystal || result.text.toLowerCase().includes("задача решена");
         const isBingo  = isSolved && !messages.some(m => m.type === "show-answer");
         const prizAdvanced = result.prizStep > prizStep;
 

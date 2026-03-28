@@ -1,4 +1,15 @@
-export const TASKS = [
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Import all tasks from existing structure
+const TASKS_DATA = [
   {
     id: 1,
     trick: {
@@ -18,9 +29,8 @@ export const TASKS = [
       hookJunior: "Трясёшь минуту — ни капли. Бьёшь по дну — льётся. Что происходит внутри?",
       witnesses: [
         { name: "Бутылка", avatar: "🍶", fact: "Кетчуп цепляется за мои стенки и стоит как стена!" },
-        { name: "Кетчуп",  avatar: "🟥", fact: "Я густой пока меня не трясут. А когда трясут — становлюсь жидким!" },
+        { name: "Кетчуп",  avatar: "🟥", fact: "Я густой пока меня не трясут. А когда трясят — становлюсь жидким!" },
       ],
-      dialog: [],
       answer: "Кетчуп — неньютоновская жидкость: густой в покое, мгновенно жидкий от удара. Это называется тиксотропия — свойство менять вязкость под нагрузкой.",
       bonusFact: "Краска для стен работает так же: под кистью течёт легко, а на стене не стекает. Зубная паста, шоколадная глазурь — всё это неньютоновские жидкости.",
     },
@@ -37,7 +47,6 @@ export const TASKS = [
       realSolution: "Heinz просто перевернул бутылку крышкой вниз. Кетчуп густой — но гравитация всегда работает. Не надо менять кетчуп — переверни бутылку. Сегодня так устроено большинство бутылок с соусами.",
     },
   },
-
   {
     id: 2,
     trick: {
@@ -59,12 +68,11 @@ export const TASKS = [
         { name: "Ящерица", avatar: "🦎", fact: "Хвост дёргается сам — враг смотрит на него, а я в это время убегаю. Хвост вырастет заново!" },
         { name: "Хвост",   avatar: "✂️", fact: "Во мне есть специальные «линии разлома» — как перфорация на билете. Отламываюсь легко и точно в нужном месте." },
       ],
-      dialog: [],
       answer: "В хвосте ящерицы есть встроенные «линии разлома» — специальные хрупкие зоны. Хвост отлетает, продолжает дёргаться (хищник отвлекается), а ящерица уходит. Через несколько недель хвост вырастает снова.",
       bonusFact: "Второй хвост вырастает из хряща, а не из кости. В нём нет позвонков — только хрящевая трубка. И он уже никогда не оторвётся так же легко.",
     },
     contradiction: {
-      intro: "Ящерица жертвует частью — и выживает. Инженеры решили ту же задачу. Но тут не сходится 🚀",
+      intro: "Ящерица жертвует частью — и выживает. Инженеры решили ту же задачу. Но тур не сходится 🚀",
       fact1: "Ракета должна брать много топлива — иначе не долетит",
       fact2: "Ракета должна быть лёгкой — иначе не взлетит",
       buddyQuestion: "Тяжёлая И лёгкая? А если она сама себя облегчит по дороге — как? 🤔",
@@ -76,7 +84,6 @@ export const TASKS = [
       realSolution: "Ракеты сбрасывают пустые ступени по дороге — точь-в-точь как ящерица хвост. Сожгли топливо — сбросили бак. Стала легче → полетела дальше. Так устроены все ракеты с 1957 года.",
     },
   },
-
   {
     id: 3,
     trick: {
@@ -98,7 +105,6 @@ export const TASKS = [
         { name: "Анемона",    avatar: "🪸", fact: "Я жалю всё, что касается меня. Но рыбка покрыта слизью — и эта слизь похожа на мою собственную. Я принимаю её за часть себя!" },
         { name: "Рыба-клоун", avatar: "🐠", fact: "Я трусь о щупальца по чуть-чуть, снова и снова. Анемона привыкает — и перестаёт жалить. Это занимает несколько дней." },
       ],
-      dialog: [],
       answer: "Рыба-клоун медленно трётся о щупальца анемоны, постепенно покрываясь её собственной слизью. Анемона «считает» рыбку частью себя и перестаёт жалить. Слизь — это пропуск.",
       bonusFact: "Это взаимовыгодно: рыбка прячется и откладывает икру. Взамен она прогоняет рыбу-бабочку, которая поедает щупальца анемоны. Союз двух смертельных врагов.",
     },
@@ -115,7 +121,6 @@ export const TASKS = [
       realSolution: "Так появились стикеры Post-it. Случайно: химик Спенсер Силвер сделал «слишком слабый» клей. Пять лет он пылился в ящике — пока коллега не использовал его для закладок. Клей-посредник между бумагой и поверхностью.",
     },
   },
-
   {
     id: 4,
     trick: {
@@ -137,15 +142,14 @@ export const TASKS = [
         { name: "Жук",   avatar: "🪲", fact: "В моём брюшке две отдельные камеры: в одной — перекись водорода, в другой — фермент. Смешиваются только когда мне угрожают!" },
         { name: "Химик", avatar: "🧪", fact: "При смешивании — мгновенная реакция: температура 100°C. Жидкость превращается в пар и вылетает как из пушки — со скоростью 10 метров в секунду." },
       ],
-      dialog: [],
       answer: "В жуке две камеры с разными веществами. При опасности они смешиваются — реакция мгновенно даёт 100°C. Жидкость превращается в пар и вылетает как выстрел. Жук управляет углом и направлением.",
       bonusFact: "Жук-бомбардир поворачивает «дуло» почти в любую сторону, включая назад. Скорость струи — около 10 метров в секунду. Именно эту химическую «пушку» изучают для создания новых распылителей.",
     },
     contradiction: {
-      intro: "Жук смешивает два вещества в нужный момент. Пожарные придумали то же. Но тут не сходится 🔥",
+      intro: "Жук смешивает два вещества в нужный момент. Пожарные придумали то же. Но тур не сходится 🔥",
       fact1: "Пожарный шланг должен быть тонким — чтобы добросить воду далеко",
       fact2: "Пожарный шланг должен быть широким — чтобы воды хватало",
-      buddyQuestion: "Тонкий И широкий по ситуации? Как жук меняет выстрел — так и тут? 🤔",
+      buddyQuestion: "Тонкий И широкий по ситуации? Как жук меняет выстрел — так и тур? 🤔",
       options: [
         { text: "Два разных шланга — выбирай нужный",                            icon: "🤔", temp: "warm"  },
         { text: "Насадка! Меняешь форму струи — тонкая или широкая по ситуации", icon: "💡", temp: "bingo" },
@@ -154,7 +158,6 @@ export const TASKS = [
       realSolution: "Насадки на пожарный шланг — точно как у жука! Узкая струя — бьёт далеко и точно. Широкий веер — накрывает близкое пространство. Один шланг, разные режимы. Жук решил это 300 миллионов лет назад.",
     },
   },
-
   {
     id: 5,
     trick: {
@@ -176,12 +179,11 @@ export const TASKS = [
         { name: "Летучая мышь", avatar: "🦇", fact: "Я кричу ультразвуком — вы его не слышите. И слушаю эхо. По задержке — знаю расстояние до любого предмета!" },
         { name: "Физик",        avatar: "🔬", fact: "Звук летит 340 м/с. Эхо от стены в 1 метре вернётся через 6 миллисекунд. Мозг мыши различает задержки в одну миллисекунду!" },
       ],
-      dialog: [],
       answer: "Летучая мышь постоянно кричит ультразвуком и слушает эхо. Чем дольше звук возвращается — тем дальше объект. Мозг мыши строит карту пространства по звуку точнее, чем большинство камер по свету.",
       bonusFact: "Первый военный сонар для подводных лодок создали в годы Первой мировой войны — прямо скопировав принцип летучей мыши. Сегодня так же работает УЗИ и парктроник в машине.",
     },
     contradiction: {
-      intro: "Мышь «видит» звуком. Подводные лодки взяли это себе. Но тут не сходится 🌊",
+      intro: "Мышь «видит» звуком. Подводные лодки взяли это себе. Но тур не сходится 🌊",
       fact1: "Подводная лодка должна быть невидимой — нельзя включать свет",
       fact2: "Подводная лодка должна знать где препятствия — иначе врежется",
       buddyQuestion: "Невидимая И видящая? Мышь умеет — как? 🤔",
@@ -193,7 +195,6 @@ export const TASKS = [
       realSolution: "Сонар — точная копия летучей мыши. Посылает звуковой импульс — слушает эхо. По задержке и направлению — рисует карту дна и препятствий. Мышь изобрела это 52 миллиона лет назад. Люди — в Первую мировую.",
     },
   },
-
   {
     id: 6,
     trick: {
@@ -215,12 +216,11 @@ export const TASKS = [
         { name: "Дятел",    avatar: "🐦", fact: "Мой череп — как матрёшка. Несколько слоёв разной плотности. Каждый слой поглощает часть удара — ни один не перегружается!" },
         { name: "Инженер",  avatar: "🛡️", fact: "Пенопласт работает так же: тысячи воздушных ячеек, каждая принимает крошечный удар. Вместе — полностью безопасно. Это называется демпфирование." },
       ],
-      dialog: [],
       answer: "Череп дятла — несколько слоёв разной плотности. Каждый слой поглощает свою часть энергии удара. Плюс: длинный язык обматывает черепную коробку снаружи, как ремень безопасности. Никакой слой не перегружается.",
       bonusFact: "Структуру черепа дятла изучают для создания лучших велосипедных и военных шлемов. Несколько слоёв разной жёсткости поглощают удар эффективнее, чем один толстый слой.",
     },
     contradiction: {
-      intro: "Дятел научил инженеров. Шлем велосипедиста — та же задача. Но тут не сходится ⛑️",
+      intro: "Дятел научил инженеров. Шлем велосипедиста — та же задача. Но тур не сходится ⛑️",
       fact1: "Шлем должен быть твёрдым снаружи — иначе острый предмет пробьёт",
       fact2: "Шлем должен быть мягким внутри — иначе удар не поглотится",
       buddyQuestion: "Твёрдый И мягкий? Как череп дятла — снаружи и внутри разные? 🤔",
@@ -254,7 +254,6 @@ export const TASKS = [
         { name: "Вода", avatar: "💧", fact: "Я приду снова и снова. Каждый сезон дождей я поднимаюсь. Нужно решение, которое работает всегда." },
         { name: "Старик деревни", avatar: "👴", fact: "40 лет живу здесь. Видел много решений. Одни трудоёмкие, другие просто красивые. Природа сама решает задачу." },
       ],
-      dialog: [],
       answer: "Есть 10 разных способов спасти деревню. Некоторые требуют много работы, но срочно. Другие кажутся магией — природа сама их делает. Самое красивое — когда вода сама уходит, не требуя повторений.",
       bonusFact: "По всему миру люди спасают города от наводнений. Каждый способ — это один из 10 классов: откачивание, дренаж, испарение, впитывание, поднять город, нагреть, разделить, барьер, использовать воду, подготовиться заранее.",
     },
@@ -264,284 +263,170 @@ export const TASKS = [
       fact2: "Нам нужно решение, которое работает ВЕЧНО или само по себе",
       buddyQuestion: "Какое из 10 способов самое красивое? Вот это задача! Давай вместе найдём 🤔",
       options: [
-        // Класс 1: Откачивание (⭐ - cold)
-        {
-          text: "Откачивание вверх — берём ведро/насос и откачиваем",
-          icon: "🪣",
-          temp: "cold",
-          class_id: "pump_out",
-          principles: [4, 2],
-          elegance: "⭐",
-          problem: "⚠️ Дождик идёт снова → нужно повторять",
-        },
-        // Класс 2: Дренаж (⭐⭐ - warm)
-        {
-          text: "Дренаж в землю — выкопать яму и подземные трубы",
-          icon: "⛏️",
-          temp: "warm",
-          class_id: "drainage",
-          principles: [28, 7, 21],
-          elegance: "⭐⭐",
-          problem: "⚠️ При сильном дожде дренаж переполняется",
-        },
-        // Класс 3: Испарение (⭐⭐⭐ - bingo)
-        {
-          text: "Испарение в облака — вода становится паром и улетает сама!",
-          icon: "☁️",
-          temp: "bingo",
-          class_id: "evaporation",
-          principles: [15, 35, 26],
-          elegance: "⭐⭐⭐",
-          advantage: "✨ Работает вечно без повторений!",
-        },
-        // Класс 4: Впитывание (⭐⭐ - warm)
-        {
-          text: "Впитывание губкой — положить песок/щебень, они впитают",
-          icon: "🧽",
-          temp: "warm",
-          class_id: "absorption",
-          principles: [31, 24],
-          elegance: "⭐⭐",
-          problem: "⚠️ Материал потом нужно сушить",
-        },
-        // Класс 5: Поднять деревню (⭐ - cold)
-        {
-          text: "Поднять деревню выше — построить дома на холме или сваях",
-          icon: "🏔️",
-          temp: "cold",
-          class_id: "raise_village",
-          principles: [8, 13],
-          elegance: "⭐",
-          problem: "⚠️ Дорогое и трудоёмкое строительство",
-        },
-        // Класс 6: Локальный нагрев (⭐⭐ - warm)
-        {
-          text: "Локальный нагрев — солнце или костёр чтобы вода испарилась",
-          icon: "🔥",
-          temp: "warm",
-          class_id: "local_heat",
-          principles: [3, 15],
-          elegance: "⭐⭐",
-          problem: "⚠️ Нижние слои остаются",
-        },
-        // Класс 7: Разделение (⭐⭐ - warm)
-        {
-          text: "Разделение воды — выкопать каналы чтоб вода разошлась ручейками",
-          icon: "🌊",
-          temp: "warm",
-          class_id: "separation",
-          principles: [1, 2],
-          elegance: "⭐⭐",
-          problem: "⚠️ Каждый ручей всё ещё нужно отводить",
-        },
-        // Класс 8: Барьер (⭐⭐ - warm)
-        {
-          text: "Барьер — построить дамбу или стену чтоб вода не прошла",
-          icon: "🚧",
-          temp: "warm",
-          class_id: "barrier",
-          principles: [1, 11],
-          elegance: "⭐⭐",
-          problem: "⚠️ Вода давит на барьер — нужна инженерия",
-        },
-        // Класс 9: Использование воды (⭐⭐⭐ - bingo)
-        {
-          text: "Использовать воду — создать пруд для рыбы или орошения!",
-          icon: "🐟",
-          temp: "bingo",
-          class_id: "use_water",
-          principles: [20, 26],
-          elegance: "⭐⭐⭐",
-          advantage: "✨ Противоречие снято! Вода нужна и не вредит!",
-        },
-        // Класс 10: Подготовка (⭐⭐⭐ - bingo)
-        {
-          text: "Подготовка заранее — поднять дома на сваи ДО сезона дождей",
-          icon: "📋",
-          temp: "bingo",
-          class_id: "preparation",
-          principles: [10, 11],
-          elegance: "⭐⭐⭐",
-          advantage: "✨ Когда вода придёт, защита уже есть!",
-        },
+        { text: "Откачивание вверх — берём ведро/насос и откачиваем", icon: "🪣", temp: "cold", class_id: "pump_out", principles: [4, 2], elegance: "⭐", problem: "⚠️ Дождик идёт снова → нужно повторять" },
+        { text: "Дренаж в землю — выкопать яму и подземные трубы", icon: "⛏️", temp: "warm", class_id: "drainage", principles: [28, 7, 21], elegance: "⭐⭐", problem: "⚠️ При сильном дожде дренаж переполняется" },
+        { text: "Испарение в облака — вода становится паром и улетает сама!", icon: "☁️", temp: "bingo", class_id: "evaporation", principles: [15, 35, 26], elegance: "⭐⭐⭐", advantage: "✨ Работает вечно без повторений!" },
+        { text: "Впитывание губкой — положить песок/щебень, они впитают", icon: "🧽", temp: "warm", class_id: "absorption", principles: [31, 24], elegance: "⭐⭐", problem: "⚠️ Материал потом нужно сушить" },
+        { text: "Поднять деревню выше — построить дома на холме или сваях", icon: "🏔️", temp: "cold", class_id: "raise_village", principles: [8, 13], elegance: "⭐", problem: "⚠️ Дорогое и трудоёмкое строительство" },
+        { text: "Локальный нагрев — солнце или костёр чтобы вода испарилась", icon: "🔥", temp: "warm", class_id: "local_heat", principles: [3, 15], elegance: "⭐⭐", problem: "⚠️ Нижние слои остаются" },
+        { text: "Разделение воды — выкопать каналы чтоб вода разошлась ручейками", icon: "🌊", temp: "warm", class_id: "separation", principles: [1, 2], elegance: "⭐⭐", problem: "⚠️ Каждый ручей всё ещё нужно отводить" },
+        { text: "Барьер — построить дамбу или стену чтоб вода не прошла", icon: "🚧", temp: "warm", class_id: "barrier", principles: [1, 11], elegance: "⭐⭐", problem: "⚠️ Вода давит на барьер — нужна инженерия" },
+        { text: "Использовать воду — создать пруд для рыбы или орошения!", icon: "🐟", temp: "bingo", class_id: "use_water", principles: [20, 26], elegance: "⭐⭐⭐", advantage: "✨ Противоречие снято! Вода нужна и не вредит!" },
+        { text: "Подготовка заранее — поднять дома на сваи ДО сезона дождей", icon: "📋", temp: "bingo", class_id: "preparation", principles: [10, 11], elegance: "⭐⭐⭐", advantage: "✨ Когда вода придёт, защита уже есть!" },
       ],
       realSolution: "Все 10 способов — валидные! Разные города выбирают разные решения. Венеция использовала барьеры и каналы. Нидерланды — дренаж и подготовку. Природные озёра работают через испарение и впитывание. Твой выбор сейчас — какое решение тебе нравится? Красивое или срочное?",
     },
   },
-
-  {
-    id: 8,
-    trick: {
-      name: "Объединение",
-      animal: "🦓",
-      animalName: "Зебра",
-      motto: "Вместе мы сильнее — группа побеждает хищника",
-      color: "#ec4899",
-      difficulty: 2,
-      building: "🏘️",
-      buildingName: "Деревня Единства",
-    },
-    puzzle: null,
-    contradiction: null,
-  },
-
-  {
-    id: 9,
-    trick: {
-      name: "Асимметрия",
-      animal: "🦑",
-      animalName: "Осьминог",
-      motto: "Разные части делают целое совершенным",
-      color: "#6366f1",
-      difficulty: 2,
-      building: "⚔️",
-      buildingName: "Форт Перекоса",
-    },
-    puzzle: null,
-    contradiction: null,
-  },
-
-  // ═══ TRIZ TRAINER TASK ═══
-  {
-    id: "solomon-hall",
-    title: "Зал Соломона",
-    icon: "🚪",
-    teaser: "Пересечь скользкий пол без помощи",
-    image: "./img/png/solomon-hall.png",
-    difficulty: 2,
-    access: "unlock",
-    ageRange: [8, 99],
-
-    // Legacy fields for UI compatibility
-    puzzle: { emoji: "🚪" },
-    trick: { name: "TRIZ Тренер", color: "#3b82f6" },
-
-    // TRIZ-specific fields
-    core_problem: {
-      need: "пересечь зал и добраться до двери",
-      obstacle: "пол залит скользким маслом — упадёшь",
-    },
-    ikr: "Мальчик оказывается у двери, не падая и почти не касаясь скользкого пола",
-    resources: [
-      { id: "ковры", properties: "шершавые, не скользят, можно передвигать" },
-      { id: "стол", properties: "тяжёлый, деревянный, стоит в центре" },
-      { id: "верёвки", properties: "гибкие, прочные, висят сверху" },
-      { id: "копья", properties: "длинные, твёрдые, можно опереться" },
-      { id: "портьеры", properties: "тяжёлые, висят на стене" },
-      { id: "масло", properties: "жидкое, скользкое, покрывает пол" },
-      { id: "окно", properties: "высокое, через него видно выход" },
-    ],
-    idea_analysis: {
-      "ковер": {
-        good_hints: ["Ковёр не скользит — по нему можно идти!"],
-        bad_hints: ["Ковров может не хватить на весь зал"],
-        consequence_push: ["А что если ковёр закончится на полпути?"],
-      },
-      "стол": {
-        good_hints: ["Стол тяжёлый — на нём можно стоять!"],
-        bad_hints: ["Стол тяжёлый — его трудно сдвинуть"],
-        consequence_push: ["Как ты его будешь двигать?"],
-      },
-      "верёвк": {
-        good_hints: ["Верёвка позволяет перемещаться, не касаясь пола!"],
-        bad_hints: ["Верёвка может не доставать до двери"],
-        consequence_push: ["А хватит ли длины верёвки?"],
-      },
-      "копь": {
-        good_hints: ["Копья длинные — на них можно опереться!"],
-        bad_hints: ["Копья могут скользить по маслу"],
-        consequence_push: ["А если копьё соскользнёт?"],
-      },
-      "осторожно": {
-        good_hints: ["Осторожность — ты думаешь о безопасности!"],
-        bad_hints: ["Масло настолько скользкое, что осторожность не спасёт"],
-        consequence_push: ["Представь: идёшь осторожно, и вдруг — бах!"],
-      },
-    },
-  },
-
-  // Tasks 8-40: Full library of TRIZ tasks with 10 solution classes each
-  {
-    id: 8,
-    trick: {
-      name: "Объединение",
-      animal: "🦓",
-      animalName: "Зебра",
-      motto: "Вместе мы сильнее",
-      color: "#ec4899",
-      difficulty: 2,
-      building: "🏘️",
-      buildingName: "Деревня Единства",
-    },
-    puzzle: {
-      emoji: "🦓",
-      question: "Почему зебры стоят стадом против льва, но разбегаются в разные стороны при атаке?",
-      hookSenior: "Враг один. Зебр много. Какая стратегия работает?",
-      hookJunior: "Враг видит полосатое стадо, двигающееся в разные стороны. Что он видит?",
-      witnesses: [
-        { name: "Лев", avatar: "🦁", fact: "Одна — это добыча. Стадо — это матрица полосок, которую я не могу понять!" },
-        { name: "Зебра", avatar: "🦓", fact: "Наши полосы создают эффект дизориентации. Лев не может выбрать одну цель." },
-      ],
-      dialog: [],
-      answer: "Эффект дизориентации: полосы зебры при движении в разные стороны запутывают хищника. Это называется дизруптивный камуфляж в действии.",
-      bonusFact: "Корабли раскрашивают в полосы (дизруптивный камуфляж) чтобы врагу было трудно определить расстояние. Рыбы в косяке используют тот же принцип.",
-    },
-    contradiction: {
-      intro: "Одна зебра — слаба. Но вместе? Вот это сила! 🦓",
-      fact1: "Каждая зебра одна — слабее льва",
-      fact2: "Вместе зебры сильнее и выживают",
-      buddyQuestion: "Как из слабых сделать сильное? 🤔",
-      options: [
-        { text: "Бежать одной в сторону", icon: "🏃", temp: "cold", class_id: "unity_solo", principles: [2], elegance: "⭐", problem: "⚠️ Лев меня поймает" },
-        { text: "Стоять вместе и защищаться", icon: "⚔️", temp: "warm", class_id: "unity_defend", principles: [5, 10], elegance: "⭐⭐", problem: "⚠️ Всё равно слабее" },
-        { text: "Убегать вместе в разные стороны", icon: "💨", temp: "bingo", class_id: "unity_scatter", principles: [1, 4], elegance: "⭐⭐⭐", advantage: "✨ Лев не знает кого поймать!" },
-        { text: "Издавать громкие звуки", icon: "📢", temp: "warm", class_id: "unity_sound", principles: [18], elegance: "⭐⭐", problem: "⚠️ Может привлечь других врагов" },
-        { text: "Создать облако пыли при беге", icon: "🌪️", temp: "warm", class_id: "unity_dust", principles: [31, 32], elegance: "⭐⭐", problem: "⚠️ Может испугать и нас" },
-        { text: "Менять направление синхронно", icon: "🔀", temp: "warm", class_id: "unity_sync", principles: [15, 23], elegance: "⭐⭐", problem: "⚠️ Нужна точная координация" },
-        { text: "Положить слабую в центр крепкими", icon: "🎯", temp: "warm", class_id: "unity_protect", principles: [7, 28], elegance: "⭐⭐", problem: "⚠️ Остальные могут не справиться" },
-        { text: "Бежать к воде где лев не может", icon: "💧", temp: "bingo", class_id: "unity_water", principles: [21, 35], elegance: "⭐⭐⭐", advantage: "✨ Лев не плывет как мы!" },
-        { text: "Использовать ночь для побега", icon: "🌙", temp: "bingo", class_id: "unity_night", principles: [31, 32], elegance: "⭐⭐⭐", advantage: "✨ Ночью враг слеп!" },
-        { text: "Отвлечь льва добычей в другом месте", icon: "🥩", temp: "warm", class_id: "unity_distract", principles: [24, 26], elegance: "⭐⭐", problem: "⚠️ Нужна приманка" },
-      ],
-      realSolution: "Зебры используют несколько стратегий: полосы дезориентируют, стадо защищает, разброс в разные стороны запутывает. Вместе это победа!",
-    },
-  },
-
-  // PLACEHOLDER: Tasks 9-40 follow the same structure
-  // Each has 10 solution options with TRIZ principles
-  // In production, this would be auto-generated from task database
-  {
-    id: 9,
-    trick: { name: "Задача 9", animal: "🐉", animalName: "Помощник", motto: "Решай творчески", color: "#fbbf24", difficulty: 1, building: "🏛️", buildingName: "Задача 9" },
-    puzzle: { emoji: "❓", question: "Задача 9 - загрузить из базы данных", hookSenior: "Загрузить из БД", hookJunior: "Загрузить из БД", witnesses: [], dialog: [], answer: "Ответ", bonusFact: "Факт" },
-    contradiction: { intro: "Задача 9", fact1: "Требование 1", fact2: "Требование 2", buddyQuestion: "Как решить?", options: [
-      { text: "Решение 1", icon: "1️⃣", temp: "cold", class_id: "t9_s1", principles: [1], elegance: "⭐", problem: "⚠️ Проблема" },
-      { text: "Решение 2", icon: "2️⃣", temp: "warm", class_id: "t9_s2", principles: [2], elegance: "⭐⭐", problem: "⚠️ Проблема" },
-      { text: "Решение 3", icon: "3️⃣", temp: "warm", class_id: "t9_s3", principles: [3], elegance: "⭐⭐", problem: "⚠️ Проблема" },
-      { text: "Решение 4", icon: "4️⃣", temp: "warm", class_id: "t9_s4", principles: [4], elegance: "⭐⭐", problem: "⚠️ Проблема" },
-      { text: "Решение 5", icon: "5️⃣", temp: "bingo", class_id: "t9_s5", principles: [5], elegance: "⭐⭐⭐", advantage: "✨ Отлично!" },
-      { text: "Решение 6", icon: "6️⃣", temp: "warm", class_id: "t9_s6", principles: [6], elegance: "⭐⭐", problem: "⚠️ Проблема" },
-      { text: "Решение 7", icon: "7️⃣", temp: "warm", class_id: "t9_s7", principles: [7], elegance: "⭐⭐", problem: "⚠️ Проблема" },
-      { text: "Решение 8", icon: "8️⃣", temp: "bingo", class_id: "t9_s8", principles: [8], elegance: "⭐⭐⭐", advantage: "✨ Хорошо!" },
-      { text: "Решение 9", icon: "9️⃣", temp: "warm", class_id: "t9_s9", principles: [9], elegance: "⭐⭐", problem: "⚠️ Проблема" },
-      { text: "Решение 10", icon: "🔟", temp: "bingo", class_id: "t9_s10", principles: [10], elegance: "⭐⭐⭐", advantage: "✨ Лучшее!" },
-    ], realSolution: "Все решения валидны!" },
-  },
-
-  // Tasks 10-40: Placeholder structure
-  // Each follows the same format: id, trick, puzzle, contradiction with 10 options
-  // Total: 32 more tasks to complete the library
-  // TODO: Generate from task database in production
 ];
 
-// For development: Generate placeholder tasks 10-40
-if (TASKS.length < 40) {
-  for (let i = 10; i <= 40; i++) {
-    TASKS.push({
-      id: i,
-      trick: { name: `Задача ${i}`, animal: "🐉", animalName: "Помощник", motto: "Много способов", color: `#${Math.floor(Math.random()*16777215).toString(16)}`, difficulty: 1, building: "🏛️", buildingName: `Задача ${i}` },
-      puzzle: { emoji: "❓", question: `Задача ${i}`, hookSenior: "Загрузить из БД", hookJunior: "Загрузить из БД", witnesses: [], dialog: [], answer: "Ответ", bonusFact: "Факт" },
-      contradiction: { intro: `Задача ${i}`, fact1: "Требование 1", fact2: "Требование 2", buddyQuestion: "Как решить?", options: Array(10).fill(0).map((_, j) => ({ text: `Решение ${j+1}`, icon: `${j+1}️⃣`, temp: ["cold", "warm", "bingo"][j % 3], class_id: `t${i}_s${j+1}`, principles: [(j%40)+1], elegance: ["⭐", "⭐⭐", "⭐⭐⭐"][j % 3], [j % 3 === 0 ? "problem" : "advantage"]: j % 3 === 0 ? "⚠️ Проблема" : "✨ Отлично!" })), realSolution: "Все валидны!" },
+// Dynamically generate tasks 8-40 (placeholders with proper structure)
+const taskLoader = require('./load-tasks');
+const generatedTasks = taskLoader.generatePlaceholderTasks(8, 40);
+TASKS_DATA.push(...generatedTasks);
+
+// Weight mapping for scoring
+const SCORE_WEIGHTS = {
+  'bingo': 3,
+  'warm': 2,
+  'cold': 1,
+};
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// GET /api/tasks/:taskId
+app.get('/api/tasks/:taskId', (req, res) => {
+  const taskId = parseInt(req.params.taskId);
+  const task = TASKS_DATA.find(t => t.id === taskId);
+
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  // Return task without revealing answer options weights (those are for scoring)
+  const safeTask = {
+    id: task.id,
+    trick: task.trick,
+    puzzle: task.puzzle,
+    contradiction: {
+      intro: task.contradiction.intro,
+      fact1: task.contradiction.fact1,
+      fact2: task.contradiction.fact2,
+      buddyQuestion: task.contradiction.buddyQuestion,
+      options: task.contradiction.options.map(opt => ({
+        text: opt.text,
+        icon: opt.icon,
+        // temp/weight not exposed to client
+      })),
+      // realSolution only revealed after scoring
+    },
+  };
+
+  res.json(safeTask);
+});
+
+// POST /api/tasks/:taskId/validate-answer
+// Expected body: { answer, userId, sessionId, source (optional) }
+app.post('/api/tasks/:taskId/validate-answer', (req, res) => {
+  const taskId = parseInt(req.params.taskId);
+  const { answer, userId, sessionId, source } = req.body;
+
+  const task = TASKS_DATA.find(t => t.id === taskId);
+  if (!task || !task.contradiction || !task.contradiction.options) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  // Score answer against options using substring matching (tolerant)
+  let bestScore = 0;
+  let chosenOption = null;
+  const answerLower = answer.toLowerCase().trim();
+
+  task.contradiction.options.forEach(option => {
+    const optionLower = option.text.toLowerCase();
+
+    // Simple substring matching (TODO: improve with Levenshtein distance + NLU)
+    if (optionLower.includes(answerLower) || answerLower.includes(optionLower)) {
+      const weight = SCORE_WEIGHTS[option.temp] || 0;
+      if (weight > bestScore) {
+        bestScore = weight;
+        chosenOption = option;
+      }
+    }
+  });
+
+  // Even if no exact match, check for keyword overlap (TODO: NLU)
+  if (bestScore === 0) {
+    // Try to match partial concepts
+    const answerWords = answerLower.split(/\s+/);
+    task.contradiction.options.forEach(option => {
+      const optionWords = option.text.toLowerCase().split(/\s+/);
+      const overlap = answerWords.filter(w => optionWords.some(ow => ow.includes(w) || w.includes(ow))).length;
+      if (overlap > 0) {
+        const weight = SCORE_WEIGHTS[option.temp] || 0;
+        if (weight > bestScore) {
+          bestScore = weight;
+          chosenOption = option;
+        }
+      }
     });
   }
-}
+
+  const earnsCrystal = bestScore >= 2;
+
+  res.json({
+    isCorrect: bestScore >= 2,
+    score: bestScore,
+    earnsCrystal,
+    feedback: bestScore === 3
+      ? '✓ Отлично! Идеальное решение!'
+      : bestScore === 2
+        ? '✓ Хорошо! Это рабочее решение.'
+        : '◐ Интересно, но есть получше. Подумай ещё.',
+    chosenOption: chosenOption ? {
+      text: chosenOption.text,
+      temp: chosenOption.temp,
+    } : null,
+    realSolution: task.contradiction.realSolution,
+    trizInsight: `Принцип: ${task.trick.name} — ${task.trick.motto}`,
+    puzzleAnswer: task.puzzle.answer,
+    bonusFact: task.puzzle.bonusFact,
+    source,
+    userId,
+    sessionId,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// POST /api/log-answer — for analytics (later: PostgreSQL)
+app.post('/api/log-answer', (req, res) => {
+  const { userId, taskId, score, source } = req.body;
+  const timestamp = new Date().toISOString();
+
+  // TODO: Store in PostgreSQL
+  console.log(`[${timestamp}] Analytics: User=${userId}, Task=${taskId}, Score=${score}, Source=${source}`);
+
+  res.json({
+    logged: true,
+    timestamp,
+  });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`\n✅ SHARIEL Backend запущен на http://localhost:${PORT}`);
+  console.log(`\n📋 API Routes:`);
+  console.log(`   GET  /health`);
+  console.log(`   GET  /api/tasks/:taskId`);
+  console.log(`   POST /api/tasks/:taskId/validate-answer`);
+  console.log(`   POST /api/log-answer\n`);
+  console.log(`📊 Loaded ${TASKS_DATA.length} tasks`);
+  console.log(`📝 Ready for Phase 1.5 development\n`);
+});
