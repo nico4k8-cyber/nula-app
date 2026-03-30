@@ -33,6 +33,11 @@ export const EVENTS = {
   DRAGON_INFO_OPENED: "dragon_info_opened",
   DRAGON_GREETING_CLOSED: "dragon_greeting_closed",
 
+  // PAYWALL
+  PAYWALL_SHOWN: "paywall_shown",
+  PAYWALL_ASK_PARENT: "paywall_ask_parent",
+  PAYWALL_PURCHASE_COMPLETED: "paywall_purchase_completed",
+
   // DEV
   DEBUG_RESET_TRIGGERED: "debug_reset_triggered",
 };

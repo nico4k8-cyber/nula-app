@@ -9,7 +9,7 @@ function getGlobalAudio() {
   if (!globalAudioRef) {
     globalAudioRef = new Audio();
     globalAudioRef.loop = true;
-    globalAudioRef.volume = 0.2;
+    globalAudioRef.volume = 0.05;
   }
   return globalAudioRef;
 }
@@ -21,9 +21,9 @@ export function useAudio(tracks = []) {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(() => {
     try {
       const saved = localStorage.getItem(TRACK_INDEX_KEY);
-      return saved !== null ? parseInt(saved, 10) : 1;
+      return saved !== null ? parseInt(saved, 10) : 0;
     } catch {
-      return 1;
+      return 0;
     }
   });
   const [isEnabled, setIsEnabled] = useState(() => {
@@ -91,14 +91,17 @@ export function useAudio(tracks = []) {
   useEffect(() => {
     if (tracks.length > 0 && audioRef.current) {
       const track = tracks[currentTrackIndex];
-      // Only change track if it's different
-      if (audioRef.current.src !== track.path) {
+      // Browser expands relative paths to absolute URLs in .src
+      const absolutePath = new URL(track.path, window.location.origin).href;
+      
+      // Only change track if it's actually different from the currently playing one
+      if (audioRef.current.src !== absolutePath) {
         const wasPlaying = !audioRef.current.paused;
         const currentTime = audioRef.current.currentTime;
         audioRef.current.src = track.path;
         // Restore position if track was playing
         if (wasPlaying && isEnabled) {
-          audioRef.current.currentTime = Math.min(currentTime, 10); // Don't jump too far
+          audioRef.current.currentTime = Math.min(currentTime, 10); 
           audioRef.current.play().catch(() => {});
         }
       }

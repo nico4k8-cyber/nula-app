@@ -1,127 +1,209 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
-export default function DragonSplashScreen({ onAnimationEnd }) {
-  const [offsetX, setOffsetX] = useState(0);
-  const audioRef = useRef(null);
-  const touchStartX = useRef(0);
-  const lastSwipeTime = useRef(0);
+const ASSETS_TO_PRELOAD = [
+  "/assets/main_island.png",
+  "/assets/island_zapovednik.png",
+  "/assets/island_laboratory.png",
+  "/assets/island_tsar.png",
+  "/assets/avatar.png",
+  "/assets/library.png",
+  "/assets/city-hall.png",
+  "/assets/workshop.png",
+  "/assets/laboratory.png",
+  "/assets/nature-reserve.png",
+  "/img/ugolok_3d.png",
+  "/img/splash_bg.png"
+];
 
-  // Simple splash: show first frame for 3 seconds
+export default function DragonSplashScreen({ onAnimationEnd, t }) {
+  const [progress, setProgress] = useState(0);
+  const [isDone, setIsDone] = useState(false);
+
   useEffect(() => {
-    const timer = setTimeout(() => onAnimationEnd?.(), 3000);
-    return () => clearTimeout(timer);
+    let loadedCount = 0;
+    const total = ASSETS_TO_PRELOAD.length;
+
+    // Minimum display time for the brand (2 seconds)
+    const minTimePromise = new Promise(resolve => setTimeout(resolve, 2500));
+    
+    const assetPromises = ASSETS_TO_PRELOAD.map(url => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+          loadedCount++;
+          setProgress(Math.round((loadedCount / total) * 100));
+          resolve();
+        };
+        img.onerror = () => {
+          loadedCount++;
+          setProgress(Math.round((loadedCount / total) * 100));
+          resolve();
+        };
+      });
+    });
+
+    Promise.all([...assetPromises, minTimePromise]).then(() => {
+      setProgress(100);
+      setTimeout(() => {
+        setIsDone(true);
+        onAnimationEnd?.();
+      }, 500);
+    });
   }, [onAnimationEnd]);
 
-  // Музыка - размучить при первом взаимодействии
-  useEffect(() => {
-    const handleUnmute = () => {
-      if (audioRef.current) {
-        audioRef.current.muted = false;
-      }
-      document.removeEventListener('touchstart', handleUnmute);
-      document.removeEventListener('click', handleUnmute);
-    };
-    document.addEventListener('touchstart', handleUnmute);
-    document.addEventListener('click', handleUnmute);
-    return () => {
-      document.removeEventListener('touchstart', handleUnmute);
-      document.removeEventListener('click', handleUnmute);
-    };
-  }, []);
-
-  // Обработка свайпов (влево-вправо)
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    if (!touchStartX.current) return;
-
-    const currentX = e.touches[0].clientX;
-    const diff = currentX - touchStartX.current;
-
-    // Ограничиваем смещение (максимум 50px в каждую сторону)
-    if (diff > 0) {
-      setOffsetX(Math.min(diff, 50));
-    } else {
-      setOffsetX(Math.max(diff, -50));
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    const endX = e.changedTouches[0].clientX;
-    const diff = endX - touchStartX.current;
-    const now = Date.now();
-
-    // Если свайп был быстрый и значительный
-    if (Math.abs(diff) > 30 && now - lastSwipeTime.current > 500) {
-      lastSwipeTime.current = now;
-
-      // Влево — переходим вперёд на кадры
-      if (diff < 0) {
-        setCurrentFrame((prev) => Math.min(prev + 5, TOTAL_FRAMES - 1));
-      }
-      // Вправо — назад на кадры
-      else {
-        setCurrentFrame((prev) => Math.max(prev - 5, 0));
-      }
-    }
-
-    touchStartX.current = 0;
-    setOffsetX(0);
-  };
-
-  // Вычисляем номер кадра (от 001 до 240)
-  const frameUrl = `/dragon/ezgif-frame-001.jpg`; // Always show first frame
-
-  // Трансформация дракона в зависимости от свайпа
-  const dragonStyle = {
-    transform: `translateX(${offsetX}px) scaleX(${offsetX > 0 ? -1 : 1})`,
-    transition: offsetX === 0 ? "transform 0.3s ease-out" : "none",
-  };
-
   return (
-    <div
-      className="fixed inset-0 bg-black overflow-hidden flex flex-col items-center justify-center cursor-pointer"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Анимация дракона - заполняет весь экран, центрирована */}
-      <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-        <img
-          src={frameUrl}
-          alt="Dragon animation"
-          className="w-full h-full object-cover"
-          style={dragonStyle}
-        />
-
-        {/* Индикатор прогресса анимации */}
-
+    <div className={`splash-container ${isDone ? 'fade-out' : ''}`}>
+      <img className="splash-bg" src="/img/splash_bg.png" alt="Archipelago" />
+      <div className="splash-overlay" />
+      
+      <div className="splash-content">
+        <h1 className="splash-title">SHARIEL</h1>
+        <p className="splash-subtitle">
+          {t('title')}
+        </p>
+        
+        {/* Progress Bar Container */}
+        <div className="progress-wrapper">
+           <div className="progress-bar-bg">
+              <div 
+                className="progress-bar-fill" 
+                style={{ width: `${progress}%` }} 
+              />
+           </div>
+           <p className="progress-text">
+              {progress < 100 ? `${t('lang') === 'ru' ? 'Загрузка мира...' : 'Loading world...'} ${progress}%` : (t('lang') === 'ru' ? 'Готово!' : 'Ready!')}
+           </p>
+        </div>
       </div>
 
-      {/* Музыка */}
-      <audio
-        ref={audioRef}
-        src="/audio/dragon-flying.mp3"
-        autoPlay
-        muted
-        loop
-        crossOrigin="anonymous"
-      />
-
-
       <style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+        .splash-container {
+          width: 100vw;
+          height: 100vh;
+          position: fixed;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-end;
+          padding-bottom: 12vh;
+          overflow: hidden;
+          background: black;
+          z-index: 9999;
+          transition: opacity 0.8s ease-out;
         }
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out;
+
+        .splash-container.fade-out {
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        .splash-bg {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center top;
+          animation: slow-zoom 20s linear infinite alternate;
+        }
+
+        @keyframes slow-zoom {
+          from { transform: scale(1); }
+          to { transform: scale(1.1); }
+        }
+
+        .splash-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.1) 0%,
+            rgba(0,0,0,0) 40%,
+            rgba(0,0,0,0.5) 75%,
+            rgba(0,0,0,0.85) 100%
+          );
+        }
+
+        .splash-content {
+          position: relative;
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0;
+          width: 100%;
+          padding: 0 5vw;
+          animation: slide-up 1s ease-out 0.3s both;
+        }
+
+        .splash-title {
+          font-family: Georgia, serif;
+          font-weight: 900;
+          font-size: clamp(48px, 12vw, 140px);
+          color: #FFD700;
+          letter-spacing: clamp(4px, 1.5vw, 16px);
+          line-height: 1;
+          text-align: center;
+          text-shadow:
+            0 0 50px rgba(255,180,0,0.4),
+            2px 2px 0 #7a5500;
+          margin-bottom: 12px;
+        }
+
+        .splash-subtitle {
+          font-family: Georgia, serif;
+          font-weight: 400;
+          font-size: clamp(12px, 2.5vw, 32px);
+          color: rgba(255,255,255,0.8);
+          letter-spacing: 4px;
+          text-transform: uppercase;
+          text-align: center;
+          margin-bottom: 40px;
+        }
+
+        .progress-wrapper {
+           width: 100%;
+           max-width: 280px;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           gap: 12px;
+        }
+
+        .progress-bar-bg {
+           width: 100%;
+           height: 8px;
+           background: rgba(255,255,255,0.1);
+           border-radius: 10px;
+           overflow: hidden;
+           border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .progress-bar-fill {
+           height: 100%;
+           background: linear-gradient(90deg, #FFD700, #FFA500);
+           box-shadow: 0 0 15px rgba(255,215,0,0.6);
+           transition: width 0.3s ease-out;
+           border-radius: 10px;
+        }
+
+        .progress-text {
+           color: rgba(255,255,255,0.5);
+           font-size: 10px;
+           font-weight: 900;
+           text-transform: uppercase;
+           letter-spacing: 2px;
+        }
+
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+          .splash-bg { object-position: 65% center; }
         }
       `}</style>
     </div>

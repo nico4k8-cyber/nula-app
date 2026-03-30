@@ -37,8 +37,19 @@ ITERATIONAL_*
 MVP_STATUS.md
 PLAYTEST_*
 
-# Local server
-local-api-server.js
+# Local planning and screenshots
+/*.png
+/*.mjs
+/*.html
+/*.docx
+/*.txt
+/*.log
+test_*.txt
+.planning/
+.env.production
+.DS_Store
 
-# Playwright
-.playwright-mcp/
+# Include necessary assets explicitly if needed
+!public/assets/*.png
+!public/img/*.png
+!src/**/*.mjs

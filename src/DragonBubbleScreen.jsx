@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 
-export default function DragonBubbleScreen({ onStart }) {
+export default function DragonBubbleScreen({ onStart, t, theme }) {
   const [displayedText, setDisplayedText] = useState("");
-  const fullText = "Я вижу, что в мире полный хаос.\n\nЕсть способ всё это пофиксить, и я научу тебя!\n\nБуду тебя сопровождать в каждой загадке.\n\nНачнём?";
+  const fullText = t('welcome');
+  const dragonImg = '/assets/avatar.png';
+  const glowColor = theme === 'scifi' ? 'rgba(34, 211, 238, 0.4)' : 'rgba(245, 158, 11, 0.4)';
 
   useEffect(() => {
     let index = 0;
@@ -15,10 +17,10 @@ export default function DragonBubbleScreen({ onStart }) {
       }
     }, 20);
     return () => clearInterval(timer);
-  }, []);
+  }, [fullText]);
 
   return (
-    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center p-6">
+    <div className="fixed inset-0 bg-app flex flex-col items-center justify-center p-6 transition-colors duration-500">
       <style>{`
         @keyframes floatChar {
           0%, 100% { transform: translateY(0px); }
@@ -31,34 +33,30 @@ export default function DragonBubbleScreen({ onStart }) {
         .dragon-float { animation: floatChar 3.5s ease-in-out infinite; }
       `}</style>
 
-      {/* Дракончик Оринс амбер свечением */}
+      {/* Dragon Character with Adaptive Glow */}
       <div className="mb-8 relative">
-        <div className="relative w-40 h-40 dragon-float">
-          <div className="absolute rounded-full blur-3xl pointer-events-none bg-amber-500/25" style={{ inset: '-28px', animation: '3.5s ease-in-out 0s infinite normal none running glowPulse' }}></div>
-          <div className="absolute rounded-full blur-xl pointer-events-none bg-orange-600/15" style={{ inset: '-14px' }}></div>
-          <img src="./img/webp/ugolok.webp" alt="Дракон Орин" className="relative w-full h-full rounded-full object-cover shadow-2xl border-4 border-amber-500/50" style={{ boxShadow: '0 25px 50px -12px rgba(146, 64, 14, 0.4)' }} />
+        <div className="relative w-48 h-48 dragon-float">
+          <div className="absolute rounded-full blur-3xl pointer-events-none" style={{ inset: '-28px', backgroundColor: glowColor, animation: '3.5s ease-in-out 0s infinite normal none running glowPulse' }}></div>
+          <img src={dragonImg} alt="Dragon Orin" className="relative w-full h-full object-contain drop-shadow-2xl" />
         </div>
       </div>
 
       {/* Баббл с текстом */}
-      <div className="w-80 pointer-events-auto flex flex-col items-center gap-4">
-        <div className="bg-amber-50 rounded-2xl px-6 py-5 shadow-lg border-2 border-amber-200 relative min-h-48 flex flex-col w-full">
-          {/* Стрелка баббла, указывающая на дракона */}
-          <div className="absolute -top-2 left-1/2 w-3 h-3 bg-amber-50 border-t-2 border-l-2 border-amber-200" style={{ transform: 'translateX(-50%) rotate(45deg)' }}></div>
-
+      <div className="w-80 pointer-events-auto flex flex-col items-center gap-8">
+        <div className="bg-white rounded-[24px] px-6 py-6 shadow-2xl border border-gray-100 relative min-h-48 flex flex-col w-full">
           {/* Текст с типографией */}
-          <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
+          <p className="text-gray-800 text-[16px] leading-relaxed whitespace-pre-line font-medium">
             {displayedText}<span className={displayedText.length < fullText.length ? "animate-pulse" : ""}>▌</span>
           </p>
         </div>
 
-        {/* Кнопка снаружи баббла */}
+        {/* Кнопка снаружи баббла - Hay Day Style */}
         {displayedText.length === fullText.length && (
           <button
             onClick={onStart}
-            className="px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-full hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300"
+            className="btn-tactile"
           >
-            ✨ Начать ✨
+            {t('start')}
           </button>
         )}
       </div>

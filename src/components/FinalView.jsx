@@ -1,0 +1,81 @@
+import React from "react";
+import { thinkingType } from "../utils/gameUtils";
+
+export default function FinalView({
+  totalStars,
+  completedTasks,
+  TASKS,
+  onRestart,
+  onBackToCity,
+  onUgc
+}) {
+  const type = thinkingType(totalStars);
+  const remaining = TASKS.length - completedTasks.length;
+
+  return (
+    <div className="flex flex-col flex-1 bg-white relative animate-fade-in">
+      {/* Background elements */}
+      <div className="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-amber-500 to-amber-600 rounded-b-[40px] shadow-2xl" />
+      
+      <div className="flex flex-col flex-1 justify-center items-center gap-8 px-6 pt-12 relative z-10">
+        
+        <div className="text-center group">
+          <div className="text-8xl mb-6 flex-shrink-0 animate-bounce-slow drop-shadow-2xl">🏆</div>
+          <h2 className="text-white text-5xl font-black uppercase tracking-tighter leading-none mb-2 filter drop-shadow-lg">
+             {type.label}
+          </h2>
+          <div className="text-white/80 font-black text-[12px] uppercase tracking-[0.3em] bg-white/10 px-4 py-2 rounded-full inline-block backdrop-blur-md border border-white/20">
+             ТВОЙ ТРИЗ УРОВЕНЬ
+          </div>
+        </div>
+
+        <div className="flex gap-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+           <div className="bg-white rounded-[32px] p-6 shadow-2xl border-4 border-amber-400 flex flex-col items-center">
+              <span className="text-5xl mb-2">⭐</span>
+              <span className="text-4xl font-black text-slate-800">{totalStars}</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Звёзд силы</span>
+           </div>
+           <div className="bg-white rounded-[32px] p-6 shadow-2xl border-4 border-emerald-400 flex flex-col items-center">
+              <span className="text-5xl mb-2">🏝️</span>
+              <span className="text-4xl font-black text-slate-800">{completedTasks.length}</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Островов пройдено</span>
+           </div>
+        </div>
+
+        <div className="w-full bg-white rounded-[36px] p-8 shadow-2xl border-2 border-slate-100 flex flex-col items-center text-center max-w-[400px] animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+           <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Путь продолжается!</h3>
+           <p className="text-slate-500 text-[15px] leading-relaxed mb-6 font-medium">
+             Ты открыл {completedTasks.length} методов из {TASKS.length}. Впереди ещё {remaining} загадок природы!
+           </p>
+           
+           <div className="flex flex-col w-full gap-4">
+              <button onClick={onBackToCity}
+                className="w-full bg-slate-900 text-white text-[16px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-xl hover:bg-black"
+              >
+                Карта Мира →
+              </button>
+              
+              <button onClick={onUgc}
+                className="w-full bg-emerald-500 text-white text-[16px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-xl hover:bg-emerald-600 border-b-4 border-emerald-700"
+              >
+                Создать свою задачу ✨
+              </button>
+              
+              <button onClick={onRestart}
+                className="w-full text-slate-400 text-[14px] font-bold py-2 hover:text-slate-600 transition-all"
+              >
+                Сбросить и начать заново
+              </button>
+           </div>
+        </div>
+
+        {/* Mentor coal footer */}
+        <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '0.8s' }}>
+           <img src="./img/ugolok_3d.png" alt="Уголёк" className="w-10 h-10 rounded-full" />
+           <p className="text-slate-400 font-bold text-[12px] uppercase tracking-widest italic">«Ты будешь отличным инженером!»</p>
+        </div>
+      </div>
+
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-import { getPersona } from "./personas.js";
+import { getPersona } from "./_lib/personas.js";
 
 // Legacy default prompt (kept as fallback if personas.js fails to load)
 const SYSTEM_PROMPT = `
@@ -179,12 +179,13 @@ function parseTag(rawText) {
     return { cleanText, prizStep, stars: 0 };
 }
 
+const models = ["claude-3-5-haiku-20241022", "claude-3-haiku-20240307"];
+
 async function callClaude(fullPrompt, userMessage) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
 
     // Try newest haiku first, fall back to stable v3 on overload (529)
-    const models = ["claude-haiku-4-5-20251001", "claude-3-haiku-20240307"];
     let lastErr;
     for (const model of models) {
         const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -213,10 +214,14 @@ async function callClaude(fullPrompt, userMessage) {
             return { text: cleanText, tokensUsed, inputTokens, outputTokens, prizStep, stars, model: "claude-haiku" };
         }
 
-        const err = await response.text();
-        lastErr = `Claude API error ${response.status} (${model}): ${err}`;
-        if (response.status !== 529 && response.status !== 429) break;
-        console.warn(lastErr, "→ retrying with fallback model");
+        const errText = await response.text();
+        const statusCode = response.status;
+        lastErr = `Claude API error ${statusCode} (${model}): ${errText}`;
+        console.error(`[Claude] Attempt failed:`, lastErr);
+        
+        if (statusCode === 401 || statusCode === 403) break;
+        if (statusCode !== 529 && statusCode !== 429) break;
+        console.warn(`[Claude] Retrying with fallback due to status ${statusCode}`);
     }
     throw new Error(lastErr);
 }
@@ -275,6 +280,21 @@ const HAVRUTA_MASTER_REVEAL_PROMPT = `
 Не хвали банально ("молодец!"). Говори по существу.
 `;
 
+const DESIGN_BUREAU_PROMPT = `
+Ты — Главный Инженер Конструкторского бюро. Твоя задача — оценивать идеи по "второй жизни" вещей. Идеи предлагает ребенок.
+
+ПРЕДМЕТ: {item}
+ИДЕЯ ПОЛЬЗОВАТЕЛЯ: {idea}
+
+ТВОЯ РОЛЬ:
+- Если идея банальная (например, "использовать как мусорку" для бочки или "выбросить") — мягко отклони и попроси придумать что-то более нестандартное, связанное со свойствами предмета.
+- Если идея креативная, интересная и физически возможная (даже если немного необычная) — ПРИНЯТЬ идею. Главное — нестандартное применение свойств.
+
+ФОРМАТ ОТВЕТА:
+Если принимаешь идею, ОБЯЗАТЕЛЬНО начни ответ со слова [ОДОБРЕНО]. Затем напиши короткий вдохновляющий комментарий (1-2 предложения), почему это классная мысль.
+Если отклоняешь, начни со слова [ДОРАБОТАТЬ]. Затем объясни, почему это слишком просто, и задай наводящий вопрос.
+`;
+
 async function callClaudeHavruta(systemPrompt, userMessage) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
@@ -320,7 +340,22 @@ export default async function handler(req, res) {
     if (req.method === "OPTIONS") return res.status(200).end();
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    const { userMessage, history, task, personaId, prizStep = 0, mode, situation, solution, beautiful } = req.body;
+    const { userMessage, history, task, personaId, prizStep = 0, mode, situation, solution, beautiful, item } = req.body;
+
+    // ─── Design Bureau mode ───
+    if (mode === "design-bureau") {
+        if (!userMessage || !item) return res.status(400).json({ error: "userMessage and item required" });
+        const prompt = DESIGN_BUREAU_PROMPT.replace("{item}", item).replace("{idea}", userMessage);
+        try {
+            const apiRes = await callClaudeHavruta(prompt, "Оцени мою идею: " + userMessage);
+            const rawText = apiRes.text || "";
+            const approved = rawText.includes("[ОДОБРЕНО]");
+            const text = rawText.replace(/\[ОДОБРЕНО\]\s*/g, "").replace(/\[ДОРАБОТАТЬ\]\s*/g, "").trim();
+            return res.status(200).json({ text, approved });
+        } catch (err) {
+            return res.status(503).json({ error: "AI unavailable", text: "Главный Инженер сейчас на обеде. Попробуй позже!" });
+        }
+    }
 
     // ─── Havruta mode ───
     if (mode === "havruta-companion") {
@@ -368,21 +403,16 @@ export default async function handler(req, res) {
     if (!userMessage || !task) return res.status(400).json({ error: "userMessage and task are required" });
     if (!userMessage || !task) return res.status(400).json({ error: "userMessage and task are required" });
 
-    // Auto-select persona by task age; dev can override via personaId in request body
-    function resolvePersonaId(requestPersonaId, ageRange) {
-        if (requestPersonaId) return requestPersonaId; // dev override (?persona=ID)
-        if (ageRange === "6-9") return "ugolok-kids";
-        if (ageRange === "10-11") return "ugolok-teen";
-        if (ageRange === "12+") return "ugolok-adult";
-        return "ugolok"; // fallback
-    }
-    const persona = getPersona(resolvePersonaId(personaId, task.ageRange));
+    // Auto-select persona by task difficulty
+    const persona = getPersona(task.difficulty);
     const personaPrompt = persona.prompt ?? SYSTEM_PROMPT;
-    console.log(`Chat persona: ${persona.id} (ageRange: ${task.ageRange})`);
+    console.log(`Chat persona: ${persona.id} (difficulty: ${task.difficulty})`);
 
-    const resourcesLine = task.resources
-        ? `РЕСУРСЫ (ребёнок видит их на иллюстрации — они УЖЕ ТАМ, не спрашивай "откуда они"): ${task.resources}`
-        : `РЕСУРСЫ: не ограничены — ребёнок может предлагать любые физически реалистичные.`;
+    const resourcesLine = Array.isArray(task.resources)
+        ? `РЕСУРСЫ (доступны герою): ${task.resources.map(r => typeof r === 'string' ? r : `${r.id} (${r.properties})`).join(", ")}`
+        : task.resources
+            ? `РЕСУРСЫ: ${task.resources}`
+            : `РЕСУРСЫ: не ограничены.`;
 
     // Support both old 5-stage (0-4) and new 7-phase (0-7) models
     const STAGE_LABELS = {
@@ -440,9 +470,9 @@ export default async function handler(req, res) {
     }
 
     const taskContext = `
-    Задача: ${task.title}
-    Условие: ${task.condition}
-    Целевая аудитория: ${task.ageRange} лет
+    Задача: ${task.title || task.customer?.title || "Новая задача"}
+    Условие: ${task.condition || task.puzzle?.question || task.customer?.story || (task.core_problem ? `${task.core_problem.need}. Но ${task.core_problem.obstacle}` : "Разгадай загадку")}
+    Целевая аудитория: уровень сложности ${task.difficulty || "1"} (1: 6-9 лет, 2: 10-11 лет, 3: 12+ лет)
     ${resourcesLine}
     ПРАВИЛО РЕСУРСОВ: Ребёнок опирается на картинку. Если он называет предмет из списка выше — ЗАПРЕЩЕНО спрашивать "откуда он взялся" или "где мы это возьмём". Считай, что этот ресурс уже в руках у героя.
     ТЕКУЩАЯ СТАДИЯ: ${stageLabel}${stageHint}${hintKeyLine}
@@ -481,13 +511,17 @@ export default async function handler(req, res) {
         .replace("{taskContext}", taskContext)
         .replace("{history}", historyText);
 
-    // Claude Haiku — sole provider
     try {
+        console.log(`[Chat] Sending request to Claude (${models[0]}...)`);
         const result = await callClaude(fullPrompt, userMessage);
-        console.log(`Chat ${result.model} (in:${result.inputTokens} out:${result.outputTokens})`);
+        console.log(`[Chat] Success: ${result.model} (in:${result.inputTokens} out:${result.outputTokens})`);
         return res.status(200).json({ ...result, personaId: persona.id });
     } catch (err) {
-        console.error("Chat Claude failed:", err.message);
-        return res.status(503).json({ error: "AI provider unavailable", details: err.message });
+        console.error("[Chat] Fatal error:", err.message);
+        return res.status(503).json({ 
+          error: "AI provider unavailable", 
+          text: "Уголёк задумался. Попробуй через минуту!",
+          details: err.message 
+        });
     }
 }

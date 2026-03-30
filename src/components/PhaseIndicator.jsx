@@ -1,75 +1,86 @@
 /**
- * PhaseIndicator — Shows progress through game phases
- * TRIZ mode: 7 phases (0-6) + end state
- * Mystery mode: 5 ПРИЗ stages (П Р И З ✨)
+ * PhaseIndicator — Shows explicit 5 steps of ПРИЗ methodology
+ * 1: Подготовка (📝)
+ * 2: Анализ (🔍)
+ * 3: Гипотезы (💡)
+ * 4: Отбор (✅)
+ * 5: Проверка (🚀)
  */
 
-export default function PhaseIndicator({ isTriz, trizPhase, prizStep, cycleCount }) {
-  if (isTriz) {
-    // TRIZ mode: 7 dots for phases 0-6, cycle counter
-    const phases = [0, 1, 2, 3, 4, 5, 6];
-    return (
-      <div className="flex flex-col items-center gap-2 py-3">
-        <div className="flex gap-2">
-          {phases.map((p) => (
-            <div
-              key={p}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
-                p === trizPhase
-                  ? "bg-blue-500 scale-125"
-                  : p < trizPhase
-                  ? "bg-green-500"
-                  : "bg-gray-200"
-              }`}
-            />
-          ))}
-        </div>
-        {cycleCount > 0 && (
-          <div className="text-xs text-gray-500">
-            Цикл {cycleCount + 1}
-          </div>
-        )}
-      </div>
-    );
-  } else {
-    // Mystery mode: 5 ПРИЗ stages
-    const stages = ["П", "Р", "И", "З", "✨"];
-    const stageLabels = {
-      "П": "Подготовка",
-      "Р": "Разведка",
-      "И": "Идеи",
-      "З": "Зачёт",
-      "✨": "Инсайт"
-    };
+export default function PhaseIndicator({ trizPhase, prizStep, cycleCount }) {
+  const stages = [
+    { id: 0, label: "Старт", icon: "📝", color: "from-amber-400 to-orange-600" },
+    { id: 1, label: "Анализ", icon: "🔍", color: "from-blue-400 to-indigo-600" },
+    { id: 2, label: "Гипотезы", icon: "💡", color: "from-yellow-300 to-amber-500" },
+    { id: 3, label: "Отбор", icon: "✅", color: "from-emerald-400 to-green-600" },
+    { id: 4, label: "Проверка", icon: "🚀", color: "from-rose-400 to-red-600" }
+  ];
 
-    return (
-      <div className="flex flex-col items-center gap-2 py-3">
-        <div className="flex gap-3">
-          {stages.map((stage, idx) => (
-            <div
-              key={stage}
-              className={`flex flex-col items-center gap-1 transition-all ${
-                idx <= prizStep ? "opacity-100" : "opacity-50"
-              }`}
-            >
+  // Map internal trizPhase (0-7) to UI steps (0-4) if needed, 
+  // but we prefer using explicit 'prizStep' from engine
+  const currentStep = prizStep || 0;
+
+  return (
+    <div className="w-full bg-slate-50/80 border-y border-slate-100 py-6 px-4 relative overflow-hidden backdrop-blur-sm">
+      {/* Connector Line */}
+      <div className="absolute top-[46px] left-[15%] right-[15%] h-1 bg-slate-200 rounded-full" />
+      <div 
+        className="absolute top-[46px] left-[15%] h-1 bg-gradient-to-r from-orange-400 to-green-500 rounded-full transition-all duration-1000" 
+        style={{ width: `${Math.min(currentStep * 17.5, 70)}%` }}
+      />
+
+      <div className="flex justify-between items-start max-w-[500px] mx-auto relative z-10">
+        {stages.map((stage, idx) => {
+          const isActive = idx === currentStep;
+          const isDone = idx < currentStep;
+          const isFuture = idx > currentStep;
+
+          return (
+            <div key={stage.id} className="flex flex-col items-center gap-2 flex-1 min-w-0">
+              {/* Icon Circle */}
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                  idx === prizStep
-                    ? "bg-orange-500 text-white"
-                    : idx < prizStep
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100 text-gray-400"
-                }`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all duration-700 shadow-lg border-4
+                  ${isActive 
+                    ? `bg-gradient-to-br ${stage.color} border-white scale-125 ring-4 ring-orange-100 animate-bounce-slow` 
+                    : isDone 
+                    ? "bg-green-500 border-green-100 text-white" 
+                    : "bg-white border-slate-50 text-slate-300"}
+                `}
               >
-                {stage}
+                {isDone ? "✓" : stage.icon}
+                
+                {/* Active Glow */}
+                {isActive && (
+                  <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${stage.color} blur-lg opacity-40 animate-pulse`} />
+                )}
               </div>
-              <div className="text-xs text-gray-500 text-center max-w-12">
-                {stageLabels[stage]}
+
+              {/* Label */}
+              <div className="flex flex-col items-center">
+                <span className={`text-[9px] font-black uppercase tracking-tighter transition-all duration-500
+                  ${isActive ? "text-slate-900 scale-110" : "text-slate-400 font-bold"}
+                `}>
+                  {stage.label}
+                </span>
+                
+                {/* Active Indicator dot */}
+                {isActive && (
+                  <div className="w-1 h-1 rounded-full bg-orange-500 mt-0.5 animate-ping" />
+                )}
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
-    );
-  }
+
+      {/* Cycle Indicator */}
+      {cycleCount > 0 && (
+        <div className="absolute top-1 right-3">
+          <div className="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border border-orange-200">
+            Поход №{cycleCount + 1}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
