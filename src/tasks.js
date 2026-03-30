@@ -1,6 +1,14 @@
 export const TASKS = [
   {
     id: 1,
+    type: "havruta",
+    customer: {
+      name: "Мария Петрова",
+      emoji: "👨‍🍳",
+      title: "Владелец ресторана",
+      photo: "./img/customers/maria-restaurant.webp",
+      story: "Мой ресторан славится специальными соусами, но клиенты жалуются: кетчуп не выливается из бутылки, когда нужен, а потом вваливается весь. Помогите придумать, как это исправить!"
+    },
     trick: {
       name: "Наоборот",
       animal: "🐟",
@@ -40,6 +48,14 @@ export const TASKS = [
 
   {
     id: 2,
+    type: "havruta",
+    customer: {
+      name: "Игорь Волков",
+      emoji: "👨‍🔬",
+      title: "Инженер ракетостроения",
+      photo: "./img/customers/igor-rocket.webp",
+      story: "Мы запускаем спутники, но ракета слишком тяжёлая. Нужно меньше топлива, но тогда не долетит. Как быть? Природа знает ответ..."
+    },
     trick: {
       name: "Дробление",
       animal: "🦎",
@@ -79,6 +95,14 @@ export const TASKS = [
 
   {
     id: 3,
+    type: "havruta",
+    customer: {
+      name: "Анна Сергеева",
+      emoji: "👨‍🏭",
+      title: "Технолог производства",
+      photo: "./img/customers/anna-factory.webp",
+      story: "Клей должен держать крепко, но когда я захочу переклеить — не держит совсем. Либо одно, либо другое. Может ли быть одновременно?"
+    },
     trick: {
       name: "Посредник",
       animal: "🐠",
@@ -118,6 +142,14 @@ export const TASKS = [
 
   {
     id: 4,
+    type: "havruta",
+    customer: {
+      name: "Дмитрий Лазарев",
+      emoji: "👨‍🚒",
+      title: "Главный пожарный",
+      photo: "./img/customers/dmitry-firefighter.webp",
+      story: "Пожарный шланг — гибкий, но вода не летит далеко. Или жёсткий и далеко бьёт, но неудобен. Как одним шлангом решить оба?"
+    },
     trick: {
       name: "Фазовый переход",
       animal: "🪲",
@@ -157,6 +189,14 @@ export const TASKS = [
 
   {
     id: 5,
+    type: "havruta",
+    customer: {
+      name: "Артём Поляков",
+      emoji: "⚓",
+      title: "Капитан кораблика",
+      photo: "./img/customers/artem-captain.webp",
+      story: "Мой парусник плывёт в ночи без света, но мне нужно знать, где препятствия. Как видеть в темноте без огня?"
+    },
     trick: {
       name: "Эхо",
       animal: "🦇",
@@ -196,6 +236,14 @@ export const TASKS = [
 
   {
     id: 6,
+    type: "havruta",
+    customer: {
+      name: "Ольга Смирнова",
+      emoji: "🏃",
+      title: "Тренер по спорту",
+      photo: "./img/customers/olga-coach.webp",
+      story: "Велосипедный шлем должен защитить голову от удара, но быть лёгким для спорта. И при этом не нагреваться. Как это может работать?"
+    },
     trick: {
       name: "Слои",
       animal: "🐦",
@@ -235,6 +283,14 @@ export const TASKS = [
 
   {
     id: 7,
+    type: "havruta",
+    customer: {
+      name: "Борис Новиков",
+      emoji: "👨‍🌾",
+      title: "Мэр деревни",
+      photo: "./img/customers/boris-mayor.webp",
+      story: "Моя деревня затапливается каждый сезон. Люди просят защиту. Я перепробовал все дорогие решения, но они не работают долго. Может быть, природа знает способ, который работает вечно?"
+    },
     trick: {
       name: "Тонущая деревня",
       animal: "🐉",

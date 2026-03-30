@@ -221,6 +221,97 @@ async function callClaude(fullPrompt, userMessage) {
     throw new Error(lastErr);
 }
 
+// ─── Havruta prompts ───
+
+const HAVRUTA_COMPANION_PROMPT = `
+Ты — Компаньон в игре. Ты НЕ знаешь ответа на задачу. Ты ищешь решение ВМЕСТЕ с ребёнком.
+
+ЗАДАЧА: {situation}
+
+ИСТОРИЯ ДИАЛОГА:
+{history}
+
+ТВОЯ РОЛЬ:
+- Ты равный партнёр, не учитель
+- Задаёшь вопросы из НАСТОЯЩЕГО любопытства — потому что сам не знаешь
+- Радуешься когда находите что-то новое вместе
+- Принимаешь ЛЮБОЕ физически реалистичное решение
+- Если ребёнок предложил рабочее решение — принимай и сигнализируй [SOLVED]
+- Никогда не указываешь на ответ напрямую
+
+СТИЛЬ:
+- Короткие сообщения (1-2 предложения)
+- Живой разговорный тон, как со старшим другом
+- Не используй слово "ТРИЗ"
+- Можешь задать ПРИЗ-вопрос: про тело объекта, среду вокруг, время (раньше/позже), части, или "а что если наоборот?"
+
+ЕСЛИ РЕШЕНИЕ НАЙДЕНО: в конце сообщения добавь метку [SOLVED] на отдельной строке.
+`;
+
+const HAVRUTA_MASTER_PROMPT = `
+Ты — Мастер. Ребёнок только что нашёл рабочее решение задачи. Твоя задача — задать ОДИН вопрос, который меняет угол зрения.
+
+ЗАДАЧА: {situation}
+НАЙДЕННОЕ РЕШЕНИЕ: {solution}
+
+ПРАВИЛА:
+- Один вопрос. Только один.
+- Вопрос НЕ указывает на ответ — он меняет угол зрения
+- Например: "Вы боролись с жарой. А что если жара тут ни при чём?"
+- НЕ говори "А хочешь найти ещё красивее?" — это слишком прямо
+- НЕ называй принцип заранее — ребёнок должен сам дойти
+
+Ответь ТОЛЬКО вопросом — без вступлений, без объяснений.
+`;
+
+const HAVRUTA_MASTER_REVEAL_PROMPT = `
+Ты — Мастер. Ребёнок нашёл красивое решение после твоего вопроса.
+
+ЗАДАЧА: {situation}
+КРАСИВОЕ РЕШЕНИЕ РЕБЁНКА: {beautiful}
+
+Твоя задача: назвать принцип ТРИЗ который ребёнок только что открыл. Коротко, 2-3 предложения. Конкретно — что именно за принцип, как его использует природа или история.
+
+Не хвали банально ("молодец!"). Говори по существу.
+`;
+
+async function callClaudeHavruta(systemPrompt, userMessage) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
+
+    const models = ["claude-haiku-4-5-20251001", "claude-3-haiku-20240307"];
+    let lastErr;
+    for (const model of models) {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+                "x-api-key": apiKey,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                max_tokens: 300,
+                system: systemPrompt,
+                messages: [{ role: "user", content: userMessage }],
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const text = data.content[0].text.trim();
+            const solved = text.includes("[SOLVED]");
+            const cleanText = text.replace(/\[SOLVED\]\s*/g, "").trim();
+            return { text: cleanText, solved };
+        }
+
+        const err = await response.text();
+        lastErr = `Claude API error ${response.status} (${model}): ${err}`;
+        if (response.status !== 529 && response.status !== 429) break;
+    }
+    throw new Error(lastErr);
+}
+
 export default async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -229,7 +320,52 @@ export default async function handler(req, res) {
     if (req.method === "OPTIONS") return res.status(200).end();
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    const { userMessage, history, task, personaId, prizStep = 0 } = req.body;
+    const { userMessage, history, task, personaId, prizStep = 0, mode, situation, solution, beautiful } = req.body;
+
+    // ─── Havruta mode ───
+    if (mode === "havruta-companion") {
+        if (!userMessage || !situation) return res.status(400).json({ error: "userMessage and situation required" });
+        const historyText = (history || []).map(m =>
+            `${m.from === "user" ? "Ребёнок" : "Компаньон"}: ${m.text}`
+        ).join("\n");
+        const prompt = HAVRUTA_COMPANION_PROMPT
+            .replace("{situation}", situation)
+            .replace("{history}", historyText || "(начало диалога)");
+        try {
+            const result = await callClaudeHavruta(prompt, userMessage);
+            return res.status(200).json(result);
+        } catch (err) {
+            return res.status(503).json({ error: "AI unavailable", text: "Хм... давай попробуем с другого угла?" });
+        }
+    }
+
+    if (mode === "havruta-master") {
+        if (!situation) return res.status(400).json({ error: "situation required" });
+        const prompt = HAVRUTA_MASTER_PROMPT
+            .replace("{situation}", situation)
+            .replace("{solution}", solution || "рабочее решение");
+        try {
+            const result = await callClaudeHavruta(prompt, userMessage || "задай вопрос");
+            return res.status(200).json(result);
+        } catch (err) {
+            return res.status(503).json({ error: "AI unavailable", text: "Хорошо нашли. Хочешь увидеть ещё один угол?" });
+        }
+    }
+
+    if (mode === "havruta-reveal") {
+        if (!situation || !beautiful) return res.status(400).json({ error: "situation and beautiful required" });
+        const prompt = HAVRUTA_MASTER_REVEAL_PROMPT
+            .replace("{situation}", situation)
+            .replace("{beautiful}", beautiful);
+        try {
+            const result = await callClaudeHavruta(prompt, "расскажи про принцип");
+            return res.status(200).json(result);
+        } catch (err) {
+            return res.status(503).json({ error: "AI unavailable", text: "Это принцип устранения противоречия — одно из самых мощных решений в ТРИЗ." });
+        }
+    }
+
+    if (!userMessage || !task) return res.status(400).json({ error: "userMessage and task are required" });
     if (!userMessage || !task) return res.status(400).json({ error: "userMessage and task are required" });
 
     // Auto-select persona by task age; dev can override via personaId in request body

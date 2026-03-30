@@ -428,7 +428,27 @@ export default function App() {
     setTwistChoice(null);
     setSessionStars(0);
 
-    if (isTriz(t)) {
+    if (t.type === "havruta") {
+      // Havruta mode: companion + customer
+      setTrizState(null);
+      const msgs = [];
+
+      // Show customer intro
+      if (t.customer) {
+        msgs.push({
+          type: "bot",
+          text: `${t.customer.emoji} Привет! Я ${t.customer.name}, ${t.customer.title}.\n\n"${t.customer.story}"`
+        });
+      }
+
+      // Companion introduces the problem
+      msgs.push({
+        type: "bot",
+        text: "Привет! 🐉 Я помогу решить эту задачу. Давай думать вместе — я тоже не знаю ответа, но мы найдём!\n\nКакие идеи у тебя есть?"
+      });
+
+      setMessages(msgs);
+    } else if (isTriz(t)) {
       // TRIZ mode: 7-phase engine with adaptive ПРИЗ version
       const age = ageGroup === "senior" ? 14 : 10; // Map ageGroup to numeric age
       const newState = createNewState(t.id, age);
@@ -588,7 +608,105 @@ export default function App() {
     try {
       const history = newMessages.map(m => ({ role: m.type === "bot" ? "bot" : "user", text: m.text }));
 
-      if (isTriz(task)) {
+      if (task.type === "havruta") {
+        // Havruta mode: companion (AI) + master (AI)
+        const hevrutaHistory = newMessages
+          .filter(m => m.type !== "situation")
+          .slice(-10)
+          .map(m => ({ from: m.type === "bot" ? "companion" : "user", text: m.text }));
+
+        // Check if master phase is active (last bot message contains мастер marker)
+        const isMasterPhase = messages.some(m => m.type === "bot" && m.isMaster);
+        const solutionMsg = messages.find(m => m.type === "bot" && m.isSolutionAccepted);
+
+        let aiResult;
+        if (isMasterPhase) {
+          // Master continues dialogue
+          aiResult = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              mode: "havruta-master",
+              situation: task.situation,
+              solution: solutionMsg?.solutionText || text,
+              userMessage: text,
+            }),
+          }).then(r => r.json()).catch(() => ({ text: null }));
+
+          const masterText = aiResult?.text || "Интересно. Попробуй сформулировать точнее.";
+          const ts = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+          setMessages(prev => [...prev, { type: "bot", text: "🔮 " + masterText, isMaster: true, timestamp: ts }]);
+
+          // Check if this looks like a beautiful solution (long thoughtful answer)
+          if (text.length > 10 && !isMasterPhase) return;
+          // After 2+ master exchanges → reveal
+          const masterCount = messages.filter(m => m.isMaster).length;
+          if (masterCount >= 2) {
+            const reveal = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                mode: "havruta-reveal",
+                situation: task.situation,
+                beautiful: text,
+                userMessage: "расскажи принцип",
+              }),
+            }).then(r => r.json()).catch(() => ({ text: null }));
+            const revealText = reveal?.text || "Это принцип устранения противоречия — вы убрали саму проблему.";
+            const ts2 = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+            setMessages(prev => [...prev, { type: "bot", text: "✨ " + revealText, isMaster: true, isDiscovery: true, timestamp: ts2 }]);
+            setTimeout(goDebrief, 2000);
+          }
+        } else {
+          // Companion phase
+          aiResult = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              mode: "havruta-companion",
+              situation: task.situation,
+              userMessage: text,
+              history: hevrutaHistory,
+            }),
+          }).then(r => r.json()).catch(() => ({ text: null, solved: false }));
+
+          const ts = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+          if (aiResult?.solved) {
+            // Solution accepted — transition to master
+            setMessages(prev => [
+              ...prev,
+              { type: "bot", text: aiResult.text || "Принимаем! Это работает.", isSolutionAccepted: true, solutionText: text, timestamp: ts },
+            ]);
+            // Master appears after pause
+            setTimeout(async () => {
+              const masterAI = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  mode: "havruta-master",
+                  situation: task.situation,
+                  solution: text,
+                  userMessage: "появись",
+                }),
+              }).then(r => r.json()).catch(() => ({ text: null }));
+              const masterText = masterAI?.text || "Хорошо нашли. Хотите увидеть ещё один угол?";
+              const ts2 = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+              setMessages(prev => [
+                ...prev,
+                { type: "bot", text: "🔮 Мастер:", isMaster: true, isStageMsg: true, timestamp: ts2 },
+                { type: "bot", text: masterText, isMaster: true, timestamp: ts2 },
+              ]);
+            }, 1500);
+          } else {
+            setMessages(prev => [...prev, {
+              type: "bot",
+              text: aiResult?.text || "Интересно! Давай попробуем с другого угла.",
+              timestamp: ts,
+            }]);
+          }
+        }
+      } else if (isTriz(task)) {
         // TRIZ mode: 7-phase engine with adaptive ПРИЗ version
         const result = await askTriz(text, task, trizState, history.slice(0, -1), ageGroup);
 
@@ -730,26 +848,16 @@ export default function App() {
         {/* PICKER */}
         {phase === "picker" && (
           <div className="flex flex-col flex-1 px-4 pb-6">
-            {/* Top bar with title and controls */}
+            {/* Top bar with title */}
             <div className="flex items-center justify-between pt-3 pb-4 border-b border-gray-100">
               <h2
                 onClick={handleLogoClick}
                 className="text-[18px] font-bold text-gray-900 flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity"
                 title={logoClickCount > 0 ? `Клики: ${logoClickCount}/10` : ""}
               >
-                <span>🐉</span> SHARIEL
+                <span>🐉</span> Архив задач
               </h2>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    trackEvent(EVENTS.CITY_OPENED, { collectedCount: collected.length });
-                    setPhase("city");
-                  }}
-                  className="text-sm font-semibold px-3 py-2 rounded-[8px] hover:bg-orange-100 transition-all flex items-center gap-2 bg-orange-50"
-                  title="Открывай новые методы, решая задачи"
-                >
-                  <span className="text-lg">🏙️</span> <span className="text-[13px] font-bold text-orange-600">Город</span> <span className="text-[12px] text-orange-500">{collected.length}</span>
-                </button>
                 <button
                   onClick={() => {
                     trackEvent(EVENTS.MENU_OPENED);
@@ -762,212 +870,57 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <div className="flex items-center justify-center gap-1 mb-3 pt-3">
-              <p className="text-gray-600 text-[12px] text-center font-semibold">
-                💡 Решай задачи и открывай здания
-              </p>
+            {/* Archive message */}
+            <div className="text-center mb-6 pt-4">
+              <p className="text-[18px] font-bold text-gray-900 mb-1">В архив пришло 7 дел</p>
+              <p className="text-[14px] text-gray-600">Какое будешь решать сегодня?</p>
             </div>
-            <p className="text-gray-600 text-[13px] text-center mb-3 font-medium">
-              {collected.length === 0
-                ? "👉 Выбери загадку и раскрой секреты природы"
-                : `⭐ ${collected.length} из ${TASKS.length} зданий открыто`
-              }
-            </p>
-            {/* Progress bar */}
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-orange-500 transition-all duration-300"
-                  style={{ width: `${(collected.length / TASKS.length) * 100}%` }}
-                />
-              </div>
-              <span className="text-[12px] font-bold text-orange-600 whitespace-nowrap">{collected.length}/{TASKS.length}</span>
-            </div>
-            {/* 3-уровневая структура */}
-            <div className="flex-1 overflow-y-auto space-y-5 pb-4">
-              {/* УРОВЕНЬ 1: Простые (⭐) */}
-              <div className="bg-gradient-to-r from-green-50 to-green-50 rounded-[16px] p-4 border-2 border-green-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">⭐</span>
-                    <div>
-                      <div className="font-bold text-gray-900 text-[14px]">Простые задачи</div>
-                      <div className="text-[11px] text-gray-600">Начни здесь</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[12px] font-semibold text-green-700">Доступно! ✓</div>
-                    <div className="text-[11px] text-gray-600">у тебя {totalStars} XP</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {[0, 1].map((i) => {
-                    const t = TASKS[i];
-                    const done = collected.includes(t.id);
-                    return (
-                      <button key={t.id}
-                        onClick={() => startTask(i)}
-                        className={`w-full rounded-[14px] p-3 flex items-start gap-2 text-left transition-all active:scale-95
-                          ${done ? "bg-green-200 border-2 border-green-400" : "bg-white border-2 border-gray-100 hover:border-green-400"}`}
-                      >
-                        <span className="text-3xl flex-shrink-0">{t.puzzle.emoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-semibold text-gray-800 line-clamp-2">{t.puzzle.question}</div>
-                          {done && <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-green-300 text-green-700">✓ Решено</span>}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
 
-              {/* УРОВЕНЬ 2: Средние (⭐⭐) */}
-              <div className={`rounded-[16px] p-4 border-2 transition-all ${
-                totalStars >= 20
-                  ? "bg-gradient-to-r from-amber-50 to-amber-50 border-amber-200"
-                  : "bg-gray-50 border-gray-200 opacity-60"
-              }`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">⭐⭐</span>
-                    <div>
-                      <div className="font-bold text-gray-900 text-[14px]">Средние задачи</div>
-                      <div className="text-[11px] text-gray-600">
-                        {totalStars >= 20 ? "Открыто!" : `Нужно ${20 - totalStars} XP`}
+            {/* Tasks list - all 7 havruta tasks */}
+            <div className="flex-1 overflow-y-auto space-y-3 pb-4">
+              {TASKS.slice(0, 7).map((t, i) => {
+                const done = collected.includes(t.id);
+                return (
+                  <button key={t.id}
+                    onClick={() => startTask(i)}
+                    className={`w-full rounded-[14px] p-4 flex items-start gap-3 text-left transition-all active:scale-95
+                      ${done ? "bg-green-100 border-2 border-green-400" : "bg-white border-2 border-gray-200 hover:border-orange-300"}`}
+                  >
+                    {/* Customer avatar */}
+                    <div className="text-4xl flex-shrink-0">
+                      {t.customer?.emoji || t.puzzle?.emoji || "❓"}
+                    </div>
+
+                    {/* Customer info and task */}
+                    <div className="flex-1 min-w-0">
+                      {/* Customer name and title */}
+                      <div className="text-[13px] font-bold text-gray-900">
+                        {t.customer?.name || "Заказчик"}
                       </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[12px] font-semibold text-amber-700">
-                      {totalStars >= 20 ? "Откроется ✓" : "Откроется при 20 XP"}
-                    </div>
-                    <div className="text-[11px] text-gray-600">
-                      {totalStars >= 20 ? `у тебя ${totalStars} XP` : `нужно ещё ${20 - totalStars}`}
-                    </div>
-                  </div>
-                </div>
-                {totalStars >= 20 ? (
-                  <div className="space-y-2">
-                    {[2, 3].map((i) => {
-                      const t = TASKS[i];
-                      const done = collected.includes(t.id);
-                      return (
-                        <button key={t.id}
-                          onClick={() => startTask(i)}
-                          className={`w-full rounded-[14px] p-3 flex items-start gap-2 text-left transition-all active:scale-95
-                            ${done ? "bg-amber-200 border-2 border-amber-400" : "bg-white border-2 border-gray-100 hover:border-amber-400"}`}
-                        >
-                          <span className="text-3xl flex-shrink-0">{t.puzzle.emoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-semibold text-gray-800 line-clamp-2">{t.puzzle.question}</div>
-                            {done && <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-300 text-amber-700">✓ Решено</span>}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-3 text-gray-500 text-[12px]">
-                    🔒 Решай простые задачи, чтобы открыть этот уровень
-                  </div>
-                )}
-              </div>
-
-              {/* УРОВЕНЬ 3: Сложные (⭐⭐⭐) */}
-              <div className={`rounded-[16px] p-4 border-2 transition-all ${
-                totalStars >= 50
-                  ? "bg-gradient-to-r from-red-50 to-red-50 border-red-200"
-                  : "bg-gray-50 border-gray-200 opacity-60"
-              }`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">⭐⭐⭐</span>
-                    <div>
-                      <div className="font-bold text-gray-900 text-[14px]">Сложные задачи</div>
-                      <div className="text-[11px] text-gray-600">
-                        {totalStars >= 50 ? "Открыто!" : `Нужно ${50 - totalStars} XP`}
+                      <div className="text-[11px] text-orange-600 font-semibold mb-1">
+                        {t.customer?.title || ""}
                       </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[12px] font-semibold text-red-700">
-                      {totalStars >= 50 ? "Откроется ✓" : "Откроется при 50 XP"}
-                    </div>
-                    <div className="text-[11px] text-gray-600">
-                      {totalStars >= 50 ? `у тебя ${totalStars} XP` : `нужно ещё ${50 - totalStars}`}
-                    </div>
-                  </div>
-                </div>
-                {totalStars >= 50 ? (
-                  <div className="space-y-2">
-                    {[4, 5].map((i) => {
-                      const t = TASKS[i];
-                      const done = collected.includes(t.id);
-                      return (
-                        <button key={t.id}
-                          onClick={() => startTask(i)}
-                          className={`w-full rounded-[14px] p-3 flex items-start gap-2 text-left transition-all active:scale-95
-                            ${done ? "bg-red-200 border-2 border-red-400" : "bg-white border-2 border-gray-100 hover:border-red-400"}`}
-                        >
-                          <span className="text-3xl flex-shrink-0">{t.puzzle.emoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-semibold text-gray-800 line-clamp-2">{t.puzzle.question}</div>
-                            {done && <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-red-300 text-red-700">✓ Решено</span>}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-3 text-gray-500 text-[12px]">
-                    🔒 Стань мастером средних задач, чтобы открыть этот уровень
-                  </div>
-                )}
-              </div>
 
-              {/* УРОВЕНЬ 4: TRIZ Тренер (🧠) */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-50 rounded-[16px] p-4 border-2 border-blue-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🧠</span>
-                    <div>
-                      <div className="font-bold text-gray-900 text-[14px]">ТРИЗ Тренер</div>
-                      <div className="text-[11px] text-gray-600">Анализируй идеи и находи решения</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[12px] font-semibold text-blue-700">Всегда доступно ✓</div>
-                    <div className="text-[11px] text-gray-600">открывай в любой момент</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {TASKS.filter(t => t.id === "solomon-hall").map((t) => {
-                    const done = collected.includes(t.id);
-                    return (
-                      <button key={t.id}
-                        onClick={() => {
-                          const idx = TASKS.findIndex(task => task.id === "solomon-hall");
-                          startTask(idx);
-                        }}
-                        className={`w-full rounded-[14px] p-3 flex items-start gap-2 text-left transition-all active:scale-95
-                          ${done ? "bg-blue-200 border-2 border-blue-400" : "bg-white border-2 border-gray-100 hover:border-blue-400"}`}
-                      >
-                        <span className="text-3xl flex-shrink-0">{t.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-semibold text-gray-800">{t.title}</div>
-                          <div className="text-[11px] text-gray-600">{t.teaser}</div>
-                          {done && <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-300 text-blue-700">✓ Решено</span>}
+                      {/* Customer story */}
+                      <div className="text-[12px] text-gray-700 line-clamp-2">
+                        {t.customer?.story || t.puzzle?.question || "Помогите решить задачу"}
+                      </div>
+
+                      {/* Done indicator */}
+                      {done && (
+                        <div className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded bg-green-300 text-green-700">
+                          ✓ Решено
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* CITY */}
+{/* CITY */}
         {phase === "city" && (
           <City
             collected={collected}
@@ -1029,7 +982,7 @@ export default function App() {
                   const isLastBotMsg = i === messages.length - 1 || messages[i+1]?.type !== 'bot';
                   return (
                     <div key={i} className="flex gap-2 items-end">
-                      {isLastBotMsg && <img src="./img/webp/ugolok.webp" alt="SHARIEL" className="w-8 h-8 flex-shrink-0 rounded-full object-cover" />}
+                      {isLastBotMsg && <img src="./img/webp/ugolok.webp" alt="Архив" className="w-8 h-8 flex-shrink-0 rounded-full object-cover" />}
                       <div className={`flex flex-col gap-0.5 ${!isLastBotMsg ? 'ml-10' : ''}`}>
                         <div className={`bg-gray-100 rounded-[16px] ${isLastBotMsg ? 'rounded-bl-[4px]' : ''} px-4 py-3 text-[15px] text-gray-800 max-w-[80%]`}>
                           {m.text}
@@ -1059,7 +1012,7 @@ export default function App() {
               })}
               {isTyping && (
                 <div className="flex gap-2 items-end">
-                  <img src="./img/webp/ugolok.webp" alt="SHARIEL" className="w-8 h-8 flex-shrink-0 rounded-full object-cover" />
+                  <img src="./img/webp/ugolok.webp" alt="Архив" className="w-8 h-8 flex-shrink-0 rounded-full object-cover" />
                   <div className="bg-gray-100 rounded-[16px] rounded-bl-[4px] px-4 py-3 flex gap-1">
                     {[0,1,2].map(j => (
                       <div key={j} className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${j * 0.15}s` }} />
@@ -1126,7 +1079,7 @@ export default function App() {
               </div>
               <div className="bg-amber-50 border-2 border-amber-200 rounded-[16px] p-4 text-[15px] text-amber-900">
                 <div className="flex gap-3">
-                  <img src="./img/webp/ugolok.webp" alt="SHARIEL" className="w-10 h-10 flex-shrink-0 rounded-full object-cover" />
+                  <img src="./img/webp/ugolok.webp" alt="Архив" className="w-10 h-10 flex-shrink-0 rounded-full object-cover" />
                   <p>
                     <span className="font-bold block mb-1">Видишь закономерность?</span>
                     Этот мир разгадан! Ты открыл <span className="font-semibold" style={{ color: task.trick.color }}>"{task.trick.name}"</span> — метод, которым природа решала эту задачу миллионы лет. Теперь ты знаешь, как она это делает.
@@ -1141,6 +1094,25 @@ export default function App() {
                 <div className="text-[13px] text-gray-600 mt-1">{task.trick.animalName}</div>
                 <p className="text-[13px] text-gray-700 mt-3">{methodDescription(task.trick.name)}</p>
               </div>
+
+              {/* Customer gratitude and question */}
+              {task.customer && (
+                <div className="w-full bg-orange-50 border-2 border-orange-200 rounded-[16px] p-4">
+                  <div className="flex gap-3">
+                    <div className="text-3xl flex-shrink-0">{task.customer.emoji}</div>
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-900 text-[14px] mb-1">{task.customer.name}</p>
+                      <p className="text-[13px] text-gray-700 leading-relaxed mb-2">
+                        Спасибо! Это решение поможет мне настоящему. Теперь у меня вопрос для тебя...
+                      </p>
+                      <p className="text-[13px] text-orange-800 font-semibold italic">
+                        "А что если эта же идея применить где-нибудь ещё? Где ещё в жизни это работает?"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="w-full bg-gray-50 rounded-[16px] p-4 text-[15px] text-gray-700 leading-relaxed">
                 <p className="font-semibold text-gray-500 text-[12px] mb-2">ЕЩЁ ИНТЕРЕСНОЕ</p>
                 {task.puzzle.bonusFact}
@@ -1267,7 +1239,7 @@ export default function App() {
             </div>
             <div className="w-full bg-gradient-to-r rounded-[16px] p-5 text-[15px] text-gray-900 leading-relaxed border-2 border-amber-300" style={{ backgroundImage: "linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.05))" }}>
               <div className="flex gap-3">
-                <img src="./img/webp/ugolok.webp" alt="SHARIEL" className="w-12 h-12 flex-shrink-0 rounded-full object-cover" />
+                <img src="./img/webp/ugolok.webp" alt="Архив" className="w-12 h-12 flex-shrink-0 rounded-full object-cover" />
                 <div>
                   <p className="font-bold mb-2">Первый этап пройден! 🔍</p>
                   <p>Ты овладел 6 методами. Дальше — три пути: 1️⃣ создавай задачи для других; 2️⃣ учись выбирать нужный метод на сложных задачах; 3️⃣ найди противоречия в реальных проблемах. И в конце — станешь настоящим изобретателем.</p>
