@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 
 const ASSETS_TO_PRELOAD = [
-  "/assets/main_island.png",
-  "/assets/island_zapovednik.png",
-  "/assets/island_laboratory.png",
-  "/assets/island_tsar.png",
-  "/assets/avatar.png",
+  "/assets/webm/main_island.webm",
+  "/assets/webm/island_zapovednik.webm",
+  "/assets/webm/island_laboratory.webm",
+  "/assets/webm/island_tsar.webm",
+  "/assets/webm/avatar.webm",
   "/assets/library.png",
   "/assets/city-hall.png",
   "/assets/workshop.png",
   "/assets/laboratory.png",
   "/assets/nature-reserve.png",
   "/img/ugolok_3d.png",
-  "/img/splash_bg.png"
+  "/img/splash_bg.png",
+  "/img/cloud.png"
 ];
 
 export default function DragonSplashScreen({ onAnimationEnd, t }) {
@@ -23,23 +24,27 @@ export default function DragonSplashScreen({ onAnimationEnd, t }) {
     let loadedCount = 0;
     const total = ASSETS_TO_PRELOAD.length;
 
-    // Minimum display time for the brand (2 seconds)
-    const minTimePromise = new Promise(resolve => setTimeout(resolve, 2500));
+    const minTimePromise = new Promise(resolve => setTimeout(resolve, 2000));
     
     const assetPromises = ASSETS_TO_PRELOAD.map(url => {
+      const isVideo = url.endsWith('.webm');
       return new Promise((resolve) => {
-        const img = new Image();
-        img.src = url;
-        img.onload = () => {
-          loadedCount++;
-          setProgress(Math.round((loadedCount / total) * 100));
-          resolve();
-        };
-        img.onerror = () => {
-          loadedCount++;
-          setProgress(Math.round((loadedCount / total) * 100));
-          resolve();
-        };
+        if (isVideo) {
+          fetch(url).then(() => {
+            loadedCount++;
+            setProgress(Math.round((loadedCount / total) * 100));
+            resolve();
+          }).catch(resolve);
+        } else {
+          const img = new Image();
+          img.src = url;
+          img.onload = () => {
+            loadedCount++;
+            setProgress(Math.round((loadedCount / total) * 100));
+            resolve();
+          };
+          img.onerror = resolve;
+        }
       });
     });
 
