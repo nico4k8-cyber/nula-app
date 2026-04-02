@@ -20,7 +20,8 @@ export default function DialogView({
   inputRef,
   bottomRef,
   childMsgCount,
-  bingoFlash
+  bingoFlash,
+  t
 }) {
   const isTriz = (t) => t?.core_problem && t?.ikr && t?.resources;
 
@@ -53,6 +54,7 @@ export default function DialogView({
         trizPhase={trizState?.phase ?? -1} 
         prizStep={prizStep} 
         cycleCount={trizState?.cycleCount ?? 0} 
+        t={t}
       />
 
       {/* Chat Area */}
@@ -103,7 +105,7 @@ export default function DialogView({
           );
           if (m.type === "show-answer") return (
             <div key={i} className="bg-blue-600 rounded-[22px] px-6 py-4 text-[16px] text-white shadow-xl animate-fade-in border-4 border-blue-400 font-medium italic">
-              <span className="font-black uppercase tracking-tighter mr-2">МУДРОСТЬ:</span> {m.text}
+              <span className="font-black uppercase tracking-tighter mr-2">{t?.('dialog.wisdom') || 'МУДРОСТЬ:'}</span> {m.text}
             </div>
           );
           return null;
@@ -128,19 +130,20 @@ export default function DialogView({
           <button onClick={onShowAnswer}
             className="w-full mb-3 py-3 rounded-[20px] bg-indigo-50 text-indigo-600 text-[14px] font-black uppercase tracking-wider border-2 border-indigo-100 active:scale-95 transition-all"
           >
-            🔍 Показать ответ
+            {t?.('dialog.show_answer') || '🔍 Показать ответ'}
           </button>
         )}
 
         {/* Resources Helper (TRIZ Phase 3-4) */}
         {task && isTriz(task) && task.resources && trizState && (trizState.phase === 3 || trizState.phase === 4) && (
           <div className="mb-4 animate-fade-in-up">
-            <p className="text-center text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Твои ресурсы для решения:</p>
+            <p className="text-center text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">{t?.('dialog.resources_label') || 'Твои ресурсы для решения:'}</p>
             <ResourceButtons
               resources={task.resources}
               currentResource={trizState.currentResource}
               onSelectResource={onSelectResource}
               disabled={isTyping}
+              t={t}
             />
           </div>
         )}
@@ -152,7 +155,7 @@ export default function DialogView({
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !e.shiftKey && onSendMessage()}
-            placeholder="Напиши свою идею..."
+            placeholder={t?.('dialog.placeholder') || 'Напиши свою идею...'}
             className="flex-1 bg-slate-100 border-2 border-transparent focus:border-orange-200 focus:bg-white rounded-[24px] px-6 py-4 text-[16px] outline-none transition-all placeholder:text-slate-400 font-medium shadow-inner"
             disabled={isTyping}
           />

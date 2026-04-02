@@ -14,7 +14,7 @@ export default function TwistView({
 }) {
   return (
     <div className="flex flex-col flex-1 px-6 pb-12 animate-fade-in-up">
-      <TopProgress completedTasks={completedTasks} current={taskIdx} TASKS={TASKS} />
+      <TopProgress completedTasks={completedTasks} current={taskIdx} TASKS={TASKS} t={t} />
       
       <div className="flex flex-col flex-1 justify-center gap-6 mt-6 max-w-[500px] mx-auto">
         <div className="text-center group">

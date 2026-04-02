@@ -15,7 +15,7 @@ export default function DebriefView({
 }) {
   return (
     <div className="flex flex-col flex-1 px-5 pb-8 animate-fade-in-up">
-      <TopProgress completedTasks={completedTasks} current={taskIdx} TASKS={TASKS} />
+      <TopProgress completedTasks={completedTasks} current={taskIdx} TASKS={TASKS} t={t} />
       
       <div className="flex flex-col flex-1 justify-center items-center gap-5 mt-4">
         <div className="text-center text-5xl mb-1 animate-bounce-slow">{debriefBingo ? "🎉" : "⚡"}</div>

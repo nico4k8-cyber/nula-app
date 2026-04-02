@@ -1,18 +1,12 @@
 import { useEffect, useState } from 'react';
 import WorldMap from './components/WorldMap';
-import { useGameStore } from './store/gameStore';
 import { ISLAND_MAPPING } from './utils/gameUtils';
 
-export default function City({ onSelectBuilding, t, onLogoClick }) {
-  const { 
-    totalStars, 
-    islands, 
-    unlockRequirements, 
-    completedTasks, 
-    checkUnlocks,
-    user
-  } = useGameStore();
-
+export default function City({ 
+  onSelectBuilding, t, onLogoClick, 
+  user, totalStars, completedTasks, islands, unlockRequirements,
+  checkUnlocks
+}) {
   const [selectedIslandId, setSelectedIslandId] = useState(null);
 
   useEffect(() => {
@@ -68,13 +62,10 @@ export default function City({ onSelectBuilding, t, onLogoClick }) {
           <div className="fixed inset-0 z-[60] bg-slate-950/60 backdrop-blur-3xl animate-fade-in flex flex-col items-center justify-center p-6">
             <div className="w-full max-w-lg bg-white rounded-[48px] shadow-full overflow-hidden flex flex-col relative animate-slide-up">
               <div className="h-56 bg-slate-900 relative overflow-hidden">
-                 <video 
+                 <img 
                    src={islandData?.imgUrl} 
-                   autoPlay 
-                   muted 
-                   loop 
-                   playsInline
-                   className="w-full h-full object-cover opacity-40 scale-110" 
+                   className="w-full h-full object-cover opacity-60 scale-110" 
+                   alt=""
                  />
                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
                  
@@ -135,7 +126,7 @@ export default function City({ onSelectBuilding, t, onLogoClick }) {
               <div className="h-6 w-px bg-white/20" />
               <div className="flex flex-col items-center">
                 <p className="text-xl font-black text-white leading-none">
-                  {Object.values(islands).filter(i => i.status === 'active' || i.status === 'completed').length}
+                   {Object.values(islands || {}).filter(i => i.status === 'active' || i.status === 'completed').length}
                 </p>
                 <p className="text-[8px] text-white/40 uppercase font-black tracking-[0.2em] mt-1">{t('hud.islands')}</p>
               </div>

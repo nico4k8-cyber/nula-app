@@ -89,34 +89,35 @@ const server = http.createServer(async (req, res) => {
       // 2. Chat / AI (/chat or /api/chat)
       if (pathname === '/chat' || pathname === '/api/chat') {
         const data = JSON.parse(body || '{}');
-        
-        // Mock Vercel req/res for the chat.js handler
-        const mockReq = { 
-          method: 'POST', 
-          body: data,
-          headers: req.headers
-        };
+        const mockReq = { method: 'POST', body: data, headers: req.headers };
         const mockRes = {
           status: (code) => ({
-            json: (payload) => {
-              res.writeHead(code);
-              res.end(JSON.stringify(payload));
-            },
-            end: () => {
-              res.writeHead(code);
-              res.end();
-            }
+            json: (payload) => { res.writeHead(code); res.end(JSON.stringify(payload)); },
+            end: () => { res.writeHead(code); res.end(); }
           }),
           setHeader: () => {}
         };
-
         try {
           await chatHandler(mockReq, mockRes);
         } catch (err) {
           console.error('[chat handler error]', err.message);
           res.writeHead(500);
-          res.end(JSON.stringify({ error: 'Chat failed', text: 'Ошибка ИИ. Проверь ключи в .env.local' }));
+          res.end(JSON.stringify({ error: 'Chat failed', text: 'Ошибка ИИ.' }));
         }
+        return;
+      }
+
+      // 3. Save Tasks (/api/save-tasks)
+      if (pathname === '/save-tasks' || pathname === '/api/save-tasks') {
+        const data = JSON.parse(body || '{}');
+        const tasks = data.tasks;
+        if (!Array.isArray(tasks)) {
+           res.writeHead(400); res.end(JSON.stringify({ error: 'Tasks must be an array' })); return;
+        }
+        const filePath = path.resolve(process.cwd(), 'src', 'tasks.js');
+        const content = `export const TASKS = ${JSON.stringify(tasks, null, 2)};\n`;
+        fs.writeFileSync(filePath, content, 'utf-8');
+        res.writeHead(200); res.end(JSON.stringify({ success: true }));
         return;
       }
 

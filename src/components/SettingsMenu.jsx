@@ -94,6 +94,12 @@ export default function SettingsMenu({
             <span className="text-white/20 text-2xl group-hover:translate-x-2 transition-transform">→</span>
           </button>
 
+          <button onClick={() => { window.__openAdmin = true; onClose(); }}
+            className="w-full text-center py-4 text-indigo-400 font-black text-[12px] uppercase tracking-widest hover:text-indigo-300 transition-all mt-4 border-2 border-indigo-900/10 rounded-2xl"
+          >
+            🛠️ Админка задач
+          </button>
+
           <button onClick={() => {
             if (confirm("Вы уверены? Весь прогресс и звёзды будут удалены.")) {
                onResetProgress();

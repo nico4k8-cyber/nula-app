@@ -6,9 +6,15 @@ export default function TaskPicker({
   TASKS, 
   completedTasks, 
   onStartTask,
-  t
+  t,
+  lang = 'ru'
 }) {
   const filtered = TASKS.filter(taskItem => taskItem.category === activeCategory);
+
+  const getTitle = (taskItem) => {
+    if (lang === 'en' && taskItem.title_en) return taskItem.title_en;
+    return taskItem.title;
+  };
 
   return (
     <div className="flex flex-col flex-1 bg-gray-50/30 overflow-hidden animate-fade-in">
@@ -50,7 +56,7 @@ export default function TaskPicker({
       {/* Mentor Bubble (Coal) */}
       <div className="px-6 mb-2 -mt-4 relative z-10 animate-fade-in-up">
          <div className="bg-white rounded-[32px] p-6 shadow-xl border border-orange-100 flex gap-4 items-center max-w-[500px] mx-auto transition-transform hover:scale-[1.02]">
-            <img src="./img/ugolok_3d.png" alt="Уголёк" className="w-16 h-16 rounded-full object-cover border-2 border-orange-200 flex-shrink-0" />
+            <img src="./img/ugolok_3d.webp" alt="Уголёк" className="w-16 h-16 rounded-full object-cover border-2 border-orange-200 flex-shrink-0" />
             <div className="flex-1">
                <p className="text-[14px] text-slate-800 font-bold leading-tight italic">
                   {t(`picker.mentor.${activeCategory === 'library' || activeCategory === 'farm' || activeCategory === 'city-hall' ? activeCategory : 'default'}`)}
@@ -85,7 +91,7 @@ export default function TaskPicker({
                    <div className="flex flex-col gap-1 min-w-0">
                      <span className={`text-[12px] font-black uppercase tracking-tight leading-tight line-clamp-2
                        ${isDone ? "text-emerald-700" : "text-slate-800"}`}>
-                       {taskItem.title}
+                       {getTitle(taskItem)}
                      </span>
                      <div className="flex items-center justify-center gap-0.5 mt-1">
                         {[...Array(taskItem.difficulty || 1)].map((_, i) => (

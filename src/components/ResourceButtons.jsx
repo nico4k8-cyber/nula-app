@@ -7,7 +7,8 @@ export default function ResourceButtons({
   resources,
   currentResource,
   onSelectResource,
-  disabled = false
+  disabled = false,
+  t
 }) {
   if (!resources || resources.length === 0) {
     return null;
@@ -16,7 +17,7 @@ export default function ResourceButtons({
   return (
     <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
       <div className="text-xs font-semibold text-gray-600 mb-2">
-        💡 Выбери ресурс:
+        {t?.('dialog.choose_resource') || '💡 Выбери ресурс:'}
       </div>
       <div className="flex flex-wrap gap-2">
         {resources.map((resource) => {
@@ -41,7 +42,7 @@ export default function ResourceButtons({
       </div>
       {currentResource && (
         <div className="mt-2 text-xs text-gray-600">
-          <span className="font-semibold">Текущий:</span> {currentResource}
+          <span className="font-semibold">{t?.('dialog.current') || 'Текущий'}:</span> {currentResource}
         </div>
       )}
     </div>

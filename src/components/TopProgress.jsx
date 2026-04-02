@@ -1,4 +1,4 @@
-export default function TopProgress({ completedTasks, current, TASKS }) {
+export default function TopProgress({ completedTasks, current, TASKS, t }) {
   return (
     <div className="flex justify-center gap-2 py-3 px-4 overflow-x-auto no-scrollbar">
       {TASKS.map((taskItem, i) => {

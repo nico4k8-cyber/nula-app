@@ -6,9 +6,9 @@ const ASSETS_TO_PRELOAD = [
   "/assets/webm/island_laboratory.webm",
   "/assets/webm/island_tsar.webm",
   "/assets/webm/avatar.webm",
-  "/img/ugolok_3d.png",
-  "/img/splash_bg.png",
-  "/img/cloud.png"
+  "/img/ugolok_3d.webp",
+  "/img/splash_bg.webp",
+  "/img/cloud.webp"
 ];
 
 export default function DragonSplashScreen({ onAnimationEnd, t }) {
@@ -54,7 +54,7 @@ export default function DragonSplashScreen({ onAnimationEnd, t }) {
 
   return (
     <div className={`splash-container ${isDone ? 'fade-out' : ''}`}>
-      <img className="splash-bg" src="/img/splash_bg.png" alt="Archipelago" />
+      <img className="splash-bg" src="/img/splash_bg.webp" alt="Archipelago" />
       <div className="splash-overlay" />
       
       <div className="splash-content">

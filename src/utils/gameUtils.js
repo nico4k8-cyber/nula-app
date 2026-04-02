@@ -57,7 +57,7 @@ export function methodDescription(methodName, lang = 'ru') {
 export const ISLAND_MAPPING = {
   main: {
     name: "Главный остров",
-    imgUrl: "/assets/webm/main_island.webm",
+    imgUrl: "/assets/webp/main_island.webp",
     buildings: [
       { id: 'library', name: 'Библиотека', icon: '📚', color: 'bg-amber-600' },
       { id: 'city-hall', name: 'Мэрия', icon: '🏛️', color: 'bg-blue-600' },
@@ -66,7 +66,7 @@ export const ISLAND_MAPPING = {
   },
   craft: {
     name: "Заповедник",
-    imgUrl: "/assets/webm/island_zapovednik.webm",
+    imgUrl: "/assets/webp/island_zapovednik.webp",
     buildings: [
       { id: 'workshop', name: 'Мастерская', icon: '🔧', color: 'bg-slate-600' },
       { id: 'farm', name: 'Ферма', icon: '🚜', color: 'bg-emerald-600' }
@@ -74,7 +74,7 @@ export const ISLAND_MAPPING = {
   },
   science: {
     name: "Остров Науки",
-    imgUrl: "/assets/webm/island_laboratory.webm",
+    imgUrl: "/assets/webp/island_laboratory.webp",
     buildings: [
       { id: 'laboratory', name: 'Лаборатория', icon: '🧪', color: 'bg-indigo-600' },
       { id: 'bredo', name: 'Бредогенератор', icon: '⚙️', color: 'bg-rose-600' }
@@ -82,7 +82,7 @@ export const ISLAND_MAPPING = {
   },
   summit: {
     name: "Пик Изобретателей",
-    imgUrl: "/assets/webm/island_tsar.webm",
+    imgUrl: "/assets/webp/island_tsar.webp",
     buildings: [
       { id: 'tsar', name: 'Царь-гора', icon: '🏔️', color: 'bg-violet-600' }
     ]

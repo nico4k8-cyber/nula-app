@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
 
 const MAP_CONFIG = [
-  { id: 'main', name: 'Главный остров', left: '45%', top: 250, icon: '/assets/webm/main_island.webm' },
-  { id: 'craft', name: 'Заповедник', left: '30%', top: 650, icon: '/assets/webm/island_zapovednik.webm' },
-  { id: 'science', name: 'Остров Науки', left: '60%', top: 1050, icon: '/assets/webm/island_laboratory.webm' },
-  { id: 'summit', name: 'Пик Изобретателей', left: '40%', top: 1450, icon: '/assets/webm/island_tsar.webm' },
+  { id: 'main', name: 'Главный остров', left: '45%', top: 250, icon: '/assets/webp/main_island.webp' },
+  { id: 'craft', name: 'Заповедник', left: '30%', top: 650, icon: '/assets/webp/island_zapovednik.webp' },
+  { id: 'science', name: 'Остров Науки', left: '60%', top: 1050, icon: '/assets/webp/island_laboratory.webp' },
+  { id: 'summit', name: 'Пик Изобретателей', left: '40%', top: 1450, icon: '/assets/webp/island_tsar.webp' },
 ];
 
 function BezierPath({ p1, p2, isDone }) {
@@ -154,7 +154,7 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
           height: '3500px', 
           top: 0, 
           transform: `translateY(${-scrollTop * 0.5}px)`,
-          backgroundImage: 'url(/img/cloud.png)',
+          backgroundImage: 'url(/img/cloud.webp)',
           backgroundRepeat: 'repeat-y',
           backgroundSize: '100% auto',
           zIndex: 1
@@ -196,17 +196,14 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                
                 <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-125 active:scale-95">
                    <div className={`island-img-wrapper ${status !== 'fog' ? 'animate-float' : ''}`} style={{ animationDelay: `${idx * 0.5}s` }}>
-                     <video 
+                     <img 
                        src={config.icon} 
-                       autoPlay 
-                       muted 
-                       loop 
-                       playsInline
-                       onLoadedData={updatePaths}
+                       onLoad={updatePaths}
                        className={`w-[130px] h-[130px] object-contain transition-all duration-700
                          ${status === 'active' ? 'drop-shadow-[0_20px_50px_rgba(255,215,0,0.4)] scale-110' : 'drop-shadow-xl'}
                          ${status === 'fog' ? 'grayscale opacity-20' : ''}
                        `}
+                       alt={config.name}
                      />
                      
                      {status === 'locked' && (

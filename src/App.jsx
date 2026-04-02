@@ -24,6 +24,7 @@ import DialogView from "./components/DialogView";
 import DebriefView from "./components/DebriefView";
 import TwistView from "./components/TwistView";
 import FinalView from "./components/FinalView";
+import AdminView from "./components/AdminView";
 
 // Utils
 import { 
@@ -62,7 +63,8 @@ export default function App() {
   const saved = loadInitialState();
   const { 
     totalStars, completedTasks, completeTask, resetGame,
-    difficulty, user, setUser, dailyTasksCount, isPremium, resetDailyCountIfNeeded
+    difficulty, user, setUser, dailyTasksCount, isPremium, resetDailyCountIfNeeded,
+    islands, unlockRequirements, checkUnlocks
   } = useGameStore();
 
   // Navigation & UI State
@@ -140,6 +142,11 @@ export default function App() {
       setPhase("city");
       setMenuOpen(false);
     }
+    if (window.__openAdmin) {
+      window.__openAdmin = false;
+      setPhase("admin");
+      setMenuOpen(false);
+    }
   }, [menuOpen]);
 
   /* ═══ Handlers ═══ */
@@ -156,12 +163,12 @@ export default function App() {
     setTwistChoice(null);
     
     // Auto-create TRIZ state if it's a TRIZ task
-    if (t.core_problem && t.ikr) {
-      const newState = createNewState(t.id, difficulty >= 2 ? 14 : 10);
+    if (taskItem.core_problem && taskItem.ikr) {
+      const newState = createNewState(taskItem.id, difficulty >= 2 ? 14 : 10);
       setTrizState(newState);
       setMessages([
         { type: "bot", text: "🐉 Давай решим эту задачу вместе!" },
-        { type: "bot", text: difficulty >= 2 ? t.puzzle?.hookSenior : t.puzzle?.hookJunior }
+        { type: "bot", text: difficulty >= 2 ? taskItem.puzzle?.hookSenior : taskItem.puzzle?.hookJunior }
       ]);
     }
     
@@ -213,7 +220,7 @@ export default function App() {
   /* ─── Render ─── */
   return (
     <div className="min-h-screen flex flex-col items-center" data-theme={theme}>
-      {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} />}
+      {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} t={t} />}
 
       <div className="w-full max-w-md min-h-screen flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800">
         
@@ -229,7 +236,15 @@ export default function App() {
         )}
 
         {phase === "city" && (
-          <City theme={theme} totalStars={totalStars} t={t} 
+          <City 
+            theme={theme} 
+            totalStars={totalStars} 
+            t={t} 
+            user={user}
+            completedTasks={completedTasks}
+            islands={islands}
+            unlockRequirements={unlockRequirements}
+            checkUnlocks={checkUnlocks}
             onLogoClick={() => setMenuOpen(true)}
             onSelectBuilding={(bId) => { setActiveCategory(bId); setPhase("picker"); }}
           />
@@ -237,7 +252,7 @@ export default function App() {
 
         {phase === "picker" && (
           <TaskPicker activeCategory={activeCategory} onBack={() => setPhase("city")} 
-            TASKS={TASKS} completedTasks={completedTasks} onStartTask={startTask} t={t}
+            TASKS={TASKS} completedTasks={completedTasks} onStartTask={startTask} t={t} lang={lang}
           />
         )}
 
@@ -306,6 +321,10 @@ export default function App() {
             onBackToCity={() => setPhase("city")} 
             onUgc={() => {}}
           />
+        )}
+
+        {phase === "admin" && (
+          <AdminView TASKS={TASKS} t={t} onBack={() => setPhase("city")} />
         )}
 
       </div>
