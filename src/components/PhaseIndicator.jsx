@@ -7,13 +7,13 @@
  * 5: Проверка (🚀)
  */
 
-export default function PhaseIndicator({ trizPhase, prizStep, cycleCount }) {
+export default function PhaseIndicator({ trizPhase, prizStep, cycleCount, t }) {
   const stages = [
-    { id: 0, label: "Старт", icon: "📝", color: "from-amber-400 to-orange-600" },
-    { id: 1, label: "Анализ", icon: "🔍", color: "from-blue-400 to-indigo-600" },
-    { id: 2, label: "Гипотезы", icon: "💡", color: "from-yellow-300 to-amber-500" },
-    { id: 3, label: "Отбор", icon: "✅", color: "from-emerald-400 to-green-600" },
-    { id: 4, label: "Проверка", icon: "🚀", color: "from-rose-400 to-red-600" }
+    { id: 0, label: t?.('priz.steps.start') || "Старт", icon: "📝", color: "from-amber-400 to-orange-600" },
+    { id: 1, label: t?.('priz.steps.analysis') || "Анализ", icon: "🔍", color: "from-blue-400 to-indigo-600" },
+    { id: 2, label: t?.('priz.steps.hypotheses') || "Гипотезы", icon: "💡", color: "from-yellow-300 to-amber-500" },
+    { id: 3, label: t?.('priz.steps.selection') || "Отбор", icon: "✅", color: "from-emerald-400 to-green-600" },
+    { id: 4, label: t?.('priz.steps.verification') || "Проверка", icon: "🚀", color: "from-rose-400 to-red-600" }
   ];
 
   // Map internal trizPhase (0-7) to UI steps (0-4) if needed, 
@@ -77,7 +77,7 @@ export default function PhaseIndicator({ trizPhase, prizStep, cycleCount }) {
       {cycleCount > 0 && (
         <div className="absolute top-1 right-3">
           <div className="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border border-orange-200">
-            Поход №{cycleCount + 1}
+            {t?.('game.cycle_count', { count: cycleCount + 1 }) || `Поход №${cycleCount + 1}`}
           </div>
         </div>
       )}

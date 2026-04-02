@@ -96,6 +96,16 @@ export default function App() {
   const task = TASKS[taskIdx];
 
   // Audio Hook - Plays main theme throughout the app
+  const t = (key) => {
+    const keys = key.split('.');
+    let res = translations[lang] || translations['ru'];
+    for (const k of keys) {
+      if (res[k]) res = res[k];
+      else return key;
+    }
+    return res;
+  };
+
   const audio = useAudio(AUDIO_TRACKS);
 
   /* ═══ Effects ═══ */
@@ -133,20 +143,13 @@ export default function App() {
   }, [menuOpen]);
 
   /* ═══ Handlers ═══ */
-  const t = (key) => {
-    if (key.includes('.')) {
-      const parts = key.split('.');
-      return translations[lang][parts[0]]?.[parts[1]] || key;
-    }
-    return translations[lang][key] || key;
-  };
 
   const startTask = (idx) => {
     if (!isPremium && dailyTasksCount >= 3) {
       setPhase("paywall");
       return;
     }
-    const t = TASKS[idx];
+    const taskItem = TASKS[idx];
     setTaskIdx(idx);
     setMessages([]);
     setSessionStars(0);

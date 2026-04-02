@@ -8,7 +8,7 @@ export default function TaskPicker({
   onStartTask,
   t
 }) {
-  const filtered = TASKS.filter(t => t.category === activeCategory);
+  const filtered = TASKS.filter(taskItem => taskItem.category === activeCategory);
 
   return (
     <div className="flex flex-col flex-1 bg-gray-50/30 overflow-hidden animate-fade-in">
@@ -68,11 +68,11 @@ export default function TaskPicker({
                 <p className="font-bold uppercase tracking-widest text-xs">Задач пока нет</p>
              </div>
            ) : (
-             filtered.map((t) => {
-               const originalIdx = TASKS.findIndex(task => task.id === t.id);
-               const isDone = completedTasks.includes(t.id);
+             filtered.map((taskItem) => {
+               const originalIdx = TASKS.findIndex(task => task.id === taskItem.id);
+               const isDone = completedTasks.includes(taskItem.id);
                return (
-                 <button key={t.id}
+                 <button key={taskItem.id}
                    onClick={() => onStartTask(originalIdx)}
                    className={`relative overflow-hidden aspect-square h-[170px] rounded-[36px] p-4 flex flex-col items-center justify-center text-center transition-all active:scale-95 border-4 group shadow-lg
                      ${isDone 
@@ -80,15 +80,15 @@ export default function TaskPicker({
                        : "bg-white border-white hover:border-orange-200 hover:shadow-orange-100 hover:shadow-2xl"}`}
                  >
                    <div className="text-5xl mb-3 flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
-                     {t.icon || t.puzzle?.emoji || "❓"}
+                     {taskItem.icon || taskItem.puzzle?.emoji || "❓"}
                    </div>
                    <div className="flex flex-col gap-1 min-w-0">
                      <span className={`text-[12px] font-black uppercase tracking-tight leading-tight line-clamp-2
                        ${isDone ? "text-emerald-700" : "text-slate-800"}`}>
-                       {t.title}
+                       {taskItem.title}
                      </span>
                      <div className="flex items-center justify-center gap-0.5 mt-1">
-                        {[...Array(t.difficulty || 1)].map((_, i) => (
+                        {[...Array(taskItem.difficulty || 1)].map((_, i) => (
                           <span key={i} className="text-[10px]">⭐</span>
                         ))}
                      </div>

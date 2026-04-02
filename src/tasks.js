@@ -32,7 +32,7 @@ export const TASKS = [
     puzzle: { 
       emoji: "🧶", 
       question: "Как не заблудиться в лабиринте, если карты нет?",
-      answer: "Разматывать клубок ниток по пути туда и возвращаться по нему."
+      answer: "Раматывать клубок ниток по пути туда и возвращаться по нему."
     }
   },
   {
@@ -75,7 +75,7 @@ export const TASKS = [
     id: 5,
     category: "nature-reserve",
     title: "Лесной холодильник",
-    icon: "❄️",
+    icon: "🍎",
     teaser: "Как сохранить еду в жару без электричества?",
     difficulty: 1,
     core_problem: { need: "охладить продукты", obstacle: "вокруг только лес и жаркое солнце" },
@@ -464,3 +464,5 @@ export const TASKS = [
     }
   }
 ];
+
+export default TASKS;

@@ -252,16 +252,16 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
             <div className="text-center mb-8">
               <div className="text-6xl mb-6">🔒</div>
               <h3 className="text-3xl font-display font-extrabold mb-3 tracking-tight">
-                ОСТРОВ ЗАБЛОКИРОВАН
+                {t?.('picker.locked_title') || 'ОСТРОВ ЗАБЛОКИРОВАН'}
               </h3>
               <p className="text-slate-400 font-medium">
-                Чтобы открыть <span className="text-indigo-400">{selectedLock.name}</span>, <br/>нужно решить ещё несколько задач
+                {t?.('picker.locked_desc', { name: t(`buildings.${selectedLock.id}`) }) || `Чтобы открыть ${selectedLock.name}, нужно решить ещё несколько задач`}
               </p>
             </div>
             
             <div className="bg-slate-800/50 rounded-[32px] p-8 mb-10 border border-white/5">
                <div className="flex justify-between items-center mb-4">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Прогресс</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t?.('hud.progress') || 'Прогресс'}</span>
                   <span className="text-sm font-bold text-indigo-400">{totalSolved} / {selectedLock.reqCount}</span>
                </div>
                <div className="bg-slate-900 rounded-full h-3 overflow-hidden border border-white/5">
@@ -276,7 +276,7 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
               onClick={() => setSelectedLock(null)}
               className="btn-premium w-full text-lg uppercase tracking-wider"
             >
-              ПРИНЯТО! ✨
+              {t?.('picker.locked_ok') || 'ПРИНЯТО! ✨'}
             </button>
           </div>
         </div>
