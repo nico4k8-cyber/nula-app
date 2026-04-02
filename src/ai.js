@@ -46,15 +46,17 @@ export async function askTriz(userMessage, task, state, history = [], ageGroup =
   const timer = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const res = await fetch("/api/engine", {
+    const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         userMessage,
         task,
-        state,
-        history,
-        ageGroup
+        prizStep: state?.phase ?? 0,
+        history: (history || []).map(m => ({
+          role: m.role || (m.type === "bot" ? "assistant" : "user"),
+          text: m.text
+        }))
       }),
       signal: controller.signal,
     });
