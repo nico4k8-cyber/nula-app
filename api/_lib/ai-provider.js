@@ -1,6 +1,6 @@
 import { PERSONAS, getPersona } from "./personas.js";
 
-const MODELS = ["claude-3-5-haiku-20241022", "claude-3-haiku-20240307"];
+const MODELS = ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-haiku-20240307"];
 
 // Stage letter → numeric index
 const STAGE_MAP = { "П": 0, "Р": 1, "И": 2, "З": 3, "✨": 4 };
