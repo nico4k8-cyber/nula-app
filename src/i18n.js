@@ -45,7 +45,10 @@ export const translations = {
         farm: "«На ферме всё растет само, если знать законы ТРИЗ. Готов к агро-вызовам?»",
         city: "«В городе шум и суета. Помоги Мэру навести порядок с помощью логики!»",
         default: "«Каждая задача — это шанс проявить смекалку. Не гадай, ищи ресурсы!»"
-      }
+      },
+      locked_title: "ОСТРОВ ЗАБЛОКИРОВАН",
+      locked_desc: "Чтобы открыть этот регион, нужно решить ещё несколько задач на других островах.",
+      locked_ok: "ПРИНЯТО! ✨"
     },
     hud: {
        guest: "Гость",
@@ -53,7 +56,8 @@ export const translations = {
        offline: "Офлайн",
        islands: "Островов",
        missions: "Миссий",
-       sync: "Синхронизировать"
+       sync: "Синхронизировать",
+       progress: "Прогресс"
     },
     language: "Язык",
     theme: "Стиль",
@@ -97,7 +101,16 @@ export const translations = {
       "Рядом со мной сломанные дроны, старые платы, прототипы без названия. Я вижу, как прошлое и будущее работают вместе.",
       "Я не даю ответы. Я задаю вопросы — потому что твой ответ всегда интереснее моего. Готов разгадывать загадки?"
     ],
-    greeting_understand: "Понимаю →"
+    greeting_understand: "Понимаю →",
+    priz: {
+      steps: {
+        start: "Старт",
+        analysis: "Анализ",
+        hypotheses: "Гипотезы",
+        selection: "Отбор",
+        verification: "Проверка"
+      }
+    }
   },
   en: {
     lang: "en",
@@ -145,7 +158,10 @@ export const translations = {
         farm: "«Everything grows by itself on the farm if you know TRIZ. Ready for agro-challenges?»",
         city: "«There is noise and fuss in the city. Help the Mayor restore order with logic!»",
         default: "«Every task is a chance to show your wit. Don't guess, look for resources!»"
-      }
+      },
+      locked_title: "ISLAND LOCKED",
+      locked_desc: "To unlock this region, you need to solve more tasks on other islands.",
+      locked_ok: "UNDERSTOOD! ✨"
     },
     hud: {
        guest: "Guest",
@@ -153,7 +169,8 @@ export const translations = {
        offline: "Offline",
        islands: "Islands",
        missions: "Missions",
-       sync: "Sync Progress"
+       sync: "Sync Progress",
+       progress: "Progress"
     },
     language: "Language",
     theme: "Theme",
@@ -197,6 +214,15 @@ export const translations = {
       "Near me are broken drones, old boards, and nameless prototypes. I see how the past and future work together.",
       "I don't give answers. I ask questions — because your answer is always more interesting than mine. Ready to solve some riddles?"
     ],
-    greeting_understand: "I understand →"
+    greeting_understand: "I understand →",
+    priz: {
+      steps: {
+        start: "Start",
+        analysis: "Analysis",
+        hypotheses: "Ideas",
+        selection: "Select",
+        verification: "Check"
+      }
+    }
   }
 };

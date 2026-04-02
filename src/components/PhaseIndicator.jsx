@@ -1,84 +1,77 @@
 /**
- * PhaseIndicator — Shows explicit 5 steps of ПРИЗ methodology
- * 1: Подготовка (📝)
- * 2: Анализ (🔍)
- * 3: Гипотезы (💡)
- * 4: Отбор (✅)
- * 5: Проверка (🚀)
+ * PhaseIndicator — Стимпанк-индикатор стадий ПРИЗ (П Р И З ✨)
+ * Выглядит как ряд медных иллюминаторов/лампочек, которые загораются теплым светом.
  */
 
-export default function PhaseIndicator({ trizPhase, prizStep, cycleCount, t }) {
-  const stages = [
-    { id: 0, label: t?.('priz.steps.start') || "Старт", icon: "📝", color: "from-amber-400 to-orange-600" },
-    { id: 1, label: t?.('priz.steps.analysis') || "Анализ", icon: "🔍", color: "from-blue-400 to-indigo-600" },
-    { id: 2, label: t?.('priz.steps.hypotheses') || "Гипотезы", icon: "💡", color: "from-yellow-300 to-amber-500" },
-    { id: 3, label: t?.('priz.steps.selection') || "Отбор", icon: "✅", color: "from-emerald-400 to-green-600" },
-    { id: 4, label: t?.('priz.steps.verification') || "Проверка", icon: "🚀", color: "from-rose-400 to-red-600" }
-  ];
+export default function PhaseIndicator({ trizPhase, prizStep, cycleCount }) {
+  const stages = ["П", "Р", "И", "З", "✨"];
+  const stageLabels = {
+    "П": "Подготовка",
+    "Р": "Разведка",
+    "И": "Идеи",
+    "З": "Зачёт",
+    "✨": "Инсайт"
+  };
 
-  // Map internal trizPhase (0-7) to UI steps (0-4) if needed, 
-  // but we prefer using explicit 'prizStep' from engine
-  const currentStep = prizStep || 0;
-
+  // ПРИЗ-лампочки (Стимпанк стиль)
   return (
-    <div className="w-full bg-slate-50/80 border-y border-slate-100 py-6 px-4 relative overflow-hidden backdrop-blur-sm">
-      {/* Connector Line */}
-      <div className="absolute top-[46px] left-[15%] right-[15%] h-1 bg-slate-200 rounded-full" />
-      <div 
-        className="absolute top-[46px] left-[15%] h-1 bg-gradient-to-r from-orange-400 to-green-500 rounded-full transition-all duration-1000" 
-        style={{ width: `${Math.min(currentStep * 17.5, 70)}%` }}
-      />
-
-      <div className="flex justify-between items-start max-w-[500px] mx-auto relative z-10">
+    <div className="flex flex-col items-center gap-2 py-4 bg-gradient-to-b from-slate-900/5 to-transparent border-b border-slate-100/50 relative overflow-hidden backdrop-blur-sm">
+      {/* Мягкое свечение фона */}
+      <div className="absolute inset-0 bg-orange-500/5 blur-3xl rounded-full scale-150" />
+      
+      <div className="flex gap-3 sm:gap-5 relative z-10">
         {stages.map((stage, idx) => {
-          const isActive = idx === currentStep;
-          const isDone = idx < currentStep;
-          const isFuture = idx > currentStep;
-
+          const isActive = idx === prizStep;
+          const isDone = idx < prizStep;
+          
           return (
-            <div key={stage.id} className="flex flex-col items-center gap-2 flex-1 min-w-0">
-              {/* Icon Circle */}
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all duration-700 shadow-lg border-4
-                  ${isActive 
-                    ? `bg-gradient-to-br ${stage.color} border-white scale-125 ring-4 ring-orange-100 animate-bounce-slow` 
-                    : isDone 
-                    ? "bg-green-500 border-green-100 text-white" 
-                    : "bg-white border-slate-50 text-slate-300"}
-                `}
-              >
-                {isDone ? "✓" : stage.icon}
-                
-                {/* Active Glow */}
-                {isActive && (
-                  <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${stage.color} blur-lg opacity-40 animate-pulse`} />
-                )}
+            <div
+              key={stage}
+              className={`flex flex-col items-center gap-1.5 transition-all duration-700 ${
+                idx <= prizStep ? "opacity-100 scale-100" : "opacity-40 scale-95"
+              }`}
+            >
+              {/* Корпус лампочки (Медь/Бронза) */}
+              <div className="relative group">
+                <div
+                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-[15px] font-black transition-all duration-700 shadow-xl border-[3px] 
+                    ${isActive 
+                      ? "bg-gradient-to-br from-amber-400 to-orange-600 text-white border-white/50 shadow-orange-300/50 scale-110 shadow-[0_0_20px_rgba(251,146,60,0.6)]" 
+                      : isDone 
+                      ? "bg-gradient-to-br from-emerald-400 to-teal-600 text-white border-white/20 shadow-emerald-200/20" 
+                      : "bg-gradient-to-br from-slate-200 to-slate-300 text-slate-500 border-slate-400/20 shadow-inner"}
+                  `}
+                >
+                  {/* Эффект свечения для активной лампочки */}
+                  {isActive && (
+                    <>
+                      <div className="absolute inset-[-4px] rounded-full border border-orange-400/30 animate-pulse-slow scale-110" />
+                      <div className="absolute inset-0 rounded-full bg-orange-400 blur-md opacity-40 animate-pulse pulse-fast" />
+                    </>
+                  )}
+                  
+                  {/* Стеклянный блик сверху */}
+                  <div className="absolute inset-1 rounded-full bg-white/20 blur-[1px] h-1/2 w-1/2 -top-1 -left-1 rotate-45" />
+                  
+                  <span className="relative z-10 drop-shadow-md">{stage}</span>
+                </div>
               </div>
 
-              {/* Label */}
-              <div className="flex flex-col items-center">
-                <span className={`text-[9px] font-black uppercase tracking-tighter transition-all duration-500
-                  ${isActive ? "text-slate-900 scale-110" : "text-slate-400 font-bold"}
-                `}>
-                  {stage.label}
-                </span>
-                
-                {/* Active Indicator dot */}
-                {isActive && (
-                  <div className="w-1 h-1 rounded-full bg-orange-500 mt-0.5 animate-ping" />
-                )}
+              {/* Текстовая метка */}
+              <div className={`text-[9px] font-black uppercase tracking-tighter text-center transition-colors duration-500
+                ${isActive ? "text-orange-700" : isDone ? "text-emerald-700" : "text-slate-400"}
+              `}>
+                {stageLabels[stage]}
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* Cycle Indicator */}
+      
       {cycleCount > 0 && (
-        <div className="absolute top-1 right-3">
-          <div className="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border border-orange-200">
-            {t?.('game.cycle_count', { count: cycleCount + 1 }) || `Поход №${cycleCount + 1}`}
-          </div>
+        <div className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] animate-fade-in mt-1">
+          {/* Стилизованный разделитель */}
+          <span className="opacity-30">───</span> Цикл {cycleCount + 1} <span className="opacity-30">───</span>
         </div>
       )}
     </div>

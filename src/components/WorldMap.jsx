@@ -85,12 +85,16 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
 
   useLayoutEffect(() => {
     const timer = setTimeout(updatePaths, 300);
-    const observer = new ResizeObserver(updatePaths);
-    if (containerRef.current) observer.observe(containerRef.current);
+    let observer = null;
+    
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      observer = new ResizeObserver(updatePaths);
+      observer.observe(containerRef.current);
+    }
     
     return () => {
       clearTimeout(timer);
-      observer.disconnect();
+      if (observer) observer.disconnect();
     };
   }, [islands]);
 
@@ -194,8 +198,8 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
 
                 {status === 'active' && <div className="island-glow scale-150 opacity-100 animate-pulse-soft" />}
                
-                <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-125 active:scale-95">
-                   <div className={`island-img-wrapper ${status !== 'fog' ? 'animate-float' : ''}`} style={{ animationDelay: `${idx * 0.5}s` }}>
+                <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-[1.5] active:scale-95 group/island">
+                   <div className={`island-img-wrapper transition-all duration-500 ${status !== 'fog' ? 'animate-float' : ''} group-hover/island:drop-shadow-[0_35px_60px_rgba(0,0,0,0.5)]`} style={{ animationDelay: `${idx * 0.5}s` }}>
                      <img 
                        src={config.icon} 
                        onLoad={updatePaths}
@@ -214,7 +218,7 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                    </div>
  
                     {/* Minimalist Premium Label */}
-                    <div className="absolute left-1/2 -translate-x-1/2 -bottom-6 flex flex-col items-center gap-1 opacity-100 transition-all duration-300 pointer-events-none z-30">
+                    <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 flex flex-col items-center gap-1 opacity-100 transition-all duration-500 pointer-events-none z-30 group-hover/island:translate-y-4 group-hover/island:scale-[0.75]">
                        <span className="text-[14px] font-black uppercase tracking-[0.3em] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap">
                          {t(`buildings.${config.id}`)}
                        </span>

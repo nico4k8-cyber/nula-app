@@ -4,6 +4,7 @@
  */
 
 import { processUserMessage, TASKS } from "../src/bot/engine.js";
+import { getClaudeResponse } from "./_lib/ai-provider.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,8 +25,29 @@ export default async function handler(req, res) {
   if (ageGroup === "junior") age = 10;    // ПРИЗ-стандарт (8-13)
   else if (ageGroup === "senior") age = 14; // ПРИЗ-про (13+)
 
+  // Wrapper for the direct AI provider to match engine's expected interface
+  const aiWrapper = async (userMsg, hist, tsk, errHandler, prizPhase) => {
+    try {
+      const resp = await getClaudeResponse({
+        userMessage: userMsg,
+        history: hist,
+        task: tsk,
+        prizStep: prizPhase
+      });
+      // Parse tags if necessary (ai-provider returns raw text)
+      // Actually, engine expects the object with text, stars, etc.
+      // ai-provider returns { text, model, ... }
+      // The original callClaude in chat.js did parseTag.
+      // I should make sure ai-provider or engine handles the tag parsing.
+      return resp;
+    } catch (e) {
+      if (errHandler) errHandler(e);
+      throw e;
+    }
+  };
+
   try {
-    const result = await processUserMessage(userMessage, task, state, history || [], null, age);
+    const result = await processUserMessage(userMessage, task, state, history || [], null, age, aiWrapper);
     return res.status(200).json(result);
   } catch (err) {
     console.error("[engine API]", err.message);

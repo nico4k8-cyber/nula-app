@@ -89,7 +89,7 @@ export function createNewState(taskId, age = 10) {
 /**
  * Phase 0: Child proposes ANY idea
  */
-async function handleProposeIdea(txt, task, state, history, onError) {
+async function handleProposeIdea(txt, task, state, history, onError, generateResponse) {
   const normalized = normalize(txt);
 
   // Reject traps
@@ -118,7 +118,7 @@ async function handleProposeIdea(txt, task, state, history, onError) {
   };
 
   const { text: aiReply, tokensUsed, inputTokens, outputTokens, model } =
-    await generateUgolokResponse(txt, history, task, onError, state.phase);
+    await generateResponse(txt, history, task, onError, state.phase);
 
   return {
     reply: aiReply,
@@ -135,7 +135,7 @@ async function handleProposeIdea(txt, task, state, history, onError) {
 /**
  * Phase 1: Good/Bad analysis (split into 1a and 1b)
  */
-async function handleGoodBadAnalysis(txt, task, state, history, onError) {
+async function handleGoodBadAnalysis(txt, task, state, history, onError, generateResponse) {
   const subPhase = state.subPhase || "ask_good";
 
   // Track attempts
@@ -149,7 +149,7 @@ async function handleGoodBadAnalysis(txt, task, state, history, onError) {
       subPhase: isGood ? "ask_bad" : "ready_for_contradiction",
     };
 
-    const { text: aiReply, model } = await generateUgolokResponse(
+    const { text: aiReply, model } = await generateResponse(
       txt,
       history,
       task,
@@ -174,7 +174,7 @@ async function handleGoodBadAnalysis(txt, task, state, history, onError) {
   };
 
   // AI evaluates if answer is relevant
-  const { text: aiReply, model } = await generateUgolokResponse(
+  const { text: aiReply, model } = await generateResponse(
     txt,
     history,
     task,
@@ -202,7 +202,7 @@ async function handleGoodBadAnalysis(txt, task, state, history, onError) {
  * For ПРИЗ-стандарт: Formulate contradiction
  * For ПРИЗ-про: Formulate contradiction + detect type (technical/physical)
  */
-async function handleContradiction(txt, task, state, history, onError) {
+async function handleContradiction(txt, task, state, history, onError, generateResponse) {
   // ПРИЗ-базовый at phase 2: This is resources phase
   if (state.prizVersion === "base") {
     const resourceIds = task.resources?.map((r) => r.id) || [];
@@ -218,7 +218,7 @@ async function handleContradiction(txt, task, state, history, onError) {
         currentResource,
       };
 
-      const { text: aiReply, model } = await generateUgolokResponse(
+      const { text: aiReply, model } = await generateResponse(
         txt,
         history,
         task,
@@ -249,7 +249,7 @@ async function handleContradiction(txt, task, state, history, onError) {
         },
       };
 
-      const { text: aiReply, model } = await generateUgolokResponse(
+      const { text: aiReply, model } = await generateResponse(
         txt,
         history,
         task,
@@ -275,7 +275,7 @@ async function handleContradiction(txt, task, state, history, onError) {
         },
       };
 
-      const { text: aiReply, model } = await generateUgolokResponse(
+      const { text: aiReply, model } = await generateResponse(
         txt,
         history,
         task,
@@ -321,7 +321,7 @@ async function handleContradiction(txt, task, state, history, onError) {
     }
   }
 
-  const { text: aiReply, model } = await generateUgolokResponse(
+  const { text: aiReply, model } = await generateResponse(
     txt,
     history,
     task,
@@ -342,7 +342,7 @@ async function handleContradiction(txt, task, state, history, onError) {
  * Phase 3: Show resources (ПРИЗ-стандарт/про only)
  * ПРИЗ-базовый handles resources inline in handleContradiction
  */
-async function handleResources(txt, task, state, history, onError) {
+async function handleResources(txt, task, state, history, onError, generateResponse) {
   const resourceIds = task.resources?.map((r) => r.id) || [];
   const resourceQueue = resourceIds.slice(0, 3); // стандарт/про have 3 resources
 
@@ -353,7 +353,7 @@ async function handleResources(txt, task, state, history, onError) {
     currentResource: resourceQueue[0] || null,
   };
 
-  const { text: aiReply, model } = await generateUgolokResponse(
+  const { text: aiReply, model } = await generateResponse(
     txt,
     history,
     task,
@@ -374,7 +374,7 @@ async function handleResources(txt, task, state, history, onError) {
  * Phase 4: Test each resource — can you use it? (ПРИЗ-стандарт/про only)
  * ПРИЗ-базовый handles resource testing inline in handleContradiction
  */
-async function handleTestResources(txt, task, state, history, onError) {
+async function handleTestResources(txt, task, state, history, onError, generateResponse) {
   const currentResource = state.currentResource;
   const resourceQueue = state.resourceQueue || [];
   const remaining = resourceQueue.filter((r) => r !== currentResource);
@@ -391,7 +391,7 @@ async function handleTestResources(txt, task, state, history, onError) {
       },
     };
 
-    const { text: aiReply, model } = await generateUgolokResponse(
+    const { text: aiReply, model } = await generateResponse(
       txt,
       history,
       task,
@@ -417,7 +417,7 @@ async function handleTestResources(txt, task, state, history, onError) {
       },
     };
 
-    const { text: aiReply, model } = await generateUgolokResponse(
+    const { text: aiReply, model } = await generateResponse(
       txt,
       history,
       task,
@@ -438,13 +438,13 @@ async function handleTestResources(txt, task, state, history, onError) {
 /**
  * Phase 5: Show ideal final result (IKR)
  */
-async function handleIKR(txt, task, state, history, onError) {
+async function handleIKR(txt, task, state, history, onError, generateResponse) {
   const newState = {
     ...state,
     phase: 6,
   };
 
-  const { text: aiReply, model } = await generateUgolokResponse(
+  const { text: aiReply, model } = await generateResponse(
     txt,
     history,
     task,
@@ -464,13 +464,13 @@ async function handleIKR(txt, task, state, history, onError) {
 /**
  * Phase 6: Improve the idea
  */
-async function handleImprove(txt, task, state, history, onError) {
+async function handleImprove(txt, task, state, history, onError, generateResponse) {
   const newState = {
     ...state,
     phase: 7,
   };
 
-  const { text: aiReply, model, stars } = await generateUgolokResponse(
+  const { text: aiReply, model, stars } = await generateResponse(
     txt,
     history,
     task,
@@ -490,7 +490,7 @@ async function handleImprove(txt, task, state, history, onError) {
 /**
  * Phase 7: Try another idea or finish
  */
-async function handleCycleOrEnd(txt, task, state, history, onError) {
+async function handleCycleOrEnd(txt, task, state, history, onError, generateResponse) {
   const normalized = normalize(txt);
   const wantMore = [
     "да",
@@ -535,7 +535,7 @@ async function handleCycleOrEnd(txt, task, state, history, onError) {
       resourceIdeas: {},
     };
 
-    const { text: aiReply, model } = await generateUgolokResponse(
+    const { text: aiReply, model } = await generateResponse(
       txt,
       history,
       task,
@@ -552,7 +552,7 @@ async function handleCycleOrEnd(txt, task, state, history, onError) {
     };
   } else {
     // Session complete
-    const { text: aiReply, model } = await generateUgolokResponse(
+    const { text: aiReply, model } = await generateResponse(
       txt,
       history,
       task,
@@ -617,8 +617,11 @@ export async function processUserMessage(
   state,
   history = [],
   onError = null,
-  age = 10
+  age = 10,
+  aiFunction = null
 ) {
+  // Use provided AI function or global one
+  const generateResponse = aiFunction || generateUgolokResponse;
   // Safety check
   if (!isSafe(txt)) {
     return {
@@ -645,7 +648,7 @@ export async function processUserMessage(
 
     switch (handler) {
       case "propose":
-        result = await handleProposeIdea(txt, task, state, history, onError);
+        result = await handleProposeIdea(txt, task, state, history, onError, generateResponse);
         break;
       case "good_bad":
         result = await handleGoodBadAnalysis(
@@ -653,26 +656,27 @@ export async function processUserMessage(
           task,
           state,
           history,
-          onError
+          onError,
+          generateResponse
         );
         break;
       case "contradiction":
-        result = await handleContradiction(txt, task, state, history, onError);
+        result = await handleContradiction(txt, task, state, history, onError, generateResponse);
         break;
       case "resources":
-        result = await handleResources(txt, task, state, history, onError);
+        result = await handleResources(txt, task, state, history, onError, generateResponse);
         break;
       case "test_resources":
-        result = await handleTestResources(txt, task, state, history, onError);
+        result = await handleTestResources(txt, task, state, history, onError, generateResponse);
         break;
       case "ikr":
-        result = await handleIKR(txt, task, state, history, onError);
+        result = await handleIKR(txt, task, state, history, onError, generateResponse);
         break;
       case "improve":
-        result = await handleImprove(txt, task, state, history, onError);
+        result = await handleImprove(txt, task, state, history, onError, generateResponse);
         break;
       case "cycle_or_end":
-        result = await handleCycleOrEnd(txt, task, state, history, onError);
+        result = await handleCycleOrEnd(txt, task, state, history, onError, generateResponse);
         break;
       default:
         result = {

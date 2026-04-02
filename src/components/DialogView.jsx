@@ -82,7 +82,7 @@ export default function DialogView({
             const isLastBotMsg = i === messages.length - 1 || messages[i+1]?.type !== 'bot';
             return (
               <div key={i} className="flex gap-3 items-end animate-fade-in-left">
-                {isLastBotMsg && <img src="./img/ugolok_3d.png" alt="Уголёк" className="w-10 h-10 flex-shrink-0 rounded-full object-cover shadow-md border-2 border-white ring-2 ring-orange-50" />}
+                {isLastBotMsg && <img src="/img/webp/ugolok.webp" alt="Уголёк" className="w-10 h-10 flex-shrink-0 rounded-full object-cover shadow-md border-2 border-white ring-2 ring-orange-50" />}
                 <div className={`flex flex-col gap-0.5 ${!isLastBotMsg ? 'ml-12' : ''}`}>
                   <div className={`bg-white shadow-sm border border-slate-100 rounded-[22px] ${isLastBotMsg ? 'rounded-bl-[4px]' : ''} px-5 py-3.5 text-[16px] text-slate-800 max-w-[90%] leading-relaxed`}>
                     {m.text}
@@ -112,7 +112,7 @@ export default function DialogView({
         })}
         {isTyping && (
           <div className="flex gap-3 items-end px-2">
-            <img src="./img/ugolok_3d.png" alt="Уголёк" className="w-10 h-10 flex-shrink-0 rounded-full object-cover blur-[0.5px] opacity-70" />
+            <img src="/img/webp/ugolok.webp" alt="Уголёк" className="w-10 h-10 flex-shrink-0 rounded-full object-cover blur-[0.5px] opacity-70" />
             <div className="bg-slate-100 rounded-[22px] rounded-bl-[4px] px-5 py-3.5 flex gap-1.5 shadow-inner">
               {[0,1,2].map(j => (
                 <div key={j} className="w-2.5 h-2.5 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: `${j * 0.15}s` }} />
