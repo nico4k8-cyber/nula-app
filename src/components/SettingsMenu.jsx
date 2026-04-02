@@ -9,99 +9,97 @@ export default function SettingsMenu({
   setLang, 
   t 
 }) {
+  const { user } = useGameStore();
+
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
+    if (error) alert("Ошибка входа: " + error.message);
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full bg-white rounded-t-[32px] p-6 pb-12 flex flex-col gap-5 shadow-2xl animate-fade-in-up">
-        {/* Grabbable handle */}
-        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto -mt-2 mb-2" />
+      <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full bg-white rounded-t-[48px] p-8 pb-12 flex flex-col gap-6 shadow-2xl animate-fade-in-up border-t border-slate-100">
+        <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto -mt-4 mb-2" />
         
-        <div className="text-center">
-          <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">{t('menu')}</h3>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {/* Language Toggle */}
-          <button onClick={() => { setLang(lang === 'ru' ? 'en' : 'ru'); }}
-            className="w-full text-left px-5 py-4 rounded-[20px] bg-gray-50 border border-transparent hover:border-blue-100 flex items-center gap-4 transition-all active:scale-[0.98]"
-          >
-            <span className="text-2xl">🌎</span>
-            <div className="flex-1">
-              <div className="font-bold text-gray-900 text-[16px]">{t('language')}</div>
-              <div className="text-gray-500 text-[13px] font-medium">
-                {lang === 'ru' ? "🇷🇺 Русский" : "🇺🇸 English"}
+        <div className="flex flex-col gap-4">
+          {!user ? (
+            <button 
+              onClick={handleLogin}
+              className="w-full bg-indigo-600 p-6 rounded-[32px] flex items-center gap-6 group transition-all active:scale-95 shadow-lg hover:shadow-indigo-200"
+            >
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform">
+                ☁️
               </div>
-            </div>
-            <span className="text-gray-300">›</span>
-          </button>
-
-          {/* Audio toggle */}
-          <button onClick={() => { audio.toggle(); }}
-            className="w-full text-left px-5 py-4 rounded-[20px] bg-gray-50 border border-transparent hover:border-orange-100 flex items-center gap-4 transition-all active:scale-[0.98]"
-          >
-            <span className="text-2xl">{audio.isEnabled ? "🔊" : "🔇"}</span>
-            <div className="flex-1">
-              <div className="font-bold text-gray-900 text-[16px]">{t('music')}</div>
-              <div className="text-gray-500 text-[13px] font-medium">
-                {audio.isEnabled ? t('on') : t('off')}
+              <div className="flex-1 text-left">
+                 <h3 className="text-white font-black text-lg uppercase tracking-tight">Сохранить прогресс</h3>
+                 <p className="text-white/60 text-xs font-bold uppercase tracking-widest">Войти через Google</p>
               </div>
-            </div>
-            <span className="text-gray-300">›</span>
-          </button>
-
-          {/* Track selection (Simplified for one track) */}
-          {audio.isEnabled && audioTracks.length > 1 && (
-            <div className="px-5 py-4 rounded-[20px] bg-indigo-50 border border-indigo-100 flex flex-col gap-3">
-              <div className="text-[13px] font-bold text-indigo-700 flex items-center gap-2">
-                🎵 {audio.currentTrack?.name || "Загрузка..."}
+              <span className="text-white/40 text-2xl group-hover:translate-x-2 transition-transform">→</span>
+            </button>
+          ) : (
+            <div className="w-full bg-emerald-50 p-6 rounded-[32px] border-2 border-emerald-100 flex items-center gap-6">
+              <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg">
+                👤
               </div>
-              <div className="flex items-center gap-2 justify-between">
-                <button onClick={() => audio.prevTrack()}
-                  className="flex-1 py-2.5 px-3 rounded-[12px] bg-white border border-indigo-200 text-[13px] font-bold text-indigo-700 hover:bg-indigo-50 active:scale-95 transition-all"
-                >
-                  ←
-                </button>
-                <div className="text-[12px] font-black text-indigo-300 px-3">
-                  {audio.currentTrackIndex + 1}/{audioTracks.length}
-                </div>
-                <button onClick={() => audio.nextTrack()}
-                  className="flex-1 py-2.5 px-3 rounded-[12px] bg-white border border-indigo-200 text-[13px] font-bold text-indigo-700 hover:bg-indigo-50 active:scale-95 transition-all"
-                >
-                  →
-                </button>
+              <div className="flex-1 text-left">
+                 <h3 className="text-slate-900 font-black text-lg uppercase tracking-tight">{user.name || 'Профиль'}</h3>
+                 <p className="text-emerald-600 text-xs font-black uppercase tracking-widest">Облако синхронизировано</p>
               </div>
+              <button 
+                onClick={() => { if(confirm("Выйти?")) supabase.auth.signOut().then(() => window.location.reload()); }}
+                className="w-10 h-10 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
+              >
+                🚪
+              </button>
             </div>
           )}
 
-          {/* Archipelago Button (Reset or Back to Map) */}
-          <button onClick={() => {
-            window.__openCity = true;
-            onClose();
-          }}
-            className="w-full text-left px-5 py-4 rounded-[20px] bg-slate-900 text-white flex items-center gap-4 transition-all active:scale-[0.98]"
+          <div className="grid grid-cols-2 gap-4">
+            <button 
+              onClick={() => audio.toggle()}
+              className="p-6 rounded-[28px] bg-slate-50 border-2 border-transparent hover:border-indigo-100 flex flex-col items-center gap-2 transition-all active:scale-95 group"
+            >
+              <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">
+                {audio.isEnabled ? "🔊" : "🔇"}
+              </span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Музыка</span>
+            </button>
+
+            <button 
+              onClick={() => setLang(lang === 'ru' ? 'en' : 'ru')}
+              className="p-6 rounded-[28px] bg-slate-50 border-2 border-transparent hover:border-indigo-100 flex flex-col items-center gap-2 transition-all active:scale-95 group"
+            >
+              <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">🌎</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">{lang === 'ru' ? "RU" : "EN"}</span>
+            </button>
+          </div>
+
+          <button onClick={() => { window.__openCity = true; onClose(); }}
+            className="w-full text-left px-8 py-6 rounded-[32px] bg-slate-900 text-white flex items-center gap-6 transition-all active:scale-[0.98] group"
           >
-            <span className="text-2xl">🗺️</span>
+            <span className="text-3xl transition-transform group-hover:scale-110">🗺️</span>
             <div className="flex-1">
-              <div className="font-bold text-[16px]">Карта Мира</div>
-              <div className="text-white/60 text-[12px]">Вернуться к островам</div>
+              <h3 className="font-black text-[18px] uppercase tracking-tight">Карта Мира</h3>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-widest">Перейти к островам</p>
             </div>
-            <span className="text-white/30">›</span>
+            <span className="text-white/20 text-2xl group-hover:translate-x-2 transition-transform">→</span>
           </button>
 
-          <hr className="my-2 border-gray-100" />
-
-          {/* Danger Zone: Reset Progress */}
           <button onClick={() => {
             if (confirm("Вы уверены? Весь прогресс и звёзды будут удалены.")) {
                onResetProgress();
                onClose();
             }
           }}
-            className="w-full text-center py-4 rounded-[18px] text-red-500 font-bold text-[14px] hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
+            className="w-full text-center py-4 text-slate-300 font-bold text-[12px] uppercase tracking-widest hover:text-red-500 transition-all mt-4"
           >
-            Сбросить весь прогресс
+            Сбросить всё
           </button>
         </div>
       </div>

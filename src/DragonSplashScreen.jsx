@@ -6,11 +6,6 @@ const ASSETS_TO_PRELOAD = [
   "/assets/webm/island_laboratory.webm",
   "/assets/webm/island_tsar.webm",
   "/assets/webm/avatar.webm",
-  "/assets/library.png",
-  "/assets/city-hall.png",
-  "/assets/workshop.png",
-  "/assets/laboratory.png",
-  "/assets/nature-reserve.png",
   "/img/ugolok_3d.png",
   "/img/splash_bg.png",
   "/img/cloud.png"

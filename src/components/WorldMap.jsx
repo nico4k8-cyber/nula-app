@@ -217,14 +217,29 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                     )}
                   </div>
 
-                   {/* Island Tooltip/Label on Hover */}
-                   <div className={`mt-2 whitespace-nowrap px-6 py-2 rounded-full shadow-2xl border backdrop-blur-md z-20 font-display font-extrabold uppercase tracking-widest text-[11px] transition-all duration-300
-                     opacity-0 group-hover:opacity-100 group-hover:translate-y-[-10px] pointer-events-none
-                     ${status === 'completed' ? 'bg-emerald-500/90 text-white border-emerald-300/50' : ''}
-                     ${status === 'active' ? 'bg-indigo-600/90 text-white border-indigo-400/50' : ''}
-                     ${status === 'locked' ? 'bg-slate-800/80 text-slate-400 border-slate-700/50' : ''}
-                   `}>
-                     {status === 'completed' ? `✓ ${config.name}` : config.name}
+                   {/* Improved Island Label */}
+                   <div className="absolute left-1/2 -translate-x-1/2 -bottom-4 group-hover:-bottom-6 transition-all duration-300 pointer-events-none z-30">
+                      <div className={`px-5 py-2.5 rounded-[20px] shadow-2xl backdrop-blur-xl border border-white/10 flex flex-col items-center gap-1 min-w-[140px]
+                        ${status === 'active' ? 'bg-indigo-600/90' : status === 'completed' ? 'bg-emerald-600/90' : 'bg-slate-900/80'}
+                      `}>
+                         <div className="flex items-center gap-2">
+                           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/90 font-display">
+                             {config.name}
+                           </span>
+                           {status === 'completed' && <span className="text-[10px]">✨</span>}
+                         </div>
+                         
+                         <div className={`px-3 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest
+                           ${status === 'active' ? 'bg-indigo-400 text-indigo-950' : status === 'completed' ? 'bg-emerald-400 text-emerald-950' : 'bg-slate-700 text-slate-400'}
+                         `}>
+                           {status === 'active' ? 'Открыто' : status === 'completed' ? 'Пройдено' : 'Закрыто'}
+                         </div>
+                      </div>
+                      
+                      {/* Sub-label Pointer */}
+                      <div className={`mx-auto w-3 h-3 rotate-45 -mt-1.5 border-r border-b border-white/10
+                        ${status === 'active' ? 'bg-indigo-600/90' : status === 'completed' ? 'bg-emerald-600/90' : 'bg-slate-900/80'}
+                      `} />
                    </div>
                </div>
             </div>
