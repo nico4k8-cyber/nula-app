@@ -210,23 +210,9 @@ export default function App() {
   /* ─── Render ─── */
   return (
     <div className="min-h-screen flex flex-col items-center" data-theme={theme}>
-      {/* Theme/Lang Toggles */}
-      <div className="fixed top-4 right-4 z-[50] flex flex-col gap-3">
-        <button onClick={() => setTheme(theme === 'hayday' ? 'scifi' : 'hayday')} 
-          className="w-12 h-12 rounded-full bg-white/95 shadow-xl border border-white/20 text-xl transition-all active:scale-90"
-        >
-          {theme === 'hayday' ? "🎨" : "🧪"}
-        </button>
-        <button onClick={() => setLang(lang === 'ru' ? 'en' : 'ru')}
-          className="w-12 h-12 rounded-full bg-white/95 shadow-xl border border-white/20 text-[14px] font-black transition-all active:scale-90"
-        >
-          {lang === 'ru' ? "RU" : "EN"}
-        </button>
-      </div>
-
       {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} />}
 
-      <div className="w-full max-w-md min-h-screen flex flex-col bg-white shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-md min-h-screen flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800">
         
         {phase === "dragon-splash" && (
           <DragonSplashScreen t={t} onAnimationEnd={() => {
@@ -248,14 +234,21 @@ export default function App() {
 
         {phase === "picker" && (
           <TaskPicker activeCategory={activeCategory} onBack={() => setPhase("city")} 
-            TASKS={TASKS} completedTasks={completedTasks} onStartTask={startTask} 
+            TASKS={TASKS} completedTasks={completedTasks} onStartTask={startTask} t={t}
           />
         )}
 
         {phase === "dialog" && (
           <DialogView task={task} messages={messages} isTyping={isTyping} trizState={trizState}
             prizStep={prizStep} sessionStars={sessionStars} totalStars={totalStars}
-            onBack={() => setPhase("picker")} onSendMessage={handleUserMessage}
+            onBack={() => {
+              if (messages.length > 2) {
+                setShowConfirmDialog(true);
+              } else {
+                setPhase("picker");
+              }
+            }} 
+            onSendMessage={handleUserMessage}
             input={input} setInput={setInput} inputRef={inputRef} bottomRef={bottomRef}
           />
         )}
@@ -283,6 +276,44 @@ export default function App() {
       <SettingsMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onResetProgress={() => resetGame()}
         completedTasks={completedTasks} audio={audio} audioTracks={AUDIO_TRACKS} lang={lang} setLang={setLang} t={t}
       />
+
+      {/* NEW: Centered & Thematic Exit Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-fade-in">
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowConfirmDialog(false)} />
+          <div className="relative w-full max-w-[320px] bg-white rounded-[40px] shadow-premium overflow-hidden animate-bounce-in">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
+                🤔
+              </div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-3">
+                {t('confirm_exit')}
+              </h3>
+              <p className="text-slate-500 text-[14px] leading-relaxed mb-8">
+                {t('exit_warning')}
+              </p>
+              
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => setShowConfirmDialog(false)}
+                  className="w-full py-4 rounded-2xl bg-slate-100 text-slate-800 font-black uppercase tracking-widest text-[11px] active:scale-95 transition-all"
+                >
+                  {t('continue_solve')}
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowConfirmDialog(false);
+                    setPhase("picker");
+                  }}
+                  className="w-full py-4 rounded-2xl bg-orange-500 text-white font-black uppercase tracking-widest text-[11px] active:scale-95 transition-all shadow-lg shadow-orange-200"
+                >
+                  {t('exit')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

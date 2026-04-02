@@ -1,3 +1,6 @@
+import { useGameStore } from '../store/gameStore';
+import { supabase } from '../lib/supabase';
+
 export default function SettingsMenu({ 
   isOpen, 
   onClose, 
@@ -37,8 +40,8 @@ export default function SettingsMenu({
                 ☁️
               </div>
               <div className="flex-1 text-left">
-                 <h3 className="text-white font-black text-lg uppercase tracking-tight">Сохранить прогресс</h3>
-                 <p className="text-white/60 text-xs font-bold uppercase tracking-widest">Войти через Google</p>
+                 <h3 className="text-white font-black text-lg uppercase tracking-tight">{t('save_progress')}</h3>
+                 <p className="text-white/60 text-xs font-bold uppercase tracking-widest">{t('login_google')}</p>
               </div>
               <span className="text-white/40 text-2xl group-hover:translate-x-2 transition-transform">→</span>
             </button>
@@ -48,8 +51,8 @@ export default function SettingsMenu({
                 👤
               </div>
               <div className="flex-1 text-left">
-                 <h3 className="text-slate-900 font-black text-lg uppercase tracking-tight">{user.name || 'Профиль'}</h3>
-                 <p className="text-emerald-600 text-xs font-black uppercase tracking-widest">Облако синхронизировано</p>
+                 <h3 className="text-slate-900 font-black text-lg uppercase tracking-tight">{user.name || t('hud.guest')}</h3>
+                 <p className="text-emerald-600 text-xs font-black uppercase tracking-widest">{t('cloud_sync')}</p>
               </div>
               <button 
                 onClick={() => { if(confirm("Выйти?")) supabase.auth.signOut().then(() => window.location.reload()); }}
@@ -68,7 +71,7 @@ export default function SettingsMenu({
               <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">
                 {audio.isEnabled ? "🔊" : "🔇"}
               </span>
-              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Музыка</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">{t('music')}</span>
             </button>
 
             <button 
@@ -76,7 +79,7 @@ export default function SettingsMenu({
               className="p-6 rounded-[28px] bg-slate-50 border-2 border-transparent hover:border-indigo-100 flex flex-col items-center gap-2 transition-all active:scale-95 group"
             >
               <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">🌎</span>
-              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">{lang === 'ru' ? "RU" : "EN"}</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">{t('language')}: {lang.toUpperCase()}</span>
             </button>
           </div>
 
@@ -85,8 +88,8 @@ export default function SettingsMenu({
           >
             <span className="text-3xl transition-transform group-hover:scale-110">🗺️</span>
             <div className="flex-1">
-              <h3 className="font-black text-[18px] uppercase tracking-tight">Карта Мира</h3>
-              <p className="text-white/40 text-[11px] font-bold uppercase tracking-widest">Перейти к островам</p>
+              <h3 className="font-black text-[18px] uppercase tracking-tight">{t('world_map')}</h3>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-widest">{t('back_to_islands')}</p>
             </div>
             <span className="text-white/20 text-2xl group-hover:translate-x-2 transition-transform">→</span>
           </button>
@@ -99,7 +102,7 @@ export default function SettingsMenu({
           }}
             className="w-full text-center py-4 text-slate-300 font-bold text-[12px] uppercase tracking-widest hover:text-red-500 transition-all mt-4"
           >
-            Сбросить всё
+            {t('reset_all')}
           </button>
         </div>
       </div>

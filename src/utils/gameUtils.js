@@ -13,23 +13,45 @@ export function generateUUID() {
   });
 }
 
-export function thinkingType(stars) {
-  if (stars >= 28) return { label: "Гений природы",    emoji: "🧠" };
-  if (stars >= 16) return { label: "Мастер решений",   emoji: "⚡" };
-  if (stars >= 7)  return { label: "Юный детектив",    emoji: "🔍" };
-  return               { label: "Любознайка",          emoji: "🌱" };
+export function thinkingType(stars, lang = 'ru') {
+  const labels = {
+    ru: [
+      { min: 28, label: "Гений природы",    emoji: "🧠" },
+      { min: 16, label: "Мастер решений",   emoji: "⚡" },
+      { min: 7,  label: "Юный детектив",    emoji: "🔍" },
+      { min: 0,  label: "Любознайка",          emoji: "🌱" }
+    ],
+    en: [
+      { min: 28, label: "Nature Genius",    emoji: "🧠" },
+      { min: 16, label: "Solution Master",   emoji: "⚡" },
+      { min: 7,  label: "Young Detective",    emoji: "🔍" },
+      { min: 0,  label: "Curious Mind",          emoji: "🌱" }
+    ]
+  };
+  const list = labels[lang] || labels['ru'];
+  return list.find(l => stars >= l.min) || list[list.length-1];
 }
 
-export function methodDescription(methodName) {
+export function methodDescription(methodName, lang = 'ru') {
   const descriptions = {
-    "Наоборот": "Ты узнал, что иногда нужно противоположное решение. Переверни проблему — и ответ станет очевидным.",
-    "Дробление": "Ты открыл, как природа использует части для решения. Маленькие кусочки работают лучше, чем целое.",
-    "Посредник": "Ты увидел, как промежуточный помощник решает конфликт. Добавь посредника — и противоречие исчезнет.",
-    "Фазовый переход": "Ты заметил, как смена состояния (жидкое ↔ твёрдое) решает задачу. Фаза вещества — мощный инструмент.",
-    "Эхо": "Ты услышал отражение и повтор. Когда система сама себе помогает, проблема решается элегантно.",
-    "Слои": "Ты разглядел скрытые слои и оболочки. Природа кладёт решение слой за слоем."
+    ru: {
+      "Наоборот": "Ты узнал, что иногда нужно противоположное решение. Переверни проблему — и ответ станет очевидным.",
+      "Дробление": "Ты открыл, как природа использует части для решения. Маленькие кусочки работают лучше, чем целое.",
+      "Посредник": "Ты увидел, как промежуточный помощник решает конфликт. Добавь посредника — и противоречие исчезнет.",
+      "Фазовый переход": "Ты заметил, как смена состояния (жидкое ↔ твёрдое) решает задачу. Фаза вещества — мощный инструмент.",
+      "Эхо": "Ты услышал отражение и повтор. Когда система сама себе помогает, проблема решается элегантно.",
+      "Слои": "Ты разглядел скрытые слои и оболочки. Природа кладёт решение слой за слоем."
+    },
+    en: {
+      "Наоборот": "You learned that sometimes the opposite solution is needed. Flip the problem — and the answer becomes obvious.",
+      "Дробление": "You discovered how nature uses parts to solve problems. Small pieces often work better than a whole.",
+      "Посредник": "You saw how an intermediate helper resolves a conflict. Add a mediator — and the contradiction disappears.",
+      "Фазовый переход": "You noticed how a change of state (liquid ↔ solid) solves a task. The phase of matter is a powerful tool.",
+      "Эхо": "You heard reflection and repetition. When a system helps itself, the problem is solved elegantly.",
+      "Слои": "You spotted hidden layers and shells. Nature builds solutions layer by layer."
+    }
   };
-  return descriptions[methodName] || "";
+  return descriptions[lang]?.[methodName] || descriptions['ru'][methodName] || "";
 }
 
 export const ISLAND_MAPPING = {

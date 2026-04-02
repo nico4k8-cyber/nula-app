@@ -27,11 +27,70 @@ export const translations = {
       'library': 'Библиотека',
       'nature-reserve': 'Заповедник',
       'workshop': 'Мастерская',
+      'farm': 'Ферма',
       'laboratory': 'Лаборатория',
-      'bureau': 'КБ',
-      'danetka': 'Царь-горы'
+      'science': 'Остров Науки',
+      'craft': 'Заповедник',
+      'summit': 'Пик Изобретателей',
+      'main': 'Главный остров'
+    },
+    picker: {
+      choose: "Выбери свою миссию",
+      back: "← Карта",
+      empty: "Задач пока нет",
+      go: "Перейти к задачам",
+      enter: "Войти",
+      mentor: {
+        library: "«Здесь спрятаны сказочные секреты. Помоги героям найти Идеальное Решение!»",
+        farm: "«На ферме всё растет само, если знать законы ТРИЗ. Готов к агро-вызовам?»",
+        city: "«В городе шум и суета. Помоги Мэру навести порядок с помощью логики!»",
+        default: "«Каждая задача — это шанс проявить смекалку. Не гадай, ищи ресурсы!»"
+      }
+    },
+    hud: {
+       guest: "Гость",
+       online: "В сети",
+       offline: "Офлайн",
+       islands: "Островов",
+       missions: "Миссий",
+       sync: "Синхронизировать"
     },
     language: "Язык",
+    theme: "Стиль",
+    save_progress: "Сохранить прогресс",
+    login_google: "Войти через Google",
+    cloud_sync: "Облако синхронизировано",
+    world_map: "Карта Мира",
+    back_to_islands: "К островам",
+    reset_all: "Сбросить всё",
+    debrief: {
+      bingo: "Разгадано блестяще!",
+      just_so: "Именно так!",
+      method_discovered: "Метод открыт",
+      mentor_says: "Наставник говорит:",
+      engineers_how: "Как это решили инженеры? →"
+    },
+    twist: {
+       engineering_solution: "Инженерное решение:",
+       accept_wisdom: "Принять мудрость ✨"
+    },
+    final: {
+       my_level: "ТВОЙ ТРИЗ УРОВЕНЬ",
+       stars_power: "Звёзд силы",
+       islands_passed: "Островов пройдено",
+       path_continues: "Путь продолжается!",
+       remaining_tasks: "Впереди ещё {count} загадок природы!",
+       create_own: "Создать свою задачу ✨",
+       reset_game: "Сбросить и начать заново",
+       mentor_footer: "«Ты будешь отличным инженером!»"
+    },
+    dialog: {
+      show_answer: "🔍 Показать ответ",
+      resources_label: "Твои ресурсы для решения:",
+      placeholder: "Напиши свою идею...",
+      wisdom: "МУДРОСТЬ:",
+      error: "Что-то пошло не так. Попробуй ещё раз."
+    },
     dragon_info: [
       "Привет! Я живу в генизе — месте, где хранятся древние знания и современные изобретения.",
       "Я прочитал много книг, спорил с ними. Убедился — с идеями можно спорить, это правильно.",
@@ -68,11 +127,70 @@ export const translations = {
       'library': 'Library',
       'nature-reserve': 'Nature Reserve',
       'workshop': 'Workshop',
+      'farm': 'Farm',
       'laboratory': 'Laboratory',
-      'bureau': 'Design Bureau',
-      'danetka': 'Riddle Peak'
+      'science': 'Science Isle',
+      'craft': 'Craft Isle',
+      'summit': 'Inventor Summit',
+      'main': 'Main Island'
+    },
+    picker: {
+      choose: "Choose your mission",
+      back: "← Map",
+      empty: "No tasks yet",
+      go: "Go to tasks",
+      enter: "Enter",
+      mentor: {
+        library: "«Fairytale secrets are hidden here. Help the heroes find the Ideal Solution!»",
+        farm: "«Everything grows by itself on the farm if you know TRIZ. Ready for agro-challenges?»",
+        city: "«There is noise and fuss in the city. Help the Mayor restore order with logic!»",
+        default: "«Every task is a chance to show your wit. Don't guess, look for resources!»"
+      }
+    },
+    hud: {
+       guest: "Guest",
+       online: "Online",
+       offline: "Offline",
+       islands: "Islands",
+       missions: "Missions",
+       sync: "Sync Progress"
     },
     language: "Language",
+    theme: "Theme",
+    save_progress: "Save Progress",
+    login_google: "Login with Google",
+    cloud_sync: "Cloud Synced",
+    world_map: "World Map",
+    back_to_islands: "Back to islands",
+    reset_all: "Reset All",
+    debrief: {
+      bingo: "Solved brilliantly!",
+      just_so: "Exactly!",
+      method_discovered: "Method discovered",
+      mentor_says: "The mentor says:",
+      engineers_how: "How did engineers solve it? →"
+    },
+    twist: {
+       engineering_solution: "Engineering Solution:",
+       accept_wisdom: "Accept wisdom ✨"
+    },
+    final: {
+       my_level: "YOUR TRIZ LEVEL",
+       stars_power: "Power Stars",
+       islands_passed: "Islands completed",
+       path_continues: "The path continues!",
+       remaining_tasks: "Ahead are {count} more riddles!",
+       create_own: "Create your own task ✨",
+       reset_game: "Reset and start over",
+       mentor_footer: "«You will be a great engineer!»"
+    },
+    dialog: {
+      show_answer: "🔍 Show Answer",
+      resources_label: "Your resources for the solution:",
+      placeholder: "Write your idea...",
+      wisdom: "WISDOM:",
+      error: "Something went wrong. Try again."
+    },
     dragon_info: [
       "Hi! I live in the Genizah — a place where ancient knowledge and modern inventions are kept.",
       "I've read many books and debated them. I'm convinced — it's right to debate ideas.",

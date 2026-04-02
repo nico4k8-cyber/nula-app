@@ -8,7 +8,9 @@ export default function TwistView({
   TASKS,
   twistChoice,
   setTwistChoice,
-  onNext
+  onNext,
+  t,
+  lang
 }) {
   return (
     <div className="flex flex-col flex-1 px-6 pb-12 animate-fade-in-up">
@@ -34,9 +36,9 @@ export default function TwistView({
         </div>
 
         <div className="text-center py-2 px-4">
-           <p className="text-[17px] text-slate-700 font-black uppercase tracking-tighter leading-tight bg-yellow-400 text-slate-900 px-6 py-3 rounded-2xl shadow-lg border-2 border-slate-900 -rotate-1 inline-block">
-             {task.contradiction.buddyQuestion}
-           </p>
+          <p className="text-[17px] text-slate-700 font-black uppercase tracking-tighter leading-tight bg-yellow-400 text-slate-900 px-6 py-3 rounded-2xl shadow-lg border-2 border-slate-900 -rotate-1 inline-block">
+            {task.contradiction.buddyQuestion}
+          </p>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -69,7 +71,7 @@ export default function TwistView({
         {twistChoice !== null && (
           <div className="bg-indigo-600 rounded-[28px] px-8 py-6 text-[16px] text-white shadow-2xl animate-fade-in-up border-4 border-indigo-400 font-medium leading-relaxed mt-4 relative overflow-hidden group">
             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700" />
-            <span className="block font-black text-xs uppercase tracking-widest text-indigo-200 mb-3 ml-1">✓ Инженерное решение:</span>
+            <span className="block font-black text-xs uppercase tracking-widest text-indigo-200 mb-3 ml-1">✓ {t('twist.engineering_solution')}</span>
             {task.contradiction.realSolution}
           </div>
         )}
@@ -79,7 +81,7 @@ export default function TwistView({
             className="w-full py-5 rounded-[24px] font-black text-[18px] active:scale-[0.97] transition-all text-white shadow-xl hover:brightness-110 border-b-6 mt-4 uppercase tracking-tighter"
             style={{ backgroundColor: task.trick.color, borderBottomColor: 'rgba(0,0,0,0.2)' }}
           >
-            Принять мудрость ✨
+            {t('twist.accept_wisdom')}
           </button>
         )}
       </div>

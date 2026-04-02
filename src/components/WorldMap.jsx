@@ -192,56 +192,47 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                  </div>
                )}
 
-               {status === 'active' && <div className="island-glow scale-150 opacity-40 animate-pulse-soft" />}
+                {status === 'active' && <div className="island-glow scale-150 opacity-100 animate-pulse-soft" />}
                
-               <div className="relative z-10 transition-transform active:scale-95 duration-200 cursor-pointer flex flex-col items-center">
-                  <div className={`island-img-wrapper ${status !== 'fog' ? 'animate-float' : ''}`} style={{ animationDelay: `${idx * 0.5}s` }}>
-                    <video 
-                      src={config.icon} 
-                      autoPlay 
-                      muted 
-                      loop 
-                      playsInline
-                      onLoadedData={updatePaths}
-                      className={`w-[140px] h-[140px] object-contain transition-all duration-500 cursor-pointer
-                        ${status === 'active' ? 'drop-shadow-[0_20px_40px_rgba(79,70,229,0.3)] scale-110' : 'drop-shadow-lg'}
-                        ${status === 'fog' ? 'grayscale opacity-20 text-slate-800' : ''}
-                        hover:scale-150 active:scale-125 hover:z-50
-                      `}
-                    />
-                    
-                    {status === 'locked' && (
-                      <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/60 backdrop-blur-[2px] rounded-full scale-50 border border-white/10 shadow-2xl">
-                        <span className="text-3xl filter drop-shadow-md">🔒</span>
-                      </div>
-                    )}
-                  </div>
-
-                   {/* Improved Island Label */}
-                   <div className="absolute left-1/2 -translate-x-1/2 -bottom-4 group-hover:-bottom-6 transition-all duration-300 pointer-events-none z-30">
-                      <div className={`px-5 py-2.5 rounded-[20px] shadow-2xl backdrop-blur-xl border border-white/10 flex flex-col items-center gap-1 min-w-[140px]
-                        ${status === 'active' ? 'bg-indigo-600/90' : status === 'completed' ? 'bg-emerald-600/90' : 'bg-slate-900/80'}
-                      `}>
-                         <div className="flex items-center gap-2">
-                           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/90 font-display">
-                             {config.name}
-                           </span>
-                           {status === 'completed' && <span className="text-[10px]">✨</span>}
-                         </div>
-                         
-                         <div className={`px-3 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest
-                           ${status === 'active' ? 'bg-indigo-400 text-indigo-950' : status === 'completed' ? 'bg-emerald-400 text-emerald-950' : 'bg-slate-700 text-slate-400'}
-                         `}>
-                           {status === 'active' ? 'Открыто' : status === 'completed' ? 'Пройдено' : 'Закрыто'}
-                         </div>
-                      </div>
-                      
-                      {/* Sub-label Pointer */}
-                      <div className={`mx-auto w-3 h-3 rotate-45 -mt-1.5 border-r border-b border-white/10
-                        ${status === 'active' ? 'bg-indigo-600/90' : status === 'completed' ? 'bg-emerald-600/90' : 'bg-slate-900/80'}
-                      `} />
+                <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-125 active:scale-95">
+                   <div className={`island-img-wrapper ${status !== 'fog' ? 'animate-float' : ''}`} style={{ animationDelay: `${idx * 0.5}s` }}>
+                     <video 
+                       src={config.icon} 
+                       autoPlay 
+                       muted 
+                       loop 
+                       playsInline
+                       onLoadedData={updatePaths}
+                       className={`w-[130px] h-[130px] object-contain transition-all duration-700
+                         ${status === 'active' ? 'drop-shadow-[0_20px_50px_rgba(255,215,0,0.4)] scale-110' : 'drop-shadow-xl'}
+                         ${status === 'fog' ? 'grayscale opacity-20' : ''}
+                       `}
+                     />
+                     
+                     {status === 'locked' && (
+                       <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/40 backdrop-blur-[1px] rounded-full scale-50 border border-white/5">
+                         <span className="text-3xl filter drop-shadow-md">🔒</span>
+                       </div>
+                     )}
                    </div>
-               </div>
+ 
+                    {/* Minimalist Premium Label */}
+                    <div className="absolute left-1/2 -translate-x-1/2 -bottom-6 flex flex-col items-center gap-1 opacity-100 transition-all duration-300 pointer-events-none z-30">
+                       <span className="text-[14px] font-black uppercase tracking-[0.3em] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap">
+                         {t(`buildings.${config.id}`)}
+                       </span>
+                       
+                       {status === 'active' && (
+                          <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-400 rounded-full shadow-[0_0_15px_rgba(255,215,0,0.4)]">
+                             <div className="w-1 h-1 bg-yellow-950 rounded-full animate-ping" />
+                             <span className="text-[8px] font-black uppercase tracking-widest text-yellow-950">{t('picker.go')}</span>
+                          </div>
+                       )}
+                       {status === 'completed' && (
+                          <span className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">{t('picker.enter')} ✨</span>
+                       )}
+                    </div>
+                </div>
             </div>
           );
         })}

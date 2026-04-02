@@ -7,9 +7,11 @@ export default function FinalView({
   TASKS,
   onRestart,
   onBackToCity,
-  onUgc
+  onUgc,
+  t,
+  lang
 }) {
-  const type = thinkingType(totalStars);
+  const type = thinkingType(totalStars, lang);
   const remaining = TASKS.length - completedTasks.length;
 
   return (
@@ -25,7 +27,7 @@ export default function FinalView({
              {type.label}
           </h2>
           <div className="text-white/80 font-black text-[12px] uppercase tracking-[0.3em] bg-white/10 px-4 py-2 rounded-full inline-block backdrop-blur-md border border-white/20">
-             ТВОЙ ТРИЗ УРОВЕНЬ
+             {t('final.my_level')}
           </div>
         </div>
 
@@ -33,38 +35,38 @@ export default function FinalView({
            <div className="bg-white rounded-[32px] p-6 shadow-2xl border-4 border-amber-400 flex flex-col items-center">
               <span className="text-5xl mb-2">⭐</span>
               <span className="text-4xl font-black text-slate-800">{totalStars}</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Звёзд силы</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{t('final.stars_power')}</span>
            </div>
            <div className="bg-white rounded-[32px] p-6 shadow-2xl border-4 border-emerald-400 flex flex-col items-center">
               <span className="text-5xl mb-2">🏝️</span>
               <span className="text-4xl font-black text-slate-800">{completedTasks.length}</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Островов пройдено</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{t('final.islands_passed')}</span>
            </div>
         </div>
 
         <div className="w-full bg-white rounded-[36px] p-8 shadow-2xl border-2 border-slate-100 flex flex-col items-center text-center max-w-[400px] animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-           <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Путь продолжается!</h3>
+           <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">{t('final.path_continues')}</h3>
            <p className="text-slate-500 text-[15px] leading-relaxed mb-6 font-medium">
-             Ты открыл {completedTasks.length} методов из {TASKS.length}. Впереди ещё {remaining} загадок природы!
+             {t('final.remaining_tasks').replace('{count}', remaining)}
            </p>
            
            <div className="flex flex-col w-full gap-4">
               <button onClick={onBackToCity}
                 className="w-full bg-slate-900 text-white text-[16px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-xl hover:bg-black"
               >
-                Карта Мира →
+                {t('world_map')} →
               </button>
               
               <button onClick={onUgc}
                 className="w-full bg-emerald-500 text-white text-[16px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-xl hover:bg-emerald-600 border-b-4 border-emerald-700"
               >
-                Создать свою задачу ✨
+                {t('final.create_own')}
               </button>
               
               <button onClick={onRestart}
                 className="w-full text-slate-400 text-[14px] font-bold py-2 hover:text-slate-600 transition-all"
               >
-                Сбросить и начать заново
+                {t('final.reset_game')}
               </button>
            </div>
         </div>
@@ -72,7 +74,7 @@ export default function FinalView({
         {/* Mentor coal footer */}
         <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '0.8s' }}>
            <img src="./img/ugolok_3d.png" alt="Уголёк" className="w-10 h-10 rounded-full" />
-           <p className="text-slate-400 font-bold text-[12px] uppercase tracking-widest italic">«Ты будешь отличным инженером!»</p>
+           <p className="text-slate-400 font-bold text-[12px] uppercase tracking-widest italic">{t('final.mentor_footer')}</p>
         </div>
       </div>
 

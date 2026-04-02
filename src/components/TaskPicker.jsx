@@ -5,7 +5,8 @@ export default function TaskPicker({
   onBack, 
   TASKS, 
   completedTasks, 
-  onStartTask 
+  onStartTask,
+  t
 }) {
   const filtered = TASKS.filter(t => t.category === activeCategory);
 
@@ -23,7 +24,7 @@ export default function TaskPicker({
           onClick={onBack}
           className="absolute top-6 left-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-[13px] font-black uppercase tracking-widest transition-all active:scale-95"
         >
-          ← Карта
+          {t('picker.back')}
         </button>
         
         <div className="mt-8 text-center" style={{ viewTransitionName: 'building-header' }}>
@@ -35,14 +36,10 @@ export default function TaskPicker({
                activeCategory === 'workshop' ? '🔧' : '⚙️'}
            </div>
            <h2 className="text-4xl font-black uppercase tracking-tighter leading-none mb-2">
-              {activeCategory === 'library' ? 'Библиотека' : 
-               activeCategory === 'farm' ? 'Ферма' :
-               activeCategory === 'nature-reserve' ? 'Заповедник' :
-               activeCategory === 'city-hall' ? 'Мэрия' :
-               activeCategory === 'workshop' ? 'Мастерская' : 'Локация'}
+              {t(`buildings.${activeCategory}`)}
            </h2>
            <p className="text-white/70 font-bold text-xs uppercase tracking-[0.2em]">
-              Выбери свою миссию
+              {t('picker.choose')}
            </p>
         </div>
 
@@ -56,10 +53,7 @@ export default function TaskPicker({
             <img src="./img/ugolok_3d.png" alt="Уголёк" className="w-16 h-16 rounded-full object-cover border-2 border-orange-200 flex-shrink-0" />
             <div className="flex-1">
                <p className="text-[14px] text-slate-800 font-bold leading-tight italic">
-                  {activeCategory === 'library' ? '«Здесь спрятаны сказочные секреты. Помоги героям найти Идеальное Решение!»' :
-                   activeCategory === 'farm' ? '«На ферме всё растет само, если знать законы ТРИЗ. Готов к агро-вызовам?»' :
-                   activeCategory === 'city-hall' ? '«В городе шум и суета. Помоги Мэру навести порядок с помощью логики!»' :
-                   '«Каждая задача — это шанс проявить смекалку. Не гадай, ищи ресурсы!»'}
+                  {t(`picker.mentor.${activeCategory === 'library' || activeCategory === 'farm' || activeCategory === 'city-hall' ? activeCategory : 'default'}`)}
                </p>
             </div>
          </div>
