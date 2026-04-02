@@ -48,9 +48,11 @@ export function useAudio(tracks = []) {
 
     // Auto-play music for current track
     if (tracks.length > 0 && audioRef.current) {
-      const track = tracks[currentTrackIndex];
-      if (!audioRef.current.src) {
-        // First load - play from start
+      // Safety: if index out of bounds (e.g. from old session with more tracks), reset to 0
+      const safeIndex = currentTrackIndex >= tracks.length ? 0 : currentTrackIndex;
+      const track = tracks[safeIndex];
+      
+      if (track && !audioRef.current.src) {
         audioRef.current.src = track.path;
         audioRef.current.play().catch(() => {});
       }
