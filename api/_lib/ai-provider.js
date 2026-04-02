@@ -40,6 +40,7 @@ export async function getClaudeResponse({
   prizStep = 0,
   systemPromptOverride = null
 }) {
+  console.log(`[AI-DEBUG] Brain v1.5 [latest] - Starting request...`);
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured on the server");
 
