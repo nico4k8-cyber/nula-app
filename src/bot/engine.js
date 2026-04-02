@@ -27,7 +27,7 @@
  */
 
 import { isSafe } from "./safety.js";
-import TASKS_DATA from "./tasks.js";
+import TASKS_DATA from "../tasks.js";
 import { generateUgolokResponse } from "./ai.js";
 
 export const TASKS = TASKS_DATA.default || TASKS_DATA;

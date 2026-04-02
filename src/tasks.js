@@ -11,6 +11,8 @@ export const TASKS = [
     core_problem: { need: "забраться на вершину башни", obstacle: "нет дверей, лестниц и выступов" },
     ikr: "Принц сам оказывается наверху, используя то, что уже есть в башне",
     resources: [{ id: "волосы", properties: "очень длинные, крепкие" }],
+    trick: { name: "Посредник", animal: "👱‍♀️", animalName: "Коса" },
+    customer: { name: "Принц", emoji: "🤴" },
     puzzle: { 
       emoji: "👱‍♀️", 
       question: "У башни нет дверей. Как принцу попасть к Рапунцель?",
@@ -61,6 +63,8 @@ export const TASKS = [
     core_problem: { need: "достать воду со дна", obstacle: "голова не пролезает в узкое горлышко" },
     ikr: "Вода сама поднимается к клюву",
     resources: [{ id: "камни", properties: "тяжелые, вытесняют объем" }],
+    trick: { name: "Вытеснение", animal: "🐦", animalName: "Ворона" },
+    customer: { name: "Ворона", emoji: "🐦" },
     puzzle: { 
       emoji: "🐦", 
       question: "Вода на дне кувшина. Как птице попить, не разбивая сосуд?",

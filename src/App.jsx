@@ -239,8 +239,16 @@ export default function App() {
         )}
 
         {phase === "dialog" && (
-          <DialogView task={task} messages={messages} isTyping={isTyping} trizState={trizState}
-            prizStep={prizStep} sessionStars={sessionStars} totalStars={totalStars}
+          <DialogView 
+            task={task} 
+            messages={messages} 
+            isTyping={isTyping} 
+            trizState={trizState}
+            prizStep={prizStep} 
+            sessionStars={sessionStars} 
+            totalStars={totalStars}
+            t={t}
+            lang={lang}
             onBack={() => {
               if (messages.length > 2) {
                 setShowConfirmDialog(true);
@@ -249,25 +257,51 @@ export default function App() {
               }
             }} 
             onSendMessage={handleUserMessage}
-            input={input} setInput={setInput} inputRef={inputRef} bottomRef={bottomRef}
+            input={input} 
+            setInput={setInput} 
+            inputRef={inputRef} 
+            bottomRef={bottomRef}
           />
         )}
 
         {phase === "debrief" && (
-          <DebriefView task={task} completedTasks={completedTasks} taskIdx={taskIdx} 
-            debriefBingo={debriefBingo} sessionStars={sessionStars} TASKS={TASKS} onNext={() => setPhase("twist")} 
+          <DebriefView 
+            task={task} 
+            completedTasks={completedTasks} 
+            taskIdx={taskIdx} 
+            debriefBingo={debriefBingo} 
+            sessionStars={sessionStars} 
+            TASKS={TASKS} 
+            t={t}
+            lang={lang}
+            onNext={() => setPhase("twist")} 
           />
         )}
 
         {phase === "twist" && (
-          <TwistView task={task} completedTasks={completedTasks} taskIdx={taskIdx} TASKS={TASKS}
-            twistChoice={twistChoice} setTwistChoice={setTwistChoice} onNext={goOutcome} 
+          <TwistView 
+            task={task} 
+            completedTasks={completedTasks} 
+            taskIdx={taskIdx} 
+            TASKS={TASKS}
+            twistChoice={twistChoice} 
+            setTwistChoice={setTwistChoice} 
+            t={t}
+            lang={lang}
+            onNext={goOutcome} 
           />
         )}
 
         {phase === "outcome" && (
-          <FinalView totalStars={totalStars} completedTasks={completedTasks} TASKS={TASKS}
-            onRestart={() => resetGame()} onBackToCity={() => setPhase("city")} onUgc={() => {}}
+          <FinalView 
+            totalStars={totalStars} 
+            completedTasks={completedTasks} 
+            TASKS={TASKS}
+            t={t}
+            lang={lang}
+            onRestart={() => resetGame()} 
+            onBackToCity={() => setPhase("city")} 
+            onUgc={() => {}}
           />
         )}
 

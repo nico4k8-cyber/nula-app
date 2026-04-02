@@ -33,7 +33,7 @@ function BezierPath({ p1, p2, isDone }) {
   );
 }
 
-export default function WorldMap({ islands, unlockRequirements, totalSolved, onSelectBuilding }) {
+export default function WorldMap({ islands, unlockRequirements, totalSolved, onSelectBuilding, t }) {
   const containerRef = useRef(null);
   const scrollContentRef = useRef(null);
   const islandElementRefs = useRef({});
