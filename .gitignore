@@ -1,43 +1,18 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
-
-# Testing
-coverage/
-
-# Production
-dist/
-build/
-
-# Misc
-.DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Vercel
-.vercel
-
-# Debug
+# Workspace Trash (locally moved junk)
+_work_repo_scraps/
+local-api-server.js
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.env*.local
+.DS_Store
+.env.production
+.planning/
+dist/
+node_modules/
+.vercel
+package-lock.json
 
-# Documentation (local planning only)
-*.md
-!README.md
-ANALYSIS_*
-FEEDBACK.md
-GDD.md
-ITERATIONAL_*
-MVP_STATUS.md
-PLAYTEST_*
-
-# Local planning and screenshots
+# Cleanup extensions at root only
 /*.png
 /*.mjs
 /*.html
@@ -45,11 +20,3 @@ PLAYTEST_*
 /*.txt
 /*.log
 test_*.txt
-.planning/
-.env.production
-.DS_Store
-
-# Include necessary assets explicitly if needed
-!public/assets/*.png
-!public/img/*.png
-!src/**/*.mjs
