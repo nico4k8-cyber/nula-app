@@ -40,13 +40,13 @@ export async function askAI(userMessage, history, puzzle, ageGroup = "senior") {
   }
 }
 
-// New system: TRIZ 7-phase engine with adaptive age-based ПРИЗ version
-export async function askTriz(userMessage, task, state, history = [], ageGroup = "senior") {
+// Brain v2.0 - Forced Cache Flush (2026-04-02)
+export async function askTriz(userMessage, task, state, history = []) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const res = await fetch("/api/chat", {
+    const res = await fetch("/api/ugolok-chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
