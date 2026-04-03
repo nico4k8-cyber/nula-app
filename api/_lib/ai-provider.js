@@ -87,7 +87,7 @@ export async function getClaudeResponse({
     if (!response.ok) {
       const err = await response.text();
       if (response.status === 429) {
-         throw new Error(`🛑 Слишком быстро! Гугл-лимиты бесплатных серверов просят подождать 30 секунд. Переведи дух и нажми еще раз!`);
+         throw new Error(`🛑 Ого, как быстро ты думаешь! Мой угольный процессор немного перегрелся от такого потока идей. Дай мне полминутки остыть, и отправь сообщение ещё раз! 🚂💨`);
       }
       throw new Error(`Gemini API Error: ${err}`);
     }
