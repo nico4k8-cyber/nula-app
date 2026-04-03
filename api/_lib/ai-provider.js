@@ -79,7 +79,7 @@ export async function getClaudeResponse({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${systemPrompt}\n\nСЕЙЧАС Ребенок пишет: ${userMessage}\n\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ УГОЛЬКА! ЗАПРЕЩЕНО писать планы, черновики, цели или процесс размышления. СРАЗУ пиши текст от лица Уголька и ОБЯЗАТЕЛЬНО поставь тег [ПРИЗ:X|⭐:N] В КОНЦЕ.` }] }],
+        contents: [{ parts: [{ text: `${systemPrompt}\n\nСЕЙЧАС Пользователь пишет: ${userMessage}\n\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ НАСТАВНИКА! ЗАПРЕЩЕНО писать планы, черновики, цели или процесс размышления. СРАЗУ пиши текст от лица наставника и ОБЯЗАТЕЛЬНО поставь тег [ПРИЗ:X|⭐:N] В КОНЦЕ.` }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
       })
     });
@@ -87,7 +87,7 @@ export async function getClaudeResponse({
     if (!response.ok) {
       const err = await response.text();
       if (response.status === 429) {
-         throw new Error(`🛑 Ого, как быстро ты думаешь! Мой угольный процессор немного перегрелся от такого потока идей. Дай мне полминутки остыть, и отправь сообщение ещё раз! 🚂💨`);
+         throw new Error(`🛑 Ого, какое быстрое мышление! Наши вычислительные системы немного перегрелись от такого потока идей. Дай мне полминутки остыть, и отправь сообщение ещё раз! ⏳`);
       }
       throw new Error(`Gemini API Error: ${err}`);
     }

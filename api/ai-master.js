@@ -65,7 +65,7 @@ export default async function handler(req) {
     const isLimitError = err.message && err.message.includes('🛑');
     const customReply = isLimitError 
        ? err.message.replace('Gemini API Error: Error: ', '') // очистка префиксов
-       : "Уголёк задумался слишком глубоко. Давай попробуем ещё раз через минуту!";
+       : "Сетевая заминка. Обдумай свою мысль и отправь её ещё раз через минуту!";
 
     return new Response(JSON.stringify({ 
       error: "AI service error", 
