@@ -5,25 +5,27 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.en
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+const isPlaceholder = () => supabaseUrl.includes('placeholder');
+
 // Simplified progress sync
 export const syncProgress = async (userId, data) => {
-  if (!userId || supabaseUrl.includes('placeholder')) return null;
-  
+  if (!userId || isPlaceholder()) return null;
+
   const { data: result, error } = await supabase
     .from('profiles')
-    .upsert({ 
-      id: userId, 
+    .upsert({
+      id: userId,
       ...data,
       updated_at: new Date().toISOString()
     })
     .select();
-    
+
   if (error) console.error('Supabase sync error:', error);
   return result;
 };
 
 export const loadProgress = async (userId) => {
-  if (!userId || supabaseUrl.includes('placeholder')) return null;
+  if (!userId || isPlaceholder()) return null;
 
   const { data, error } = await supabase
     .from('profiles')
@@ -33,4 +35,155 @@ export const loadProgress = async (userId) => {
 
   if (error) console.error('Supabase load error:', error);
   return data;
+};
+
+// ---- PATENTS (Bredo) ----
+
+export const loadPatents = async (userId) => {
+  if (!userId || isPlaceholder()) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('patents, used_bredo_ids')
+    .eq('id', userId)
+    .single();
+  if (error) return null;
+  return data;
+};
+
+export const savePatentToSupabase = async (userId, patent, usedBreoIds) => {
+  if (!userId || isPlaceholder()) return null;
+  // Load current patents first
+  const { data: current } = await supabase
+    .from('profiles')
+    .select('patents')
+    .eq('id', userId)
+    .single();
+  const existing = current?.patents || [];
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({
+      id: userId,
+      patents: [...existing, patent],
+      used_bredo_ids: usedBreoIds,
+      updated_at: new Date().toISOString(),
+    });
+  if (error) console.error('savePatent error:', error);
+};
+
+// ---- TSAR MOUNTAIN (used word IDs) ----
+
+export const loadUsedTsarIds = async (userId) => {
+  if (!userId || isPlaceholder()) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('used_tsar_ids')
+    .eq('id', userId)
+    .single();
+  if (error) return null;
+  return data?.used_tsar_ids || [];
+};
+
+export const saveUsedTsarIds = async (userId, usedIds) => {
+  if (!userId || isPlaceholder()) return null;
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({
+      id: userId,
+      used_tsar_ids: usedIds,
+      updated_at: new Date().toISOString(),
+    });
+  if (error) console.error('saveUsedTsarIds error:', error);
+};
+
+// ── TSAR WORDS (управление из админки) ───────────────────────────────────────
+
+export const loadTsarWords = async () => {
+  if (isPlaceholder()) return null;
+  const { data, error } = await supabase
+    .from('tsar_words')
+    .select('*')
+    .eq('active', true)
+    .order('difficulty', { ascending: true });
+  if (error) return null;
+  return data;
+};
+
+export const saveTsarWord = async (word) => {
+  if (isPlaceholder()) return null;
+  const { error } = await supabase.from('tsar_words').upsert(word);
+  if (error) console.error('saveTsarWord error:', error);
+  return !error;
+};
+
+export const deleteTsarWord = async (id) => {
+  if (isPlaceholder()) return null;
+  const { error } = await supabase.from('tsar_words').update({ active: false }).eq('id', id);
+  if (error) console.error('deleteTsarWord error:', error);
+  return !error;
+};
+
+// ── BREDO ITEMS (управление из админки) ──────────────────────────────────────
+
+export const loadBredomakerItems = async () => {
+  if (isPlaceholder()) return null;
+  const { data, error } = await supabase
+    .from('bredo_items')
+    .select('*')
+    .eq('active', true)
+    .order('created_at', { ascending: true });
+  if (error) return null;
+  return data;
+};
+
+export const saveBredomakerItem = async (item) => {
+  if (isPlaceholder()) return null;
+  const { error } = await supabase.from('bredo_items').upsert(item);
+  if (error) console.error('saveBredomakerItem error:', error);
+  return !error;
+};
+
+export const deleteBredomakerItem = async (id) => {
+  if (isPlaceholder()) return null;
+  const { error } = await supabase.from('bredo_items').update({ active: false }).eq('id', id);
+  if (error) console.error('deleteBredomakerItem error:', error);
+  return !error;
+};
+
+// ── АНАЛИТИКА ТОКЕНОВ ─────────────────────────────────────────────────────────
+
+export const logTokenUsage = async ({ userId, action, model, promptTokens, completionTokens, totalTokens, costUsd }) => {
+  if (isPlaceholder()) return null;
+  const { error } = await supabase.from('token_usage').insert({
+    user_id: userId || null,
+    action,
+    model: model || null,
+    prompt_tokens: promptTokens || 0,
+    completion_tokens: completionTokens || 0,
+    total_tokens: totalTokens || 0,
+    cost_usd: costUsd || 0,
+  });
+  if (error) console.error('logTokenUsage error:', error);
+};
+
+export const getTokenStats = async (days = 7) => {
+  if (isPlaceholder()) return null;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('token_usage')
+    .select('total_tokens, cost_usd, action, created_at')
+    .gte('created_at', since)
+    .order('created_at', { ascending: true });
+  if (error) return null;
+  return data;
+};
+
+export const getPlayerAlerts = async (totalWords) => {
+  if (isPlaceholder()) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, used_tsar_ids, child_name, parent_email')
+    .not('used_tsar_ids', 'is', null);
+  if (error) return null;
+  const threshold = Math.floor(totalWords * 0.8);
+  return data.filter(p => (p.used_tsar_ids?.length || 0) >= threshold);
 };

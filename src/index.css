@@ -65,17 +65,15 @@
   }
 
   .btn-premium {
-    @apply relative px-8 py-5 font-bold text-white transition-all 
-           active:scale-95 duration-300 flex items-center justify-center gap-3
-           overflow-hidden;
-    background: linear-gradient(135deg, var(--color-indigo) 0%, var(--color-violet) 100%);
-    border-radius: var(--radius-md);
-    box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+    @apply relative overflow-hidden bg-orange-500 text-white font-bold py-3.5 px-10 rounded-full shadow-lg shadow-orange-900/40;
+    @apply border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
 
   .btn-premium::after {
     content: '';
-    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300 rounded-full;
     background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
   }
 
@@ -84,8 +82,8 @@
   }
 
   .btn-premium:hover {
-    @apply -translate-y-0.5 shadow-xl;
-    box-shadow: 0 15px 30px -5px rgba(79, 70, 229, 0.5);
+    @apply -translate-y-0.5;
+    box-shadow: 0 12px 28px -4px rgba(234, 88, 12, 0.5);
   }
 
   .input-modern {
@@ -104,14 +102,6 @@
     -webkit-tap-highlight-color: transparent !important;
     outline: none !important;
     border: none !important;
-  }
-
-  .btn-premium {
-    @apply w-full py-5 bg-gradient-to-br from-orange-400 to-orange-600 
-           text-white font-black text-lg uppercase tracking-[0.2em] rounded-[24px] 
-           shadow-[0_8px_0_rgb(194,65,12)] border-b-4 border-orange-700
-           transition-all active:translate-y-1 active:shadow-none hover:scale-[1.02]
-           flex items-center justify-center gap-3 drop-shadow-xl;
   }
   
   .btn-tactile {
@@ -133,6 +123,11 @@
 
 .animate-float {
   animation: float-slow 6s ease-in-out infinite;
+}
+
+@keyframes slow-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.03); }
 }
 
 @keyframes pulse-soft {

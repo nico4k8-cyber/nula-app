@@ -26,6 +26,9 @@ import DebriefView from "./components/DebriefView";
 import TwistView from "./components/TwistView";
 import FinalView from "./components/FinalView";
 import AdminView from "./components/AdminView";
+import Paywall from "./components/Paywall";
+import BredomakerView from "./components/BredomakerView";
+import TsarMountainView from "./components/TsarMountainView";
 
 // Utils
 import { 
@@ -214,7 +217,7 @@ export default function App() {
       setTrizState(newState);
       setMessages([
         { type: "bot", text: "🐉 Давай решим эту задачу вместе!" },
-        { type: "bot", text: difficulty >= 2 ? taskItem.puzzle?.hookSenior : taskItem.puzzle?.hookJunior }
+        { type: "bot", text: difficulty >= 2 ? task.puzzle?.hookSenior : task.puzzle?.hookJunior }
       ]);
     }
     
@@ -314,7 +317,11 @@ export default function App() {
             unlockRequirements={unlockRequirements}
             checkUnlocks={checkUnlocks}
             onLogoClick={() => setMenuOpen(true)}
-            onSelectBuilding={(bId) => { setActiveCategory(bId); setPhase("picker"); }}
+            onSelectBuilding={(bId) => {
+              if (bId === "bredo") { setPhase("bredo-play"); return; }
+              if (bId === "tsar")  { setPhase("mountain-play"); return; }
+              setActiveCategory(bId); setPhase("picker");
+            }}
             activeIslandId={activeIslandId}
             setActiveIslandId={setActiveIslandId}
           />
@@ -405,6 +412,28 @@ export default function App() {
 
         {phase === "admin" && (
           <AdminView TASKS={TASKS} t={t} onBack={() => setPhase("city")} />
+        )}
+
+        {phase === "bredo-play" && (
+          <BredomakerView
+            onBack={() => setPhase("city")}
+            t={t}
+          />
+        )}
+
+        {phase === "mountain-play" && (
+          <TsarMountainView
+            onBack={() => setPhase("city")}
+            onComplete={(score) => completeTask(`tsar-${Date.now()}`, score)}
+          />
+        )}
+
+        {phase === "paywall" && (
+          <Paywall
+            onBack={() => setPhase("task-preview")}
+            onSelectPlan={() => setPhase("task-preview")}
+            onDonate={() => setPhase("city")}
+          />
         )}
 
       </div>

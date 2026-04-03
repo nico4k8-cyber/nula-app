@@ -18,10 +18,10 @@ export const useGameStore = create(
 
       // ---- СТРУКТУРА ДЛЯ РЕЖИМА WORLD MAP (АРХИПЕЛАГИ) ----
       islands: {
-        'main': { solved: 0, total: 10, stars: 0, status: 'active' }, // Первый остров разблокирован
-        'craft': { solved: 0, total: 8, stars: 0, status: 'locked' },
-        'science': { solved: 0, total: 12, stars: 0, status: 'fog' },
-        'summit': { solved: 0, total: 4, stars: 0, status: 'fog' },
+        'main': { solved: 0, total: 17, stars: 0, status: 'active' }, // library(6) + city-hall(6) + nature-reserve(5)
+        'craft': { solved: 0, total: 13, stars: 0, status: 'locked' }, // workshop(7) + farm(6)
+        'science': { solved: 0, total: 0, stars: 0, status: 'fog' },
+        'summit': { solved: 0, total: 0, stars: 0, status: 'fog' },
       },
 
       unlockRequirements: {
@@ -51,6 +51,24 @@ export const useGameStore = create(
           }
         });
 
+        // Unlock buildings belonging to newly active islands
+        const islandBuildings = {
+          'craft': ['farm'],
+          'science': ['laboratory', 'bredo'],
+          'summit': ['tsar'],
+        };
+        let newUnlockedBuildings = [...state.unlockedBuildings];
+        Object.keys(islandBuildings).forEach((islandId) => {
+          if (newIslands[islandId]?.status === 'active') {
+            islandBuildings[islandId].forEach((bId) => {
+              if (!newUnlockedBuildings.includes(bId)) {
+                newUnlockedBuildings.push(bId);
+                changed = true;
+              }
+            });
+          }
+        });
+
         // Locked vs Fog transition
         let foundFirstLocked = false;
         const keys = ['main', 'craft', 'science', 'summit'];
@@ -69,7 +87,7 @@ export const useGameStore = create(
           }
         });
 
-        return changed ? { islands: newIslands } : {};
+        return changed ? { islands: newIslands, unlockedBuildings: newUnlockedBuildings } : {};
       }),
       // ----------------------------------------------------
 
@@ -135,10 +153,10 @@ export const useGameStore = create(
         difficulty: 1,
         // Reset world map
         islands: {
-          'main': { solved: 0, total: 10, stars: 0, status: 'active' },
-          'craft': { solved: 0, total: 8, stars: 0, status: 'locked' },
-          'science': { solved: 0, total: 12, stars: 0, status: 'fog' },
-          'summit': { solved: 0, total: 4, stars: 0, status: 'fog' },
+          'main': { solved: 0, total: 17, stars: 0, status: 'active' },
+          'craft': { solved: 0, total: 13, stars: 0, status: 'locked' },
+          'science': { solved: 0, total: 0, stars: 0, status: 'fog' },
+          'summit': { solved: 0, total: 0, stars: 0, status: 'fog' },
         }
       }),
     }),

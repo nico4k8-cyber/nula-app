@@ -1,8 +1,9 @@
 import { getClaudeResponse } from "./_lib/ai-provider.js";
 import { getPersona } from "./_lib/personas.js";
+import { createClient } from "@supabase/supabase-js";
 
 export const config = {
-  runtime: 'edge', // Break out of the 10s Serverless limit!
+  runtime: 'edge',
 };
 
 const corsHeaders = {
@@ -12,39 +13,97 @@ const corsHeaders = {
   "Cache-Control": "no-store, max-age=0, must-revalidate",
 };
 
+// Логируем токены в Supabase (fire-and-forget, не блокирует ответ)
+function logUsage({ action, model, usage, userId }) {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!url || !key || !usage?.totalTokens) return;
+  // Стоимость: Gemini 2.0 Flash ~$0.075 / 1M токенов
+  const costUsd = (usage.totalTokens / 1_000_000) * 0.075;
+  const supabase = createClient(url, key);
+  supabase.from('token_usage').insert({
+    user_id: userId || null,
+    action,
+    model: model || 'gemini-2.0-flash',
+    prompt_tokens: usage.promptTokens || 0,
+    completion_tokens: usage.completionTokens || 0,
+    total_tokens: usage.totalTokens || 0,
+    cost_usd: costUsd,
+  }).then(({ error }) => { if (error) console.error('[token_usage log]', error); });
+}
+
 export default async function handler(req) {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
-
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { 
-      status: 405, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
   try {
     const body = await req.json();
-    const { userMessage, history = [], task, prizStep = 0 } = body;
+    const { action, userId } = body;
 
+    // ── Царь-гора: ответить да/нет ───────────────────────────────────────────
+    if (action === "twenty_q_answer") {
+      const { secretWord, question } = body;
+      if (!secretWord || !question) throw new Error("secretWord and question required");
+
+      const result = await getClaudeResponse({
+        userMessage: `Загаданное слово: "${secretWord}". Вопрос: "${question}". Отвечай строго одним словом: "Да" или "Нет".`,
+        history: [],
+        systemPromptOverride: `Ты ведущий игры "20 вопросов". Тебе известно загаданное слово. На вопрос отвечай ТОЛЬКО "Да" или "Нет" без объяснений.`,
+      });
+
+      logUsage({ action: 'twenty_q_answer', model: result.model, usage: result.usage, userId });
+
+      const raw = (result.text || '').trim();
+      const answer = raw.startsWith('Да') ? 'Да' : raw.startsWith('Нет') ? 'Нет' : (Math.random() > 0.5 ? 'Да' : 'Нет');
+      return new Response(JSON.stringify({ answer }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Бредогенератор: оценить изобретение ──────────────────────────────────
+    if (action === "evaluate_invention") {
+      const { item, itemHint, invention } = body;
+      if (!item || !invention) throw new Error("item and invention required");
+
+      const result = await getClaudeResponse({
+        userMessage: `Ребёнок придумал изобретение на основе предмета "${item}" (${itemHint || ''}): "${invention}". Оцени оригинальность от 5 до 30 (только число). Затем напиши краткую реакцию (1–2 предложения, с восхищением, для ребёнка 7–12 лет).`,
+        history: [],
+        systemPromptOverride: `Ты — весёлый изобретатель Уголёк, помощник детей. Оценивай детские идеи тепло и подбадривающе. Формат ответа: первая строка — число (оценка 5–30), вторая строка — реакция.`,
+      });
+
+      logUsage({ action: 'evaluate_invention', model: result.model, usage: result.usage, userId });
+
+      const lines = (result.text || '').trim().split('\n').filter(Boolean);
+      const scoreMatch = lines[0]?.match(/\d+/);
+      const score = scoreMatch ? Math.min(30, Math.max(5, parseInt(scoreMatch[0]))) : 15;
+      const reaction = lines.slice(1).join(' ').trim() || "Отличная идея! Уголёк записывает в копилочку 📜";
+
+      return new Response(JSON.stringify({ score, reaction }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Основной диалог ТРИЗ ──────────────────────────────────────────────────
+    const { userMessage, history = [], task, prizStep = 0 } = body;
     if (!userMessage || !task) {
       return new Response(JSON.stringify({ error: "userMessage and task are required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const result = await getClaudeResponse({
-      userMessage,
-      history: history, // Send full history if ai-provider wants to slice it
-      task,
-      prizStep,
-      _forceHaiku: true
+      userMessage, history, task, prizStep, _forceHaiku: true,
     });
 
-    const persona = getPersona(task.difficulty);
+    logUsage({ action: 'chat', model: result.model, usage: result.usage, userId });
 
+    const persona = getPersona(task.difficulty);
     return new Response(JSON.stringify({
       text: result.text,
       reply: result.text,
@@ -52,29 +111,20 @@ export default async function handler(req) {
       prizStep: result.prizStep || prizStep,
       personaId: persona.id,
       model: result.model,
-      _v: Date.now()
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+      _v: Date.now(),
+    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
-    console.error("[Ugolok Chat Error]:", err);
-    
-    // Если ошибка содержит наш маркер лимита (🛑), показываем ее напрямую ребенку!
-    const isLimitError = err.message && err.message.includes('🛑');
-    const customReply = isLimitError 
-       ? err.message.replace('Gemini API Error: Error: ', '') // очистка префиксов
-       : "Сетевая заминка. Обдумай свою мысль и отправь её ещё раз через минуту!";
-
-    return new Response(JSON.stringify({ 
-      error: "AI service error", 
+    console.error("[AI Master Error]:", err);
+    const isLimitError = err.message?.includes('🛑');
+    const customReply = isLimitError
+      ? err.message.replace('Gemini API Error: Error: ', '')
+      : "Сетевая заминка. Обдумай свою мысль и отправь ещё раз через минуту!";
+    return new Response(JSON.stringify({
+      error: "AI service error",
       reply: customReply,
       details: err.message,
-      _v: Date.now()
-    }), {
-      status: 503, // Can be caught by frontend to show friendly message
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+      _v: Date.now(),
+    }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 }

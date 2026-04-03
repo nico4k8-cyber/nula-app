@@ -86,45 +86,56 @@ export async function getClaudeResponse({
     }
 
     const historyText = history.length > 0 
-      ? history.slice(-6).map(m => `${m.role === "assistant" || m.from === "bot" ? "Уголек" : "Ребенок"}: ${m.text}`).join("\n")
+      ? history.slice(-6).map(m => `${m.role === "assistant" || m.from === "bot" ? "Орион" : "Ребенок"}: ${m.text}`).join("\n")
       : "(начало диалога)";
 
-    systemPrompt = `${persona.prompt}\n\n${taskContext}\n${stageHint}\n\nИСТОРИЯ (последние сообщения):\n${historyText}`;
+    // ИНСТРУКЦИЯ ПО КРАТКОСТИ:
+    systemPrompt = `${persona.prompt}\n\n${taskContext}\n${stageHint}\n\nКРАТКОСТЬ: Отвечай очень сжато (макс 2-3 предложения). Сразу к сути, без воды. Твоя цель — ПОМОЧЬ РЕШИТЬ, а не болтать.\n\nИСТОРИЯ:\n${historyText}`;
   }
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=${geminiKey}`, {
+    const polzaKey = process.env.POLZA_API_KEY;
+    if (!polzaKey) throw new Error("POLZA_API_KEY is not configured on the server");
+
+    const response = await fetch(`https://api.polza.ai/v1/chat/completions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${polzaKey}`
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${systemPrompt}\n\nСЕЙЧАС Пользователь пишет: ${userMessage}\n\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ НАСТАВНИКА! ЗАПРЕЩЕНО писать планы, черновики, цели или процесс размышления. СРАЗУ пиши текст от лица наставника и ОБЯЗАТЕЛЬНО поставь тег [ПРИЗ:X|⭐:N] В КОНЦЕ.` }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          { role: "system", content: `${systemPrompt}\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ НАСТАВНИКА! В КОНЦЕ ОБЯЗАТЕЛЬНО ПОСТАВЬ ТЕГ [ПРИЗ:X|⭐:N].` },
+          { role: "user", content: userMessage }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
       })
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      if (response.status === 429) {
-         throw new Error(`🛑 Ого, какое быстрое мышление! Наши вычислительные системы немного перегрелись от такого потока идей. Дай мне полминутки остыть, и отправь сообщение ещё раз! ⏳`);
-      }
-      throw new Error(`Gemini API Error: ${err}`);
+        const errText = await response.text();
+        throw new Error(`Polza API Error: ${errText}`);
     }
 
     const data = await response.json();
-    if (!data.candidates || !data.candidates[0].content) {
-        throw new Error("No candidates returned from Gemini");
-    }
-    const rawText = data.candidates[0].content.parts[0].text;
+    const rawText = data.choices[0].message.content;
     const { cleanText, stars, prizStep: newStep } = parseTag(rawText);
 
     return {
       text: cleanText,
       stars,
       prizStep: newStep || prizStep,
-      model: "gemma-4-31b-it"
+      model: "google/gemini-2.0-flash-001",
+      usage: {
+        promptTokens: data.usage?.prompt_tokens || 0,
+        completionTokens: data.usage?.completion_tokens || 0,
+        totalTokens: data.usage?.total_tokens || 0,
+      },
     };
   } catch (e) {
-    console.error("[Gemini Provider] Error:", e);
+    console.error("[Polza Provider] Error:", e);
     throw e;
   }
 }

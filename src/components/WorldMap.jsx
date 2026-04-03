@@ -163,10 +163,9 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
           backgroundRepeat: 'repeat-y',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          mixBlendMode: 'soft-light',
-          maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
-          opacity: 0.8,
+          maskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)',
+          opacity: 0.95,
           zIndex: 1
         }}
       />
@@ -174,7 +173,6 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
       <div 
         className="fixed inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at center, transparent 30%, rgba(2, 6, 23, 0.4) 100%)',
           zIndex: 2
         }}
       />
@@ -285,8 +283,8 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                </div>
             </div>
 
-            <button 
-              onClick={() => setSelectedLock(null)}
+            <button
+                    onClick={() => setSelectedLock(null)}
               className="btn-premium w-full text-lg uppercase tracking-wider"
             >
               {t?.('picker.locked_ok') || 'ПРИНЯТО! ✨'}

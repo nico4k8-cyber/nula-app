@@ -9,7 +9,7 @@ export default function TaskPreview({ task, onStart, onBack, t, lang }) {
       {/* Top Image Header */}
       <div className="relative h-[45vh] w-full overflow-hidden">
         <img 
-          src={task.imgUrl || "/assets/webp/main_island.webp"} 
+          src={task.image_url || task.imgUrl || "/assets/webp/main_island.webp"}
           className="w-full h-full object-cover"
           alt={title}
         />

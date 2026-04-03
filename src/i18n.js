@@ -46,10 +46,13 @@ export const translations = {
         city: "«В городе шум и суета. Помоги Мэру навести порядок с помощью логики!»",
         default: "«Каждая задача — это шанс проявить смекалку. Не гадай, ищи ресурсы!»"
       },
+      missions: "МИССИЯ",
       locked_title: "ОСТРОВ ЗАБЛОКИРОВАН",
       locked_desc: "Чтобы открыть этот регион, нужно решить ещё несколько задач на других островах.",
       locked_ok: "ПРИНЯТО! ✨"
     },
+    preview_tip: "Используй метод ПРИЗ, чтобы найти самое сильное решение этой задачи!",
+    start_solving: "К РЕШЕНИЮ",
     hud: {
        guest: "Гость",
        online: "В сети",
@@ -159,10 +162,13 @@ export const translations = {
         city: "«There is noise and fuss in the city. Help the Mayor restore order with logic!»",
         default: "«Every task is a chance to show your wit. Don't guess, look for resources!»"
       },
+      missions: "MISSION",
       locked_title: "ISLAND LOCKED",
       locked_desc: "To unlock this region, you need to solve more tasks on other islands.",
       locked_ok: "UNDERSTOOD! ✨"
     },
+    preview_tip: "Use the PRIZ method to find the strongest solution to this challenge!",
+    start_solving: "START SOLVING",
     hud: {
        guest: "Guest",
        online: "Online",
