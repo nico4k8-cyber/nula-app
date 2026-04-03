@@ -115,12 +115,14 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
       case 'fog': {
          const depth = Math.min(orderIndex * 1, 5);
          return { 
-           opacity: Math.max(0.6 - depth * 0.1, 0.1), 
+           opacity: Math.max(0.6 - depth * 0.1, 0.1),            
            filter: `blur(${Math.min(depth + 2, 6)}px)`,
-           transform: 'translateX(-50%) translateY(-50%)'
+           transform: 'translateX(-50%) translateY(-50%)',
+           border: 'none',
+           boxShadow: 'none'
          };
       }
-      default: return { transform: 'translateX(-50%) translateY(-50%)' };
+      default: return { transform: 'translateX(-50%) translateY(-50%)', border: 'none', boxShadow: 'none' };
     }
   };
 
@@ -195,8 +197,8 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                  </div>
                )}
 
-                <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-[1.5] active:scale-95 group/island">
-                    <div className={`island-img-wrapper transition-all duration-500 ${status !== 'fog' ? 'animate-float' : ''} group-hover/island:scale-110`} style={{ animationDelay: `${idx * 0.5}s` }}>
+                <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-[1.5] active:scale-95 group/island border-0 outline-none bg-transparent">
+                    <div className={`island-img-wrapper transition-all duration-500 ${status !== 'fog' ? 'animate-float' : ''} group-hover/island:scale-110 border-0 outline-none`} style={{ animationDelay: `${idx * 0.5}s` }}>
                      <img 
                        src={config.icon} 
                        onLoad={updatePaths}
