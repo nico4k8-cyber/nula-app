@@ -175,8 +175,19 @@ export default function App() {
   /* ═══ Handlers ═══ */
 
   function startTaskPreview(taskKey) {
-    const tDef = TASKS.find(t => t.id === taskKey);
-    if (!tDef) return;
+    // 1. Сначала ищем четко по ID
+    let tDef = TASKS.find(t => String(t.id) === String(taskKey));
+    
+    // 2. Если не нашли, то ищем первую задачу в категории (здании)
+    if (!tDef) {
+       tDef = TASKS.find(t => t.category === taskKey);
+    }
+
+    if (!tDef) {
+       console.error("Task not found for key:", taskKey);
+       return;
+    }
+    
     setTask(tDef);
     setPhase("task-preview");
   }
