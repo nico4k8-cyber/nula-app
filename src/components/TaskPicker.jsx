@@ -19,7 +19,7 @@ export default function TaskPicker({
   return (
     <div className="flex flex-col flex-1 bg-gray-50/30 overflow-hidden animate-fade-in">
       {/* Header / Navigation */}
-      <div className={`p-6 pb-12 pt-10 text-white relative shadow-2xl transition-all duration-700
+      <div className={`p-6 pb-12 pt-32 text-white relative shadow-2xl transition-all duration-700
         ${activeCategory === 'library' ? 'bg-gradient-to-br from-amber-600 to-orange-800 border-b-4 border-amber-800' : 
           activeCategory === 'farm' ? 'bg-gradient-to-br from-emerald-600 to-green-900 border-b-4 border-emerald-900' :
           activeCategory === 'nature-reserve' ? 'bg-gradient-to-br from-teal-500 to-emerald-800 border-b-4 border-teal-900' :
@@ -28,7 +28,7 @@ export default function TaskPicker({
       `}>
         <button 
           onClick={onBack}
-          className="absolute top-6 left-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-[13px] font-black uppercase tracking-widest transition-all active:scale-95"
+          className="absolute top-28 left-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-[13px] font-black uppercase tracking-widest transition-all active:scale-95"
         >
           ← НА ОСТРОВ
         </button>

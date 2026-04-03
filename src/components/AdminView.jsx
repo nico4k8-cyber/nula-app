@@ -110,7 +110,7 @@ export default function AdminView({ TASKS, onBack, t }) {
   return (
     <div className="flex flex-col h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* Header */}
-      <div className="p-6 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 flex items-center justify-between z-20">
+      <div className="p-6 pt-28 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 flex items-center justify-between z-20">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xl hover:bg-slate-700 transition-colors">
             ←
