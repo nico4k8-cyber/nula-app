@@ -16,6 +16,13 @@ export const useGameStore = create(
       dailyTasksCount: 0,
       lastTaskReset: null, // ISO string
 
+      // ---- STREAK ----
+      streak: 0,
+      lastPlayDate: null, // YYYY-MM-DD
+
+      // ---- UPSELL ----
+      upsellShownAt: [], // массив completedTasks.length при которых показывали
+
       // ---- СТРУКТУРА ДЛЯ РЕЖИМА WORLD MAP (АРХИПЕЛАГИ) ----
       islands: {
         'main': { solved: 0, total: 17, stars: 0, status: 'active' }, // library(6) + city-hall(6) + nature-reserve(5)
@@ -91,6 +98,18 @@ export const useGameStore = create(
       }),
       // ----------------------------------------------------
 
+      updateStreak: () => set((state) => {
+        const today = new Date().toISOString().slice(0, 10);
+        if (state.lastPlayDate === today) return {}; // уже сегодня играли
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        const newStreak = state.lastPlayDate === yesterday ? state.streak + 1 : 1;
+        return { streak: newStreak, lastPlayDate: today };
+      }),
+
+      markUpsellShown: (count) => set((state) => ({
+        upsellShownAt: [...state.upsellShownAt, count],
+      })),
+
       setTotalStars: (stars) => set({ totalStars: stars }),
       addStars: (amount) => set((state) => {
         const nextStars = state.totalStars + amount;
@@ -151,6 +170,9 @@ export const useGameStore = create(
         completedTasks: [],
         currentTask: null,
         difficulty: 1,
+        streak: 0,
+        lastPlayDate: null,
+        upsellShownAt: [],
         // Reset world map
         islands: {
           'main': { solved: 0, total: 17, stars: 0, status: 'active' },

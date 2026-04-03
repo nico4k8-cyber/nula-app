@@ -29,6 +29,7 @@ import AdminView from "./components/AdminView";
 import Paywall from "./components/Paywall";
 import BredomakerView from "./components/BredomakerView";
 import TsarMountainView from "./components/TsarMountainView";
+import UpsellView, { getUpsellMessage } from "./components/UpsellView";
 
 // Utils
 import { 
@@ -65,10 +66,11 @@ function saveGlobalState(data) {
 /* ═══ Main App Orchestrator ═══ */
 export default function App() {
   const saved = loadInitialState();
-  const { 
+  const {
     totalStars, completedTasks, completeTask, resetGame,
     difficulty, user, setUser, dailyTasksCount, isPremium, resetDailyCountIfNeeded,
-    islands, unlockRequirements, checkUnlocks, unlockedBuildings
+    islands, unlockRequirements, checkUnlocks, unlockedBuildings,
+    streak, updateStreak, upsellShownAt, markUpsellShown,
   } = useGameStore();
 
   // Navigation & UI State
@@ -90,6 +92,7 @@ export default function App() {
   const [twistChoice, setTwistChoice] = useState(null);
   const [prizStep, setPrizStep] = useState(0);
   const [bingoFlash, setBingoFlash] = useState(false);
+  const [upsellMessage, setUpsellMessage] = useState(null);
   
   // Modals & Overlays
   const [menuOpen, setMenuOpen] = useState(false);
@@ -260,7 +263,14 @@ export default function App() {
   function goOutcome() {
     const isNew = !completedTasks.includes(task.id);
     completeTask(task.id, sessionStars);
+    updateStreak();
     if (isNew) {
+      const nextCount = completedTasks.length + 1;
+      const upsell = getUpsellMessage(nextCount, upsellShownAt);
+      if (upsell) {
+        markUpsellShown(upsell.trigger);
+        setTimeout(() => setUpsellMessage(upsell), 2000);
+      }
       setUnlockedBuildingId(task.id);
       setTimeout(() => { setUnlockedBuildingId(null); setPhase("outcome"); }, 2500);
     } else setPhase("outcome");
@@ -272,29 +282,44 @@ export default function App() {
   return (
     <div className="min-h-[100dvh] flex flex-col items-center bg-slate-900 overflow-hidden" data-theme={theme}>
       {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} t={t} />}
+      {upsellMessage && (
+        <UpsellView
+          message={upsellMessage}
+          onDismiss={() => setUpsellMessage(null)}
+          onSignup={() => { setUpsellMessage(null); window.open("https://t.me/ugolok_triz", "_blank"); }}
+        />
+      )}
 
       <div className={`w-full ${phase === 'admin' ? 'max-w-[1920px]' : 'max-w-md'} h-full flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800`}>
-        
+
         {renderHUD && (
-          <div 
-            className="fixed top-6 right-6 z-50 cursor-pointer active:scale-95 transition-transform"
-            onClick={() => setMenuOpen(true)}
-            title={user ? user.name : t('hud.guest')}
-          >
+          <div className="fixed top-6 right-6 z-50 flex items-center gap-2">
+            {/* Стрик */}
+            {streak >= 2 && (
+              <div className="flex items-center gap-1 bg-orange-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg shadow-orange-900/30">
+                🔥 {streak}
+              </div>
+            )}
+            <div
+              className="cursor-pointer active:scale-95 transition-transform"
+              onClick={() => setMenuOpen(true)}
+              title={user ? user.name : t('hud.guest')}
+            >
             <div className="relative">
               {/* Круглая кнопка аватара */}
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl shadow-xl border-2 border-white/20">
                 {user ? '👤' : '☁️'}
               </div>
-              
+
               {/* Точка статуса онлайн/офлайн */}
-              <div 
+              <div
                 className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${user ? 'bg-emerald-400' : 'bg-rose-400'} shadow-sm`} 
               />
             </div>
+            </div>
           </div>
         )}
-        
+
         {phase === "dragon-splash" && (
           <DragonSplashScreen t={t} onAnimationEnd={() => {
             audio.playTrack(0);

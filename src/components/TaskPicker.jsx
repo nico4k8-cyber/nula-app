@@ -9,7 +9,11 @@ export default function TaskPicker({
   t,
   lang = 'ru'
 }) {
-  const filtered = TASKS.filter(taskItem => taskItem.category === activeCategory);
+  const filtered = TASKS
+    .filter(taskItem => taskItem.category === activeCategory)
+    .sort((a, b) => (a.difficulty || 1) - (b.difficulty || 1));
+
+  const doneCount = filtered.filter(t => completedTasks.includes(t.id)).length;
 
   const getTitle = (taskItem) => {
     if (lang === 'en' && taskItem.title_en) return taskItem.title_en;
@@ -47,6 +51,20 @@ export default function TaskPicker({
            <p className="text-white/70 font-bold text-xs uppercase tracking-[0.2em]">
               {t('picker.choose')}
            </p>
+           {filtered.length > 0 && (
+             <div className="mt-4 mx-auto max-w-[200px]">
+               <div className="flex justify-between text-white/60 text-[10px] font-black uppercase mb-1.5">
+                 <span>Решено</span>
+                 <span>{doneCount} / {filtered.length}</span>
+               </div>
+               <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
+                 <div
+                   className="h-full bg-white rounded-full transition-all duration-700"
+                   style={{ width: `${filtered.length > 0 ? (doneCount / filtered.length) * 100 : 0}%` }}
+                 />
+               </div>
+             </div>
+           )}
         </div>
 
         {/* Decorative Curve */}
