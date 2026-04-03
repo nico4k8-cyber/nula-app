@@ -12,7 +12,14 @@ export default function SettingsMenu({
   setLang, 
   t 
 }) {
-  const { user } = useGameStore();
+  const { user, setUser } = useGameStore();
+
+  const handleNameChange = (e) => {
+    if (setUser) {
+      setUser({ ...user, name: e.target.value });
+    }
+  };
+
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -25,9 +32,9 @@ export default function SettingsMenu({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center">
       <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full bg-white rounded-t-[48px] p-8 pb-12 flex flex-col gap-6 shadow-2xl animate-fade-in-up border-t border-slate-100">
+      <div className="relative w-full max-w-md bg-white rounded-t-[48px] p-8 pb-12 flex flex-col gap-6 shadow-2xl animate-fade-in-up border-t border-slate-100">
         <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto -mt-4 mb-2" />
         
         <div className="flex flex-col gap-4">
@@ -50,9 +57,15 @@ export default function SettingsMenu({
               <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg">
                 👤
               </div>
-              <div className="flex-1 text-left">
-                 <h3 className="text-slate-900 font-black text-lg uppercase tracking-tight">{user.name || t('hud.guest')}</h3>
-                 <p className="text-emerald-600 text-xs font-black uppercase tracking-widest">{t('cloud_sync')}</p>
+              <div className="flex-1 text-left flex flex-col justify-center">
+                 <input 
+                    type="text" 
+                    value={user?.name || ""} 
+                    onChange={handleNameChange}
+                    className="bg-transparent font-black text-lg uppercase tracking-tight text-slate-900 outline-none w-full placeholder-slate-400"
+                    placeholder={t('hud.guest')}
+                 />
+                 <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest">{t('cloud_sync')}</p>
               </div>
               <button 
                 onClick={() => { if(confirm("Выйти?")) supabase.auth.signOut().then(() => window.location.reload()); }}
@@ -94,11 +107,13 @@ export default function SettingsMenu({
             <span className="text-white/20 text-2xl group-hover:translate-x-2 transition-transform">→</span>
           </button>
 
-          <button onClick={() => { window.__openAdmin = true; onClose(); }}
-            className="w-full text-center py-4 text-indigo-400 font-black text-[12px] uppercase tracking-widest hover:text-indigo-300 transition-all mt-4 border-2 border-indigo-900/10 rounded-2xl"
-          >
-            🛠️ Админка задач
-          </button>
+          {user?.name === "DragonAdmin" && (
+            <button onClick={() => { window.__openAdmin = true; onClose(); }}
+              className="w-full text-center py-4 text-indigo-400 font-black text-[12px] uppercase tracking-widest hover:text-indigo-300 transition-all mt-4 border-2 border-indigo-900/10 rounded-2xl"
+            >
+              🛠️ Админка задач
+            </button>
+          )}
 
           <button onClick={() => {
             if (confirm("Вы уверены? Весь прогресс и звёзды будут удалены.")) {

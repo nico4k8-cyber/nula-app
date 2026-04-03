@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import WorldMap from './components/WorldMap';
 import { ISLAND_MAPPING } from './utils/gameUtils';
 
 export default function City({ 
   onSelectBuilding, t, onLogoClick, 
   user, totalStars, completedTasks, islands, unlockRequirements,
-  checkUnlocks
+  checkUnlocks, activeIslandId, setActiveIslandId
 }) {
-  const [selectedIslandId, setSelectedIslandId] = useState(null);
+  const selectedIslandId = activeIslandId;
+  const setSelectedIslandId = setActiveIslandId;
 
   useEffect(() => {
     checkUnlocks();

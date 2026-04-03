@@ -92,6 +92,7 @@ export default function App() {
   const [pendingAction, setPendingAction] = useState(null);
   const [activeCategory, setActiveCategory] = useState("library");
   const [unlockedBuildingId, setUnlockedBuildingId] = useState(null);
+  const [activeIslandId, setActiveIslandId] = useState(null);
   
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -247,6 +248,8 @@ export default function App() {
             checkUnlocks={checkUnlocks}
             onLogoClick={() => setMenuOpen(true)}
             onSelectBuilding={(bId) => { setActiveCategory(bId); setPhase("picker"); }}
+            activeIslandId={activeIslandId}
+            setActiveIslandId={setActiveIslandId}
           />
         )}
 
@@ -330,7 +333,7 @@ export default function App() {
       </div>
 
       <SettingsMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onResetProgress={() => resetGame()}
-        completedTasks={completedTasks} audio={audio} audioTracks={AUDIO_TRACKS} lang={lang} setLang={setLang} t={t}
+        completedTasks={completedTasks} audio={audio} audioTracks={AUDIO_TRACKS} lang={lang} setLang={setLang} t={t} user={user} setUser={setUser}
       />
 
       {/* NEW: Centered & Thematic Exit Confirmation Dialog */}
