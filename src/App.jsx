@@ -64,7 +64,7 @@ export default function App() {
   const { 
     totalStars, completedTasks, completeTask, resetGame,
     difficulty, user, setUser, dailyTasksCount, isPremium, resetDailyCountIfNeeded,
-    islands, unlockRequirements, checkUnlocks
+    islands, unlockRequirements, checkUnlocks, unlockedBuildings
   } = useGameStore();
 
   // Navigation & UI State
