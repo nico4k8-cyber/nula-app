@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 
 const ASSETS_TO_PRELOAD = [
-  "/assets/webm/main_island.webm",
-  "/assets/webm/island_zapovednik.webm",
-  "/assets/webm/island_laboratory.webm",
-  "/assets/webm/island_tsar.webm",
-  "/assets/webm/avatar.webm",
+  "/assets/webp/main_island.webp",
+  "/assets/webp/island_zapovednik.webp",
+  "/assets/webp/island_laboratory.webp",
+  "/assets/webp/island_tsar.webp",
+  "/assets/webp/avatar.webp",
   "/img/ugolok_3d.webp",
   "/img/splash_bg.webp",
   "/img/cloud.webp"
