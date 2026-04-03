@@ -79,7 +79,7 @@ export async function getClaudeResponse({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${systemPrompt}\n\nСЕЙЧАС Ребенок пишет: ${userMessage}\n\nОТВЕТЬ В СТИЛЕ УГОЛЬКА И ОБЯЗАТЕЛЬНО ПОСТАВЬ ТЕГ [ПРИЗ:X|⭐:N] В КОНЦЕ.` }] }],
+        contents: [{ parts: [{ text: `${systemPrompt}\n\nСЕЙЧАС Ребенок пишет: ${userMessage}\n\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ УГОЛЬКА! ЗАПРЕЩЕНО писать планы, черновики, цели или процесс размышления. СРАЗУ пиши текст от лица Уголька и ОБЯЗАТЕЛЬНО поставь тег [ПРИЗ:X|⭐:N] В КОНЦЕ.` }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
       })
     });

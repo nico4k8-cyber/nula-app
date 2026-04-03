@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import PhaseIndicator from "./PhaseIndicator";
 import ResourceButtons from "./ResourceButtons";
 
@@ -21,8 +21,81 @@ export default function DialogView({
   bottomRef,
   childMsgCount,
   bingoFlash,
-  t
+  t,
+  lang
 }) {
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch(e) {}
+      }
+    };
+  }, []);
+
+  const toggleMic = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch(e){}
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(t?.('dialog.no_mic') || "Голосовой ввод недоступен в вашем браузере (попробуйте Chrome или Safari).");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = lang === 'en' ? 'en-US' : 'ru-RU';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onstart = () => setIsListening(true);
+    
+    let baseInput = input.trim() ? input.trim() + " " : "";
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      let interimTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+      
+      if (finalTranscript) {
+         baseInput += finalTranscript + " ";
+         setInput(baseInput);
+      } else if (interimTranscript) {
+         setInput(baseInput + interimTranscript);
+      }
+    };
+
+    recognition.onerror = (e) => {
+      console.error(e);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch(e) {
+      console.error("Mic start failed", e);
+    }
+  };
+
   const isTriz = (t) => t?.core_problem && t?.ikr && t?.resources;
 
   return (
@@ -149,16 +222,28 @@ export default function DialogView({
         )}
 
         {/* Chat Input */}
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={toggleMic}
+            className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center transition-all ${
+              isListening ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-200" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+            }`}
+          >
+            🎤
+          </button>
+          
           <input
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && !e.shiftKey && onSendMessage()}
-            placeholder={t?.('dialog.placeholder') || 'Напиши свою идею...'}
-            className="flex-1 bg-slate-100 border-2 border-transparent focus:border-orange-200 focus:bg-white rounded-[24px] px-6 py-4 text-[16px] outline-none transition-all placeholder:text-slate-400 font-medium shadow-inner"
+            onKeyDown={e => e.key === "Enter" && !e.shiftKey && !isListening && onSendMessage()}
+            placeholder={isListening ? "Говорите..." : (t?.('dialog.placeholder') || 'Напиши свою идею...')}
+            className={`flex-1 border-2 bg-slate-100 rounded-[24px] px-5 py-4 text-[16px] outline-none transition-all font-medium ${
+              isListening ? "border-red-400 placeholder:text-red-300 shadow-inner" : "border-transparent focus:border-orange-200 focus:bg-white placeholder:text-slate-400 shadow-inner"
+            }`}
             disabled={isTyping}
           />
+          
           <button
             onClick={onSendMessage}
             disabled={!input.trim() || isTyping}
