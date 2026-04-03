@@ -60,9 +60,16 @@ export default async function handler(req) {
 
   } catch (err) {
     console.error("[Ugolok Chat Error]:", err);
+    
+    // Если ошибка содержит наш маркер лимита (🛑), показываем ее напрямую ребенку!
+    const isLimitError = err.message && err.message.includes('🛑');
+    const customReply = isLimitError 
+       ? err.message.replace('Gemini API Error: Error: ', '') // очистка префиксов
+       : "Уголёк задумался слишком глубоко. Давай попробуем ещё раз через минуту!";
+
     return new Response(JSON.stringify({ 
       error: "AI service error", 
-      reply: "Уголёк задумался слишком глубоко. Давай попробуем ещё раз через минуту!",
+      reply: customReply,
       details: err.message,
       _v: Date.now()
     }), {

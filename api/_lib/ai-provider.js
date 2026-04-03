@@ -75,7 +75,7 @@ export async function getClaudeResponse({
   }
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -86,6 +86,9 @@ export async function getClaudeResponse({
 
     if (!response.ok) {
       const err = await response.text();
+      if (response.status === 429) {
+         throw new Error(`🛑 Слишком быстро! Гугл-лимиты бесплатных серверов просят подождать 30 секунд. Переведи дух и нажми еще раз!`);
+      }
       throw new Error(`Gemini API Error: ${err}`);
     }
 
@@ -100,7 +103,7 @@ export async function getClaudeResponse({
       text: cleanText,
       stars,
       prizStep: newStep || prizStep,
-      model: "gemini-1.5-flash-latest"
+      model: "gemini-2.0-flash"
     };
   } catch (e) {
     console.error("[Gemini Provider] Error:", e);

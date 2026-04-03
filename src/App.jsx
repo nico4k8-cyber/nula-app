@@ -240,7 +240,7 @@ export default function App() {
   }
 
   /* ─── Render ─── */
-  const renderHUD = (phase === "city" || phase === "picker" || phase === "admin");
+  const renderHUD = (phase !== "dragon-splash" && phase !== "auth");
   
   return (
     <div className="min-h-screen flex flex-col items-center" data-theme={theme}>
