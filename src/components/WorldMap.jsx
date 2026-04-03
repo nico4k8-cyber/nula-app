@@ -211,8 +211,8 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                      />
                      
                      {status === 'locked' && (
-                       <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/40 backdrop-blur-[1px] rounded-full scale-50 border border-white/5">
-                         <span className="text-3xl filter drop-shadow-md">🔒</span>
+                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center bg-slate-900/60 shadow-xl backdrop-blur-md rounded-full w-12 h-12 border border-white/10 filter drop-shadow-md">
+                         <span className="text-2xl pt-1">🔒</span>
                        </div>
                      )}
                    </div>
