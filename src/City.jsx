@@ -107,10 +107,13 @@ export default function City({
               </div>
               
               <div className="p-6 bg-slate-50 flex justify-center border-t border-slate-100">
-                 <button onClick={() => setSelectedIslandId(null)} className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">
-                    {t('world_map')}
-                 </button>
-              </div>
+                   <button 
+                     onClick={() => setSelectedIslandId(null)} 
+                     className="px-8 py-3 bg-slate-200 hover:bg-slate-300 rounded-full text-[11px] font-black uppercase tracking-widest text-slate-600 transition-all active:scale-95"
+                   >
+                      {t('world_map')}
+                   </button>
+                </div>
             </div>
           </div>
         )}
