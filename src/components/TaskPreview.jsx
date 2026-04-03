@@ -60,7 +60,7 @@ export default function TaskPreview({ task, onStart, onBack, t, lang }) {
       <div className="fixed bottom-0 inset-x-0 p-8 bg-gradient-to-t from-white via-white to-transparent pointer-events-none">
         <button 
           onClick={onStart}
-          className="w-full bg-gradient-to-br from-orange-400 to-orange-600 text-white py-5 rounded-[24px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-orange-200 active:scale-95 transition-all pointer-events-auto flex items-center justify-center gap-3"
+          className="btn-premium pointer-events-auto"
         >
           {t?.('start_solving') || 'К РЕШЕНИЮ'}
           <span className="text-xl">🚀</span>

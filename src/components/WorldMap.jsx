@@ -160,7 +160,7 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
         style={{ 
           height: '3500px', 
           top: 0, 
-          transform: `translateY(${-scrollTop * 0.5}px)`,
+          transform: `translateY(${-scrollTop * 0.2}px)`,
           backgroundImage: 'url(/img/cloud.webp)',
           backgroundRepeat: 'repeat-y',
           backgroundSize: '100% auto',

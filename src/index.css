@@ -106,16 +106,16 @@
     border: none !important;
   }
 
-  .island-glow {
-    @apply absolute inset-0 rounded-full blur-[60px] opacity-20 transition-opacity duration-700;
-    background: radial-gradient(circle, var(--color-indigo) 0%, transparent 70%);
-  }
-  .btn-tactile {
-    @apply px-10 py-5 bg-gradient-to-r from-indigo-500 to-indigo-600 
-           text-white font-black text-lg uppercase tracking-wider rounded-[24px] 
-           shadow-[0_8px_0_rgb(67,56,202)] border-b-4 border-indigo-700
+  .btn-premium {
+    @apply w-full py-5 bg-gradient-to-br from-orange-400 to-orange-600 
+           text-white font-black text-lg uppercase tracking-[0.2em] rounded-[24px] 
+           shadow-[0_8px_0_rgb(194,65,12)] border-b-4 border-orange-700
            transition-all active:translate-y-1 active:shadow-none hover:scale-[1.02]
            flex items-center justify-center gap-3 drop-shadow-xl;
+  }
+  
+  .btn-tactile {
+    @apply btn-premium;
   }
 
   .btn-secondary {

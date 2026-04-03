@@ -8,15 +8,20 @@ export default function DragonBubbleScreen({ onStart, t, theme }) {
 
   useEffect(() => {
     let index = 0;
-    const timer = setInterval(() => {
-      if (index < fullText.length) {
-        setDisplayedText(fullText.substring(0, index + 1));
-        index++;
-      } else {
-        clearInterval(timer);
-      }
-    }, 20);
-    return () => clearInterval(timer);
+    // Задержка перед печатанием текста, чтобы картинка успела появиться
+    const startDelay = setTimeout(() => {
+      const timer = setInterval(() => {
+        if (index < fullText.length) {
+          setDisplayedText(fullText.substring(0, index + 1));
+          index++;
+        } else {
+          clearInterval(timer);
+        }
+      }, 20);
+      return () => clearInterval(timer);
+    }, 800);
+
+    return () => clearTimeout(startDelay);
   }, [fullText]);
 
   return (
