@@ -196,13 +196,13 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                )}
 
                 <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-[1.5] active:scale-95 group/island">
-                   <div className={`island-img-wrapper transition-all duration-500 ${status !== 'fog' ? 'animate-float' : ''} group-hover/island:drop-shadow-[0_35px_60px_rgba(0,0,0,0.3)]`} style={{ animationDelay: `${idx * 0.5}s` }}>
+                    <div className={`island-img-wrapper transition-all duration-500 ${status !== 'fog' ? 'animate-float' : ''} group-hover/island:scale-110`} style={{ animationDelay: `${idx * 0.5}s` }}>
                      <img 
                        src={config.icon} 
                        onLoad={updatePaths}
-                       className={`w-[130px] h-[130px] object-contain transition-all duration-700
-                         ${status === 'active' ? 'drop-shadow-2xl scale-110' : 'drop-shadow-xl'}
-                         ${status === 'fog' ? 'grayscale opacity-20' : ''}
+                       className={`w-[130px] h-[130px] object-contain transition-all duration-700 pointer-events-none Antialiased
+                         ${status === 'active' ? 'scale-110' : 'scale-100'}
+                         ${status === 'fog' ? 'grayscale opacity-20' : 'opacity-100'}
                        `}
                        alt={config.name}
                      />
