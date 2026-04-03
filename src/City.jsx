@@ -17,8 +17,8 @@ export default function City({
   const islandData = selectedIslandId ? ISLAND_MAPPING[selectedIslandId] : null;
 
   return (
-    <div className="flex flex-col flex-1 min-h-screen relative bg-slate-900 overflow-hidden">
-      <div className="w-full flex-1">
+    <div className="flex flex-col flex-1 min-h-screen relative bg-sky-300 overflow-hidden">
+      <div className="w-full h-full">
         {!selectedIslandId ? (
           <WorldMap 
             islands={islands}
