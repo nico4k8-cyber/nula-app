@@ -124,6 +124,7 @@ export default function SettingsMenu({
             if (confirm("Вы уверены? Весь прогресс и звёзды будут удалены.")) {
                onResetProgress();
                onClose();
+               setTimeout(() => window.location.reload(), 300);
             }
           }}
             className="w-full text-center py-4 text-slate-300 font-bold text-[12px] uppercase tracking-widest hover:text-red-500 transition-all mt-4"
