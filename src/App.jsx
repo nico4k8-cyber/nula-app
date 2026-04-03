@@ -175,12 +175,19 @@ export default function App() {
   /* ═══ Handlers ═══ */
 
   function startTaskPreview(taskKey) {
-    // 1. Сначала ищем четко по ID
+    if (taskKey === null || taskKey === undefined) return;
+    
+    // 1. Сначала ищем четко по ID (обрабатываем и числа, и строки)
     let tDef = TASKS.find(t => String(t.id) === String(taskKey));
     
-    // 2. Если не нашли, то ищем первую задачу в категории (здании)
+    // 2. Если не нашли по ID (может пришел 0 из-за индекса), ищем по категории
     if (!tDef) {
        tDef = TASKS.find(t => t.category === taskKey);
+    }
+    
+    // 3. Если всё еще не нашли, берем первую задачу как дефолтную (защита от '0')
+    if (!tDef && (taskKey === 0 || taskKey === "0")) {
+       tDef = TASKS[0];
     }
 
     if (!tDef) {

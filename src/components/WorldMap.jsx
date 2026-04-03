@@ -164,6 +164,8 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           mixBlendMode: 'soft-light',
+          maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
           opacity: 0.8,
           zIndex: 1
         }}
