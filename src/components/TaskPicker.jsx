@@ -30,7 +30,7 @@ export default function TaskPicker({
           onClick={onBack}
           className="absolute top-6 left-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-[13px] font-black uppercase tracking-widest transition-all active:scale-95"
         >
-          {t('picker.back')}
+          ← НА ОСТРОВ
         </button>
         
         <div className="mt-8 text-center" style={{ viewTransitionName: 'building-header' }}>
@@ -56,7 +56,7 @@ export default function TaskPicker({
       {/* Mentor Bubble (Coal) */}
       <div className="px-6 mb-2 -mt-4 relative z-10 animate-fade-in-up">
          <div className="bg-white rounded-[32px] p-6 shadow-xl border border-orange-100 flex gap-4 items-center max-w-[500px] mx-auto transition-transform hover:scale-[1.02]">
-            <img src="./img/ugolok_3d.webp" alt="Уголёк" className="w-16 h-16 rounded-full object-cover border-2 border-orange-200 flex-shrink-0" />
+            <img src="/img/webp/ugolok.webp" alt="Уголёк" className="w-16 h-16 rounded-full object-cover border-2 border-orange-200 flex-shrink-0" />
             <div className="flex-1">
                <p className="text-[14px] text-slate-800 font-bold leading-tight italic">
                   {t(`picker.mentor.${activeCategory === 'library' || activeCategory === 'farm' || activeCategory === 'city-hall' ? activeCategory : 'default'}`)}

@@ -5,8 +5,7 @@ const ASSETS_TO_PRELOAD = [
   "/assets/webp/island_zapovednik.webp",
   "/assets/webp/island_laboratory.webp",
   "/assets/webp/island_tsar.webp",
-  "/assets/webp/avatar.webp",
-  "/img/ugolok_3d.webp",
+  "/img/webp/ugolok.webp",
   "/img/splash_bg.webp",
   "/img/cloud.webp"
 ];
