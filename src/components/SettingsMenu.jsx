@@ -41,14 +41,14 @@ export default function SettingsMenu({
           {!user ? (
             <button 
               onClick={handleLogin}
-              className="w-full bg-indigo-600 p-6 rounded-[32px] flex items-center gap-6 group transition-all active:scale-95 shadow-lg hover:shadow-indigo-200"
+              className="btn-premium"
             >
               <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform">
                 ☁️
               </div>
               <div className="flex-1 text-left">
                  <h3 className="text-white font-black text-lg uppercase tracking-tight">{t('save_progress')}</h3>
-                 <p className="text-white/60 text-xs font-bold uppercase tracking-widest">{t('login_google')}</p>
+                 <p className="text-white/10 text-xs font-bold uppercase tracking-widest">{t('login_google')}</p>
               </div>
               <span className="text-white/40 text-2xl group-hover:translate-x-2 transition-transform">→</span>
             </button>
@@ -102,7 +102,7 @@ export default function SettingsMenu({
           </div>
 
           <button onClick={() => { window.__openCity = true; onClose(); }}
-            className="w-full text-left px-8 py-6 rounded-[32px] bg-slate-900 text-white flex items-center gap-6 transition-all active:scale-[0.98] group"
+            className="btn-premium"
           >
             <span className="text-3xl transition-transform group-hover:scale-110">🗺️</span>
             <div className="flex-1">

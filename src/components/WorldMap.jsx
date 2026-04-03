@@ -109,21 +109,22 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
 
   const getIslandStyle = (status, orderIndex) => {
     switch (status) {
-      case 'completed': return { opacity: 1, filter: 'none' };
-      case 'active': return { opacity: 1, filter: 'none', transform: 'translateX(-50%) translateY(-50%) scale(1.15)' };
-      case 'locked': return { opacity: 0.9, filter: 'none', transform: 'translateX(-50%) translateY(-50%)' };
+      case 'completed': return { opacity: 1, filter: 'none', backfaceVisibility: 'hidden', transform: 'translateX(-50%) translateY(-50%) translateZ(0)' };
+      case 'active': return { opacity: 1, filter: 'none', transform: 'translateX(-50%) translateY(-50%) scale(1.15) translateZ(0)', backfaceVisibility: 'hidden' };
+      case 'locked': return { opacity: 1, filter: 'none', transform: 'translateX(-50%) translateY(-50%) translateZ(0)', backfaceVisibility: 'hidden' };
       case 'fog': {
-         const depth = Math.min(orderIndex * 1, 5);
          return { 
-           opacity: 0.8,
-           filter: 'blur(1px)',
-           transform: 'translateX(-50%) translateY(-50%)',
+           opacity: 1,
+           filter: 'grayscale(0.1) blur(0.5px)',
+           transform: 'translateX(-50%) translateY(-50%) translateZ(0)',
+           WebkitBackfaceVisibility: 'hidden',
+           backfaceVisibility: 'hidden',
            border: 'none',
            boxShadow: 'none',
            outline: 'none'
          };
       }
-      default: return { transform: 'translateX(-50%) translateY(-50%)', border: 'none', boxShadow: 'none' };
+      default: return { transform: 'translateX(-50%) translateY(-50%) translateZ(0)', backfaceVisibility: 'hidden', border: 'none', boxShadow: 'none' };
     }
   };
 
@@ -147,24 +148,32 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
       onScroll={handleScroll}
       className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden overscroll-none bg-sky-300 select-none scrollbar-hide"
     >
-      {/* Background Decor */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <div className="absolute top-[20%] left-[-10%] w-[60%] h-[40%] bg-indigo-600/20 blur-[150px] animate-pulse-soft" />
         <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] bg-violet-600/20 blur-[150px] animate-pulse-soft" style={{ animationDelay: '3s' }} />
       </div>
 
-      {/* Cloud Substrate (Interscroller/Parallax) */}
-      {/* Cloud Substrate (Interscroller/Parallax) */}
       <div 
-        className="absolute inset-x-0 w-full pointer-events-none opacity-50 will-change-transform"
+        className="absolute inset-x-0 w-full pointer-events-none will-change-transform"
         style={{ 
-          height: '3500px', 
+          height: '6000px', 
           top: 0, 
           transform: `translateY(${-scrollTop * 0.2}px)`,
           backgroundImage: 'url(/img/cloud.webp)',
           backgroundRepeat: 'repeat-y',
-          backgroundSize: '100% auto',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          mixBlendMode: 'soft-light',
+          opacity: 0.8,
           zIndex: 1
+        }}
+      />
+      
+      <div 
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at center, transparent 30%, rgba(2, 6, 23, 0.4) 100%)',
+          zIndex: 2
         }}
       />
 
@@ -191,7 +200,6 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
               style={{ ...style, left: config.left, top: config.top, zIndex: 10 + idx }}
               onClick={() => handleIslandClick(config.id, status)}
             >
-               {/* Static Shadow on Clouds */}
                {status !== 'fog' && (
                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[15px] z-[-1] pointer-events-none flex flex-col items-center justify-center">
                     <div className="absolute w-24 h-6 bg-black/40 blur-[8px] rounded-[100%]" />
@@ -200,15 +208,17 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
 
                 <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-[1.5] active:scale-95 group/island border-0 outline-none bg-transparent">
                     <div className={`island-img-wrapper transition-all duration-500 ${status !== 'fog' ? 'animate-float' : ''} group-hover/island:scale-110 border-0 outline-none`} style={{ animationDelay: `${idx * 0.5}s` }}>
-                     <img 
-                       src={config.icon} 
-                       onLoad={updatePaths}
-                       className={`w-[130px] h-[130px] object-contain transition-all duration-700 pointer-events-none Antialiased
-                         ${status === 'active' ? 'scale-110' : 'scale-100'}
-                         ${status === 'fog' ? 'grayscale opacity-20' : 'opacity-100'}
-                       `}
-                       alt={config.name}
-                     />
+                     <div className="relative transform-gpu">
+                        <img 
+                          src={`${config.icon}?v=4`}
+                          alt={config.name}
+                          className={`w-[130px] h-[130px] object-contain transition-all duration-700 pointer-events-none drop-shadow-lg ${status === 'fog' ? 'grayscale' : ''}`}
+                          style={{
+                            WebkitPrintColorAdjust: 'exact',
+                            backfaceVisibility: 'hidden'
+                          }}
+                        />
+                     </div>
                      
                      {status === 'locked' && (
                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center bg-slate-900/60 shadow-xl backdrop-blur-md rounded-full w-12 h-12 border border-white/10 filter drop-shadow-md">
