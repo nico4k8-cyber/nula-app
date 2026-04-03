@@ -4,26 +4,44 @@ import { PERSONAS, getPersona } from "./personas.js";
 const STAGE_MAP = { "П": 0, "Р": 1, "И": 2, "З": 3, "✨": 4 };
 
 function parseTag(rawText) {
-    // Match format: [ПРИЗ:X|⭐:N]
-    const newMatch = rawText.match(/\[ПРИЗ:([ПРИЗз✨]+)\|⭐:(\d)\]/);
-    if (newMatch) {
-        const letter = newMatch[1];
-        const stars = parseInt(newMatch[2], 10);
-        const prizStep = STAGE_MAP[letter] ?? 0;
-        const cleanText = rawText
-            .replace(/\*{0,2}\[ПРИЗ:[ПРИЗз✨]+\|⭐:\d\]\*{0,2}\s*/g, '')
-            .replace(/^\s*\*[^*\n]+\*\s*$/gm, '')
-            .replace(/^[🐉🦎🔥]\s*/gmu, '')
-            .replace(/\n{3,}/g, '\n\n')
-            .trim();
-        
-        // Safety: if AI says "Задача решена" but uses wrong tag
-        if (cleanText.toLowerCase().includes("задача решена") && prizStep < 3) {
-            return { cleanText, prizStep: 4, stars: Math.max(stars, 2) };
-        }
-        return { cleanText, prizStep, stars };
+    // 1. Remove everything before the last actual response text (Gemma often outputs Drafts)
+    let cleanText = rawText;
+    
+    // Split by common thinking markers and take the last block
+    const blocks = rawText.split(/\*?\*?(?:Draft|Final|Response|Draft \d):?\*?\*?/i);
+    if (blocks.length > 1) {
+        cleanText = blocks[blocks.length - 1].trim();
     }
-    return { cleanText: rawText.replace(/\[.*\]/g, "").trim(), prizStep: 0, stars: 0 };
+
+    // 2. Extract Tag
+    const tagMatch = cleanText.match(/\[ПРИЗ:([ПРИЗз✨]+)\|⭐:(\d)\]/);
+    let prizStep = 0;
+    let stars = 0;
+
+    if (tagMatch) {
+       prizStep = STAGE_MAP[tagMatch[1]] ?? 0;
+       stars = parseInt(tagMatch[2], 10);
+    }
+
+    // 3. Cleanup garbage (bullets, persona markers, etc.)
+    cleanText = cleanText
+        .replace(/\[ПРИЗ:[ПРИЗз✨]+\|⭐:\d\]/g, '') // remove tag
+        .replace(/^\s*\*[^*\n]+\*\s*$/gm, '')       // remove bullet lines
+        .replace(/\n{2,}/g, '\n\n')                // normalize double lines
+        .replace(/^["'\s]+|["'\s]+$/g, '')         // strip wrapper quotes
+        .trim();
+
+    // Final safety check: if cleanText is too short and rawText has better content
+    if (cleanText.length < 5 && rawText.includes('"')) {
+        const quoteMatch = rawText.match(/"([^"]{10,})"/);
+        if (quoteMatch) cleanText = quoteMatch[1];
+    }
+
+    if (cleanText.toLowerCase().includes("задача решена")) {
+       return { cleanText, prizStep: 4, stars: 2 };
+    }
+    
+    return { cleanText, prizStep, stars };
 }
 
 /**

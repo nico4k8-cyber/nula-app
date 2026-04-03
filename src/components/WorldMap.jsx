@@ -191,20 +191,17 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
                {/* Static Shadow on Clouds */}
                {status !== 'fog' && (
                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[15px] z-[-1] pointer-events-none flex flex-col items-center justify-center">
-                    <div className="absolute w-24 h-6 bg-black/80 blur-[8px] rounded-[100%]" />
-                    <div className="absolute w-48 h-12 bg-slate-900/60 blur-xl rounded-[100%]" />
+                    <div className="absolute w-24 h-6 bg-black/40 blur-[8px] rounded-[100%]" />
                  </div>
                )}
 
-                {status === 'active' && <div className="island-glow scale-150 opacity-100 animate-pulse-soft" />}
-               
                 <div className="relative z-10 cursor-pointer flex flex-col items-center transition-all duration-500 hover:scale-[1.5] active:scale-95 group/island">
-                   <div className={`island-img-wrapper transition-all duration-500 ${status !== 'fog' ? 'animate-float' : ''} group-hover/island:drop-shadow-[0_35px_60px_rgba(0,0,0,0.5)]`} style={{ animationDelay: `${idx * 0.5}s` }}>
+                   <div className={`island-img-wrapper transition-all duration-500 ${status !== 'fog' ? 'animate-float' : ''} group-hover/island:drop-shadow-[0_35px_60px_rgba(0,0,0,0.3)]`} style={{ animationDelay: `${idx * 0.5}s` }}>
                      <img 
                        src={config.icon} 
                        onLoad={updatePaths}
                        className={`w-[130px] h-[130px] object-contain transition-all duration-700
-                         ${status === 'active' ? 'drop-shadow-[0_20px_50px_rgba(255,215,0,0.4)] scale-110' : 'drop-shadow-xl'}
+                         ${status === 'active' ? 'drop-shadow-2xl scale-110' : 'drop-shadow-xl'}
                          ${status === 'fog' ? 'grayscale opacity-20' : ''}
                        `}
                        alt={config.name}
@@ -245,7 +242,7 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
           onClick={() => setSelectedLock(null)}
         >
           <div 
-            className="w-full sm:w-[500px] bg-slate-900 rounded-t-[40px] border-t border-white/10 shadow-full p-10 transform animate-slideUp text-white"
+            className="flex flex-col h-[100dvh] w-full sm:w-[500px] bg-slate-900 rounded-t-[40px] border-t border-white/10 shadow-full p-10 transform animate-slideUp text-white"
             onClick={e => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-10" />

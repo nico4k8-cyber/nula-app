@@ -21,6 +21,7 @@ import TopProgress from "./components/TopProgress";
 import SettingsMenu from "./components/SettingsMenu";
 import TaskPicker from "./components/TaskPicker";
 import DialogView from "./components/DialogView";
+import TaskPreview from "./components/TaskPreview";
 import DebriefView from "./components/DebriefView";
 import TwistView from "./components/TwistView";
 import FinalView from "./components/FinalView";
@@ -76,6 +77,7 @@ export default function App() {
   
   // Game Logic State
   const [taskIdx, setTaskIdx] = useState(0);
+  const [task, setTask] = useState(TASKS[0]);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -96,7 +98,6 @@ export default function App() {
   
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
-  const task = TASKS[taskIdx];
 
   // Audio Hook - Plays main theme throughout the app
   const t = (key) => {
@@ -173,20 +174,25 @@ export default function App() {
 
   /* ═══ Handlers ═══ */
 
-  const startTask = (idx) => {
+  function startTaskPreview(taskKey) {
+    const tDef = TASKS.find(t => t.id === taskKey);
+    if (!tDef) return;
+    setTask(tDef);
+    setPhase("task-preview");
+  }
+
+  function startDialog() {
     if (!isPremium && dailyTasksCount >= 3) {
       setPhase("paywall");
       return;
     }
-    const taskItem = TASKS[idx];
-    setTaskIdx(idx);
     setMessages([]);
     setSessionStars(0);
     setTwistChoice(null);
     
     // Auto-create TRIZ state if it's a TRIZ task
-    if (taskItem.core_problem && taskItem.ikr) {
-      const newState = createNewState(taskItem.id, difficulty >= 2 ? 14 : 10);
+    if (task.core_problem && task.ikr) {
+      const newState = createNewState(task.id, difficulty >= 2 ? 14 : 10);
       setTrizState(newState);
       setMessages([
         { type: "bot", text: "🐉 Давай решим эту задачу вместе!" },
@@ -243,10 +249,10 @@ export default function App() {
   const renderHUD = (phase !== "dragon-splash" && phase !== "auth");
   
   return (
-    <div className="min-h-screen flex flex-col items-center" data-theme={theme}>
+    <div className="min-h-[100dvh] flex flex-col items-center bg-slate-900 overflow-hidden" data-theme={theme}>
       {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} t={t} />}
 
-      <div className={`w-full ${phase === 'admin' ? 'max-w-[1920px]' : 'max-w-md'} min-h-screen flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800`}>
+      <div className={`w-full ${phase === 'admin' ? 'max-w-[1920px]' : 'max-w-md'} h-full flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800`}>
         
         {renderHUD && (
           <div 
@@ -298,7 +304,17 @@ export default function App() {
 
         {phase === "picker" && (
           <TaskPicker activeCategory={activeCategory} onBack={() => setPhase("city")} 
-            TASKS={TASKS} completedTasks={completedTasks} onStartTask={startTask} t={t} lang={lang}
+            TASKS={TASKS} completedTasks={completedTasks} onStartTask={startTaskPreview} t={t} lang={lang}
+          />
+        )}
+
+        {phase === "task-preview" && (
+          <TaskPreview 
+            task={task} 
+            t={t} 
+            lang={lang} 
+            onBack={() => setPhase("picker")} 
+            onStart={startDialog} 
           />
         )}
 

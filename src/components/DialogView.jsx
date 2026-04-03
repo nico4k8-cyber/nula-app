@@ -99,7 +99,7 @@ export default function DialogView({
   const isTriz = (t) => t?.core_problem && t?.ikr && t?.resources;
 
   return (
-    <div className="flex flex-col flex-1 bg-white relative animate-fade-in-up">
+    <div className="flex flex-col h-[100dvh] bg-white relative animate-fade-in-up overflow-hidden">
       {/* HUD Header */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4 bg-white/80 backdrop-blur-md sticky top-0 z-20">
         <button
@@ -131,7 +131,7 @@ export default function DialogView({
       />
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto px-5 pb-6 flex flex-col gap-4 pt-4 custom-scrollbar bg-gray-50/20" style={{ maxHeight: "calc(100vh - 180px)" }}>
+      <div className="flex-1 overflow-y-auto px-5 pb-6 flex flex-col gap-4 pt-4 custom-scrollbar bg-gray-50/20">
         {messages.map((m, i) => {
           if (m.type === "bot") {
             if (m.isStageMsg) {
