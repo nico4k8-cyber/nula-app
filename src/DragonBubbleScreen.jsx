@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 export default function DragonBubbleScreen({ onStart, t, theme }) {
   const [displayedText, setDisplayedText] = useState("");
   const fullText = t('welcome');
-  const dragonImg = '/assets/avatar.png';
+  const dragonImg = '/assets/webp/avatar.webp';
   const glowColor = theme === 'scifi' ? 'rgba(34, 211, 238, 0.4)' : 'rgba(245, 158, 11, 0.4)';
 
   useEffect(() => {
