@@ -225,7 +225,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col items-center" data-theme={theme}>
       {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} t={t} />}
 
-      <div className="w-full max-w-md min-h-screen flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800">
+      <div className={`w-full ${phase === 'admin' ? 'max-w-[1920px]' : 'max-w-md'} min-h-screen flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800`}>
         
         {renderHUD && (
           <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-sm flex items-center justify-between px-6 py-4 glass-dark rounded-[32px] shadow-premium">
