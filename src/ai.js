@@ -40,13 +40,13 @@ export async function askAI(userMessage, history, puzzle, ageGroup = "senior") {
   }
 }
 
-// Brain v2.0 - Forced Cache Flush (2026-04-02)
+// Brain v3.0 - NEW ROUTE /api/ai-master (2026-04-03)
 export async function askTriz(userMessage, task, state, history = []) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const res = await fetch("/api/ugolok-chat", {
+    const res = await fetch("/api/ai-master", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
