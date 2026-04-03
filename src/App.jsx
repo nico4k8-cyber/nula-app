@@ -69,7 +69,7 @@ export default function App() {
   } = useGameStore();
 
   // Navigation & UI State
-  const [phase, setPhase] = useState(saved?.phase || "dragon-splash");
+  const [phase, setPhase] = useState("dragon-splash");
   const [lang, setLang] = useState(saved?.lang || "ru");
   const [theme, setTheme] = useState(saved?.theme || "hayday");
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(saved?.hasSeenOnboarding || false);
