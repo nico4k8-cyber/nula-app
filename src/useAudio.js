@@ -59,11 +59,19 @@ export function useAudio(tracks = []) {
     }
   }, [currentTrackIndex, tracks]);
 
-  // Handle enable/disable toggle (save preference only, don't interrupt music)
+  // Handle enable/disable toggle
   useEffect(() => {
     try {
       localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify(isEnabled));
     } catch {}
+
+    if (audioRef.current) {
+      if (isEnabled && audioRef.current.src) {
+        audioRef.current.play().catch(() => {});
+      } else {
+        audioRef.current.pause();
+      }
+    }
   }, [isEnabled]);
 
   // Pause music when tab is not focused
@@ -120,7 +128,9 @@ export function useAudio(tracks = []) {
     setIsPlaying(true);
     if (audioRef.current) {
       audioRef.current.src = tracks[index].path;
-      audioRef.current.play().catch(() => {});
+      if (isEnabled) {
+         audioRef.current.play().catch(() => {});
+      }
     }
   };
 

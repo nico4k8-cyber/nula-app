@@ -68,7 +68,12 @@ export default function SettingsMenu({
                  <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest">{t('cloud_sync')}</p>
               </div>
               <button 
-                onClick={() => { if(confirm("Выйти?")) supabase.auth.signOut().then(() => window.location.reload()); }}
+                onClick={() => { 
+                  if(confirm("Выйти?")) {
+                     localStorage.removeItem('nula-game-storage');
+                     supabase.auth.signOut().then(() => window.location.reload()); 
+                  }
+                }}
                 className="w-10 h-10 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
               >
                 🚪

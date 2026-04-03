@@ -14,7 +14,7 @@ import { trackEvent, EVENTS } from "./analytics";
 import sfx from "./sfx";
 import { useGameStore } from "./store/gameStore";
 import { translations } from "./i18n";
-import { supabase, loadProgress } from "./lib/supabase";
+import { supabase, loadProgress, syncProgress } from "./lib/supabase";
 
 // Components
 import TopProgress from "./components/TopProgress";
@@ -119,15 +119,36 @@ export default function App() {
         setUser({ id: session.user.id, email: session.user.email, name: session.user.user_metadata?.full_name || "Инженер" });
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           setHasSeenOnboarding(true);
-          setPhase("city");
           audio.playTrack(0);
+          
+          // Download Cloud Progress and merge it to local!
+          const cloudData = await loadProgress(session.user.id);
+          if (cloudData) {
+             useGameStore.setState((state) => ({
+                totalStars: Math.max(state.totalStars, cloudData.stars || 0),
+                completedTasks: Array.from(new Set([...state.completedTasks, ...(cloudData.completedTasks || [])])),
+                unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...(cloudData.unlockedBuildings || [])]))
+             }));
+          }
         }
       } else {
         setUser(null);
       }
     });
+
     return () => subscription.unsubscribe();
   }, []);
+
+  // Cloud Sync Effect (triggered when user progress changes)
+  useEffect(() => {
+    if (user && user.id) {
+       syncProgress(user.id, { 
+          stars: totalStars, 
+          completedTasks, 
+          unlockedBuildings 
+       });
+    }
+  }, [totalStars, completedTasks.length, unlockedBuildings.length, user]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
