@@ -121,6 +121,30 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      // 4. Save Image (/api/save-image)
+      if (pathname === '/save-image' || pathname === '/api/save-image') {
+        const data = JSON.parse(body || '{}');
+        const { filename, base64 } = data;
+        if (!filename || !base64) {
+           res.writeHead(400); res.end(JSON.stringify({ error: 'Missing filename or base64' })); return;
+        }
+        
+        // Remove data URI prefix
+        const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
+        const uploadDir = path.resolve(process.cwd(), 'public', 'assets', 'tasks');
+        
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        
+        const filePath = path.resolve(uploadDir, filename);
+        fs.writeFileSync(filePath, base64Data, 'base64');
+        
+        res.writeHead(200); 
+        res.end(JSON.stringify({ success: true, url: `/assets/tasks/${filename}` }));
+        return;
+      }
+
       // Default 404
       console.log('404 Not Found:', pathname);
       res.writeHead(404);

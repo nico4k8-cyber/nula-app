@@ -68,8 +68,8 @@ export default function App() {
   } = useGameStore();
 
   // Navigation & UI State
-  const [phase, setPhase] = useState("dragon-splash");
-  const [lang, setLang] = useState("ru");
+  const [phase, setPhase] = useState(saved?.phase || "dragon-splash");
+  const [lang, setLang] = useState(saved?.lang || "ru");
   const [theme, setTheme] = useState(saved?.theme || "hayday");
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(saved?.hasSeenOnboarding || false);
   const [hasSeenDragonSplash, setHasSeenDragonSplash] = useState(saved?.hasSeenDragonSplash || false);
@@ -90,9 +90,9 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
-  const [activeCategory, setActiveCategory] = useState("library");
+  const [activeCategory, setActiveCategory] = useState(saved?.activeCategory || "library");
   const [unlockedBuildingId, setUnlockedBuildingId] = useState(null);
-  const [activeIslandId, setActiveIslandId] = useState(null);
+  const [activeIslandId, setActiveIslandId] = useState(saved?.activeIslandId || null);
   
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -134,8 +134,8 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    saveGlobalState({ theme, hasSeenOnboarding, hasSeenDragonSplash, trizState, lang });
-  }, [theme, hasSeenOnboarding, hasSeenDragonSplash, trizState, lang]);
+    saveGlobalState({ theme, hasSeenOnboarding, hasSeenDragonSplash, trizState, lang, phase, activeCategory, activeIslandId });
+  }, [theme, hasSeenOnboarding, hasSeenDragonSplash, trizState, lang, phase, activeCategory, activeIslandId]);
 
   useEffect(() => {
     if (window.__openCity) {
@@ -219,11 +219,46 @@ export default function App() {
   }
 
   /* ─── Render ─── */
+  const renderHUD = (phase === "city" || phase === "picker" || phase === "admin");
+  
   return (
     <div className="min-h-screen flex flex-col items-center" data-theme={theme}>
       {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} t={t} />}
 
       <div className="w-full max-w-md min-h-screen flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800">
+        
+        {renderHUD && (
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-sm flex items-center justify-between px-6 py-4 glass-dark rounded-[32px] shadow-premium">
+            <div 
+              className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform" 
+              onClick={() => setMenuOpen(true)}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl shadow-lg border border-white/20">
+                {user ? '👤' : '☁️'}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[14px] font-black text-white uppercase tracking-wider leading-none mb-1">
+                  {user?.name || t('hud.guest')}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${user ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                  <span className="text-[9px] text-white/50 font-black uppercase tracking-[0.2em]">
+                    {user ? t('hud.online') : t('hud.offline')}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div 
+              className="flex items-center gap-3 px-5 py-2.5 bg-white/5 rounded-2xl border border-white/10 active:scale-90 transition-transform cursor-pointer"
+              onClick={() => window.location.reload()}
+              title={t('hud.sync')}
+            >
+              <span className="text-yellow-400 text-lg">⭐</span>
+              <span className="font-black text-white text-[18px] tracking-tighter">{totalStars}</span>
+            </div>
+          </div>
+        )}
         
         {phase === "dragon-splash" && (
           <DragonSplashScreen t={t} onAnimationEnd={() => {

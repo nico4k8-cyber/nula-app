@@ -4,6 +4,63 @@ export default function AdminView({ TASKS, onBack, t }) {
   const [editingTask, setEditingTask] = useState(null);
   const [localTasks, setLocalTasks] = useState(TASKS);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const max_size = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height && width > max_size) {
+            height *= max_size / width;
+            width = max_size;
+          } else if (height > max_size) {
+            width *= max_size / height;
+            height = max_size;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compress to WebP
+          const webpDataUrl = canvas.toDataURL('image/webp', 0.85);
+          const filename = `task_${editingTask.id}_${Date.now()}.webp`;
+          
+          // Send to dev-api-server
+          const response = await fetch('http://localhost:3001/api/save-image', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ filename, base64: webpDataUrl })
+          });
+          
+          if (response.ok) {
+             const data = await response.json();
+             updateTask(editingTask.id, 'image_url', data.url);
+          } else {
+             alert('❌ Ошибка сохранения картинки');
+          }
+          setIsUploading(false);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    } catch(err) {
+      alert("Ошибка: " + err.message);
+      setIsUploading(false);
+    }
+  };
 
   const handleSaveAll = async () => {
     setIsSaving(true);
@@ -43,7 +100,8 @@ export default function AdminView({ TASKS, onBack, t }) {
       core_problem: { need: '', obstacle: '' },
       ikr: '',
       resources: [],
-      puzzle: { question_ru: '', question_en: '', answer_ru: '', answer_en: '' }
+      puzzle: { question_ru: '', question_en: '', answer_ru: '', answer_en: '' },
+      image_url: ''
     };
     setLocalTasks([...localTasks, newTask]);
     setEditingTask(newTask);
@@ -149,6 +207,32 @@ export default function AdminView({ TASKS, onBack, t }) {
                     value={editingTask.title_en || ''}
                     onChange={(e) => updateTask(editingTask.id, 'title_en', e.target.value)}
                   />
+                </div>
+                <div className="space-y-4 pt-4">
+                   <h2 className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em]">Изображение</h2>
+                   
+                   {editingTask.image_url && (
+                      <div className="w-full h-40 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center relative group">
+                        <img src={editingTask.image_url} alt="Task" className="h-full object-cover" />
+                        <button onClick={() => updateTask(editingTask.id, 'image_url', '')} className="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                      </div>
+                   )}
+                   
+                   <div>
+                     <label className="text-[10px] uppercase text-slate-500 font-black mb-2 block">Загрузить или вставить URL</label>
+                     <div className="flex gap-2">
+                       <input 
+                         className="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-xl focus:border-indigo-500 outline-none text-sm"
+                         placeholder="URL картинки..."
+                         value={editingTask.image_url || ''}
+                         onChange={(e) => updateTask(editingTask.id, 'image_url', e.target.value)}
+                       />
+                       <label className="bg-slate-700 hover:bg-slate-600 transition-colors px-4 rounded-xl flex items-center justify-center cursor-pointer cursor-allowed opacity-100">
+                          {isUploading ? '⏳' : '📁 Файл (WebP)'}
+                          <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploading} />
+                       </label>
+                     </div>
+                   </div>
                 </div>
               </section>
 

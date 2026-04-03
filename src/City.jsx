@@ -18,38 +18,6 @@ export default function City({
 
   return (
     <div className="flex flex-col flex-1 min-h-screen relative bg-slate-900 overflow-hidden">
-      {/* Floating Header HUD (Premium Glass) */}
-      <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-sm flex items-center justify-between px-6 py-4 glass-dark rounded-[32px] shadow-premium">
-        <div 
-          className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform" 
-          onClick={onLogoClick}
-        >
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl shadow-lg border border-white/20">
-            {user ? '👤' : '☁️'}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[14px] font-black text-white uppercase tracking-wider leading-none mb-1">
-              {user?.name || t('hud.guest')}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${user ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-              <span className="text-[9px] text-white/50 font-black uppercase tracking-[0.2em]">
-                {user ? t('hud.online') : t('hud.offline')}
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <div 
-          className="flex items-center gap-3 px-5 py-2.5 bg-white/5 rounded-2xl border border-white/10 active:scale-90 transition-transform cursor-pointer"
-          onClick={() => window.location.reload()}
-          title={t('hud.sync')}
-        >
-          <span className="text-yellow-400 text-lg">⭐</span>
-          <span className="font-black text-white text-[18px] tracking-tighter">{totalStars}</span>
-        </div>
-      </div>
-
       <div className="w-full flex-1">
         {!selectedIslandId ? (
           <WorldMap 
