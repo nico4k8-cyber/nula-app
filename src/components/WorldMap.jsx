@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
 
 const MAP_CONFIG = [
-  { id: 'main', name: 'Главный остров', left: '45%', top: 250, icon: '/assets/webp/main_island.webp' },
-  { id: 'craft', name: 'Заповедник', left: '30%', top: 650, icon: '/assets/webp/island_zapovednik.webp' },
-  { id: 'science', name: 'Остров Науки', left: '60%', top: 1050, icon: '/assets/webp/island_laboratory.webp' },
-  { id: 'summit', name: 'Пик Изобретателей', left: '40%', top: 1450, icon: '/assets/webp/island_tsar.webp' },
+  { id: 'main', name: 'Главный остров', left: '45%', top: 250, icon: '/assets/webp/main_island.webp?v=2' },
+  { id: 'craft', name: 'Заповедник', left: '30%', top: 650, icon: '/assets/webp/island_zapovednik.webp?v=2' },
+  { id: 'science', name: 'Остров Науки', left: '60%', top: 1050, icon: '/assets/webp/island_laboratory.webp?v=2' },
+  { id: 'summit', name: 'Пик Изобретателей', left: '40%', top: 1450, icon: '/assets/webp/island_tsar.webp?v=2' },
 ];
 
 function BezierPath({ p1, p2, isDone }) {
