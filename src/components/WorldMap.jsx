@@ -142,7 +142,7 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
     <div 
       ref={containerRef}
       onScroll={handleScroll}
-      className="relative w-full h-[100dvh] overflow-y-auto bg-sky-300 select-none scrollbar-hide"
+      className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden overscroll-none bg-sky-300 select-none scrollbar-hide"
     >
       {/* Background Decor */}
       <div className="absolute inset-0 pointer-events-none z-0">
