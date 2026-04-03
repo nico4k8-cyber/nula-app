@@ -1,34 +1,43 @@
 import { getClaudeResponse } from "./_lib/ai-provider.js";
 import { getPersona } from "./_lib/personas.js";
 
-function compressHistory(history = []) {
-  if (history.length <= 8) return history.map(m => `${m.role === "user" || m.from === "user" ? "Ребенок" : "Уголек"}: ${m.text}`).join("\n");
-  const hook = history[0];
-  const tail = history.slice(-6);
-  const middle = history.slice(1, -6);
-  const middleChildMsgs = middle.filter(m => m.role === "user" || m.from === "user");
-  const middleTopics = middleChildMsgs.map(m => (m.text || "").substring(0, 60) + "...");
-  const summary = middleTopics.length > 0 ? `[...ранее ребенок предлагал: ${middleTopics.join("; ")}...]` : "[...идет обсуждение ресурсов и противоречий...]";
-  return [`${hook.role === "user" || hook.from === "user" ? "Ребенок" : "Уголек"}: ${hook.text}`, summary, ...tail.map(m => `${m.role === "user" || m.from === "user" ? "Ребенок" : "Уголек"}: ${m.text}`)].join("\n");
-}
+export const config = {
+  runtime: 'edge', // Break out of the 10s Serverless limit!
+};
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Cache-Control", "no-store, max-age=0, must-revalidate");
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Cache-Control": "no-store, max-age=0, must-revalidate",
+};
 
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+export default async function handler(req) {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
+  }
 
-  const { userMessage, history = [], task, prizStep = 0 } = req.body;
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { 
+      status: 405, 
+      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    });
+  }
 
   try {
-    if (!userMessage || !task) return res.status(400).json({ error: "userMessage and task are required" });
+    const body = await req.json();
+    const { userMessage, history = [], task, prizStep = 0 } = body;
+
+    if (!userMessage || !task) {
+      return new Response(JSON.stringify({ error: "userMessage and task are required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
     const result = await getClaudeResponse({
       userMessage,
-      history: [], 
+      history: history, // Send full history if ai-provider wants to slice it
       task,
       prizStep,
       _forceHaiku: true
@@ -36,7 +45,7 @@ export default async function handler(req, res) {
 
     const persona = getPersona(task.difficulty);
 
-    return res.status(200).json({
+    return new Response(JSON.stringify({
       text: result.text,
       reply: result.text,
       stars: result.stars || 0,
@@ -44,15 +53,21 @@ export default async function handler(req, res) {
       personaId: persona.id,
       model: result.model,
       _v: Date.now()
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
 
   } catch (err) {
     console.error("[Ugolok Chat Error]:", err);
-    return res.status(503).json({ 
+    return new Response(JSON.stringify({ 
       error: "AI service error", 
       reply: "Уголёк задумался слишком глубоко. Давай попробуем ещё раз через минуту!",
       details: err.message,
       _v: Date.now()
+    }), {
+      status: 503, // Can be caught by frontend to show friendly message
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
 }
