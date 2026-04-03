@@ -115,11 +115,12 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
       case 'fog': {
          const depth = Math.min(orderIndex * 1, 5);
          return { 
-           opacity: Math.max(0.7 - depth * 0.1, 0.4),            
-           filter: `blur(${Math.min(depth + 1, 3)}px)`,
+           opacity: 0.8,
+           filter: 'blur(1px)',
            transform: 'translateX(-50%) translateY(-50%)',
            border: 'none',
-           boxShadow: 'none'
+           boxShadow: 'none',
+           outline: 'none'
          };
       }
       default: return { transform: 'translateX(-50%) translateY(-50%)', border: 'none', boxShadow: 'none' };

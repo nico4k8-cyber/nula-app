@@ -96,6 +96,14 @@
 
   .island-node {
     @apply relative flex flex-col items-center justify-center transition-all duration-500;
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+  }
+  
+  .island-node * {
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+    border: none !important;
   }
 
   .island-glow {
