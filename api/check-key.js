@@ -1,45 +1,66 @@
 
 export default async function handler(req, res) {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) {
     return res.status(200).json({ 
       status: "❌ ОШИБКА", 
-      message: "Ключ ANTHROPIC_API_KEY не найден в переменных окружения Vercel!" 
+      message: "Ключ GEMINI_API_KEY не найден в переменных окружения Vercel!" 
     });
   }
 
-  const maskedKey = key.substring(0, 7) + "..." + key.substring(key.length - 4);
+  const maskedKey = geminiKey.substring(0, 7) + "..." + geminiKey.substring(geminiKey.length - 4);
   
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "claude-3-haiku-20240307",
-        max_tokens: 10,
-        messages: [{ role: "user", content: "Привет! Ответь одним словом 'Работает'." }]
-      })
-    });
+    // 1. Get Models List from Google AI Studio API
+    const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}`);
+    const modelsData = await modelsRes.json();
 
-    const data = await response.json();
-    
-    if (response.ok) {
+    if (!modelsRes.ok) {
       return res.status(200).json({
-        status: "✅ КЛЮЧ РАБОТАЕТ",
+        status: "❌ ОШИБКА ПОЛУЧЕНИЯ СПИСКА МОДЕЛЕЙ",
         key_preview: maskedKey,
-        ai_reply: data.content[0].text
-      });
-    } else {
-      return res.status(200).json({
-        status: "❌ ОШИБКА АПИ",
-        key_preview: maskedKey,
-        error_details: data
+        error_details: modelsData
       });
     }
+
+    // 2. Filter only generation models
+    const generationModels = modelsData.models
+      .filter(m => m.supportedGenerationMethods.includes("generateContent"))
+      .map(m => ({
+        name: m.name, // e.g. "models/gemini-1.5-flash"
+        displayName: m.displayName,
+        description: m.description,
+        inputTokenLimit: m.inputTokenLimit
+      }));
+
+    // 3. Test simple generation with gemini-1.5-flash (most likely available)
+    const testModel = generationModels.find(m => m.name.includes("gemini-1.5-flash"))?.name || "models/gemini-1.5-flash";
+    
+    const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/${testModel}:generateContent?key=${geminiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: "Привет! Ответь одним словом 'Работает'." }] }]
+      })
+    });
+    
+    const testData = await testRes.json();
+    let testStatus = "Unknown";
+    if (testRes.ok && testData.candidates) {
+      testStatus = testData.candidates[0].content.parts[0].text;
+    } else {
+      testStatus = `Ошибка теста: ${JSON.stringify(testData)}`;
+    }
+
+    return res.status(200).json({
+      status: "✅ КЛЮЧ GEMINI НАЙДЕН",
+      key_preview: maskedKey,
+      test_model: testModel,
+      test_reply: testStatus,
+      available_models_count: generationModels.length,
+      available_models: generationModels
+    });
+
   } catch (err) {
     return res.status(200).json({
       status: "❌ КРИТИЧЕСКАЯ ОШИБКА",
