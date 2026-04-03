@@ -75,7 +75,7 @@ export async function getClaudeResponse({
   }
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -103,7 +103,7 @@ export async function getClaudeResponse({
       text: cleanText,
       stars,
       prizStep: newStep || prizStep,
-      model: "gemini-2.0-flash"
+      model: "gemma-4-31b-it"
     };
   } catch (e) {
     console.error("[Gemini Provider] Error:", e);
