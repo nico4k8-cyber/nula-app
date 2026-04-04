@@ -24,12 +24,6 @@ function parseTag(rawText) {
         .replace(/^["'\s]+|["'\s]+$/g, '')
         .trim();
 
-    // If AI signals task completion in text → force stage 4
-    const lower = cleanText.toLowerCase();
-    const solvedPhrases = ["задача решена", "задача решена!", "решение найдено", "полностью решает задачу", "ты решил задачу", "задача выполнена"];
-    if (solvedPhrases.some(p => lower.includes(p))) {
-        return { cleanText, prizStep: 4, stars: Math.max(stars, 2) };
-    }
 
     return { cleanText, prizStep, stars };
 }
@@ -86,9 +80,9 @@ STRICT RULES — follow exactly:
 - When stage is 3: say "Задача решена!" and nothing about science.
 
 IMPORTANT: End EVERY reply with this tag on a new line: [S:N|R:N]
-S = stage to set (0/1/2/3 = current stages, 4 = task fully solved and done)
-R = rating of child's last message (1=ok, 2=good, 3=excellent)
-Use S:4 ONLY when child gave a complete working solution and you said "Задача решена!".
+S = stage to set: 0=П, 1=Р, 2=И, 3=З
+R = rating of child's last message: 1=ok, 2=good, 3=excellent
+Use S:3 when the child gave a complete working solution.
 Example: [S:2|R:3]`;
   }
 

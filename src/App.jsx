@@ -286,12 +286,12 @@ export default function App() {
       const replyText = result.reply || result.text || "";
       setMessages(prev => [...prev, { type: "bot", text: replyText, stars: earnedStars, timestamp }]);
 
-      // Stage 4 = task solved (AI declared it complete)
-      if (newPrizStep === 4) {
+      // Stage 3 (З) = task solved → show ✨ then go to debrief
+      if (newPrizStep === 3 && prizStep < 3) {
         setTimeout(() => {
-          setMessages(prev => [...prev, { type: "bot", text: `Отличная работа! 🎉`, isDiscovery: true }]);
-          setTimeout(() => setPhase("debrief"), 1500);
-        }, 800);
+          setPrizStep(4); // light up ✨ briefly
+          setTimeout(() => setPhase("debrief"), 1200);
+        }, 1000);
       }
     } catch (err) {
       setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз." }]);
