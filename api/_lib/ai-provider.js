@@ -85,13 +85,23 @@ export async function getClaudeResponse({
       stageHint += `\n⚡ ПРАВИЛО ГИНА: Не принимай первую попавшуюся идею сразу! Проси еще варианты.`;
     }
 
-    const historyText = history.length > 0 
-      ? history.slice(-6).map(m => `${m.role === "assistant" || m.from === "bot" ? "Орион" : "Ребенок"}: ${m.text}`).join("\n")
-      : "(начало диалога)";
-
-    // ИНСТРУКЦИЯ ПО КРАТКОСТИ:
-    systemPrompt = `${persona.prompt}\n\n${taskContext}\n${stageHint}\n\nКРАТКОСТЬ: Отвечай очень сжато (макс 2-3 предложения). Сразу к сути, без воды. Твоя цель — ПОМОЧЬ РЕШИТЬ, а не болтать.\n\nИСТОРИЯ:\n${historyText}`;
+    systemPrompt = `${persona.prompt}\n\n${taskContext}\n${stageHint}\n\nКРАТКОСТЬ: Отвечай очень сжато (макс 2 предложения). Не повторяй вопросы которые уже задавал. Твоя цель — ПРОДВИГАТЬ диалог вперёд.\nВАЖНО: В КОНЦЕ КАЖДОГО ОТВЕТА ПОСТАВЬ ТЕГ [ПРИЗ:X|⭐:N] где X — текущая стадия (П/Р/И/З/✨), N — звёзды (0-3).`;
   }
+
+  // Build messages array with real history for proper context
+  const conversationMessages = [];
+  if (history.length > 0) {
+    const recent = history.slice(-8); // last 8 messages max
+    for (const m of recent) {
+      const isBot = m.role === "assistant" || m.role === "bot" || m.from === "bot" || m.type === "bot";
+      conversationMessages.push({
+        role: isBot ? "assistant" : "user",
+        content: m.text || m.content || ""
+      });
+    }
+  }
+  // Add current message
+  conversationMessages.push({ role: "user", content: userMessage });
 
   try {
     const polzaKey = process.env.POLZA_API_KEY;
@@ -106,11 +116,11 @@ export async function getClaudeResponse({
       body: JSON.stringify({
         model: "anthropic/claude-haiku-4-5",
         messages: [
-          { role: "system", content: `${systemPrompt}\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ НАСТАВНИКА! В КОНЦЕ ОБЯЗАТЕЛЬНО ПОСТАВЬ ТЕГ [ПРИЗ:X|⭐:N].` },
-          { role: "user", content: userMessage }
+          { role: "system", content: systemPrompt },
+          ...conversationMessages
         ],
         temperature: 0.7,
-        max_tokens: 500
+        max_tokens: 400
       })
     });
 
