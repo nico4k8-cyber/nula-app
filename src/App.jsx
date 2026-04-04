@@ -8,7 +8,8 @@ import DesignBureau from "./DesignBureau";
 import DragonBubbleScreen from "./DragonBubbleScreen";
 import UnlockAnimation from "./UnlockAnimation";
 import DragonSplashScreen from "./DragonSplashScreen";
-import AuthScreen from "./components/AuthScreen";
+import AuthScreen, { popReturnPhase, saveReturnPhase } from "./components/AuthScreen";
+import IslandUnlockScreen from "./components/IslandUnlockScreen";
 import { useAudio } from "./useAudio";
 import { trackEvent, EVENTS } from "./analytics";
 import sfx from "./sfx";
@@ -103,6 +104,8 @@ export default function App() {
   const [unlockedBuildingId, setUnlockedBuildingId] = useState(null);
   const [activeIslandId, setActiveIslandId] = useState(saved?.activeIslandId || null);
   const [isTutorial, setIsTutorial] = useState(false);
+  const [showIslandUnlock, setShowIslandUnlock] = useState(false);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -129,7 +132,15 @@ export default function App() {
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           setHasSeenOnboarding(true);
           audio.playTrack(0);
-          
+
+          // Return to the screen that triggered login
+          const returnPhase = popReturnPhase();
+          if (returnPhase && returnPhase !== 'auth') {
+            setPhase(returnPhase);
+          } else {
+            setPhase('city');
+          }
+
           // Download Cloud Progress and merge it to local!
           const cloudData = await loadProgress(session.user.id);
           if (cloudData) {
@@ -280,6 +291,25 @@ export default function App() {
     updateStreak();
     if (isNew) {
       const nextCount = completedTasks.length + 1;
+
+      // First ever task → show island unlock animation, then city
+      if (nextCount === 1) {
+        setShowIslandUnlock(true);
+        // Save prompt after island animation
+        setTimeout(() => {
+          setShowIslandUnlock(false);
+          setPhase("city");
+          // Suggest saving progress if not logged in
+          setTimeout(() => setShowSavePrompt(true), 1000);
+        }, 4000);
+        return;
+      }
+
+      // After 3rd task → save prompt
+      if (nextCount === 3 && !user) {
+        setTimeout(() => setShowSavePrompt(true), 2000);
+      }
+
       const upsell = getUpsellMessage(nextCount, upsellShownAt);
       if (upsell) {
         markUpsellShown(upsell.trigger);
@@ -302,6 +332,50 @@ export default function App() {
           onDismiss={() => setUpsellMessage(null)}
           onSignup={() => { setUpsellMessage(null); window.open("https://t.me/ugolok_triz", "_blank"); }}
         />
+      )}
+
+      {/* Island Unlock Animation */}
+      {showIslandUnlock && (
+        <IslandUnlockScreen
+          islandName="Главный остров"
+          onComplete={() => { setShowIslandUnlock(false); setPhase("city"); }}
+        />
+      )}
+
+      {/* Save Progress Prompt */}
+      {showSavePrompt && !user && (
+        <div className="fixed inset-0 z-[150] flex items-end justify-center pointer-events-none">
+          <div className="w-full max-w-md px-4 pb-8 pointer-events-auto">
+            <div className="bg-white rounded-[32px] p-6 shadow-2xl border border-orange-100">
+              <div className="flex items-start gap-4">
+                <span className="text-3xl">🐉</span>
+                <div className="flex-1">
+                  <p className="font-black text-slate-900 text-[16px] leading-tight mb-1">
+                    Сохрани прогресс!
+                  </p>
+                  <p className="text-slate-500 text-[13px] leading-snug">
+                    Орин помнит твои открытия — но только если ты сохранишь их в облако.
+                  </p>
+                </div>
+                <button onClick={() => setShowSavePrompt(false)} className="text-slate-300 text-xl leading-none">✕</button>
+              </div>
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => { setShowSavePrompt(false); saveReturnPhase(phase); setPhase("auth"); }}
+                  className="flex-1 py-3 bg-orange-500 text-white font-black rounded-2xl text-[14px] uppercase tracking-wide shadow-lg shadow-orange-200 active:scale-95 transition-all"
+                >
+                  Сохранить →
+                </button>
+                <button
+                  onClick={() => setShowSavePrompt(false)}
+                  className="px-5 py-3 bg-slate-100 text-slate-500 font-bold rounded-2xl text-[13px] active:scale-95 transition-all"
+                >
+                  Потом
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className={`w-full ${phase === 'admin' ? 'max-w-[1920px]' : 'max-w-md'} h-full flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800`}>
@@ -352,6 +426,13 @@ export default function App() {
               setPhase("city");
             }
           }} />
+        )}
+
+        {phase === "auth" && (
+          <AuthScreen
+            returnPhase={phase}
+            onGuest={() => setPhase(popReturnPhase() || "city")}
+          />
         )}
 
         {phase === "city" && (
