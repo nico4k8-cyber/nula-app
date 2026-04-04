@@ -24,8 +24,10 @@ function parseTag(rawText) {
         .replace(/^["'\s]+|["'\s]+$/g, '')
         .trim();
 
-    // If AI wrote "задача решена" → force stage 4 completion
-    if (cleanText.toLowerCase().includes("задача решена")) {
+    // If AI signals task completion in text → force stage 4
+    const lower = cleanText.toLowerCase();
+    const solvedPhrases = ["задача решена", "задача решена!", "решение найдено", "полностью решает задачу", "ты решил задачу", "задача выполнена"];
+    if (solvedPhrases.some(p => lower.includes(p))) {
         return { cleanText, prizStep: 4, stars: Math.max(stars, 2) };
     }
 
@@ -61,37 +63,33 @@ export async function getClaudeResponse({
     }
 
     const STAGE_GUIDE = {
-      0: "STAGE P (Prepare): Ask 1 short question to make sure the child understands the problem.",
-      1: "STAGE R (Research): Ask about obstacles or what resources are available nearby.",
-      2: "STAGE I (Ideas): The child proposed an idea — ask them to develop it further OR propose one more variant. Do NOT accept the first idea immediately.",
-      3: "STAGE Z (Done): The child gave a solid solution. Praise them specifically (mention what exactly is good). End with 'задача решена'.",
+      0: "STAGE 0 (П): Ask 1 short question to check the child understands the problem.",
+      1: "STAGE 1 (Р): Ask what resources or tools are nearby that could help.",
+      2: "STAGE 2 (И): The child proposed an idea — ask ONE clarifying question to develop it. Do NOT accept the first idea immediately.",
+      3: "STAGE 3 (З): The child gave a complete solution. Write EXACTLY 2 sentences: first praise what specifically is good, second say 'Задача решена!' Nothing else.",
     };
 
     const currentGuide = STAGE_GUIDE[prizStep] || STAGE_GUIDE[0];
-
-    // Determine next valid stages (AI can stay or advance, never go back)
-    const nextStages = prizStep < 3
-      ? `You may keep stage ${prizStep} or advance to ${prizStep + 1} (or higher if fully solved).`
-      : `Stay at stage 3 and end the task.`;
 
     systemPrompt = `${persona.prompt}
 
 ${taskContext}
 
-CURRENT STAGE: ${currentGuide}
-${nextStages}
+YOUR CURRENT INSTRUCTION: ${currentGuide}
 
-RULES:
-- Reply in Russian, max 2 short sentences.
-- Ask only ONE question per reply.
-- Do not repeat questions already asked.
-- Do not explain TRIZ theory — just guide the child's thinking.
-- If the child already gave a working solution → praise specifically and say "задача решена".
+STRICT RULES — follow exactly:
+- Reply in Russian, MAX 2 short sentences. Never more.
+- Ask only ONE question per reply. Never two.
+- Do NOT explain scientific principles, TRIZ theory, or unrelated facts.
+- Do NOT give compliments like "отличная мысль" unless child gave a real solution.
+- Do NOT repeat questions already asked in this conversation.
+- When stage is 3: say "Задача решена!" and nothing about science.
 
-IMPORTANT: End EVERY reply with a tag on a new line: [S:N|R:N]
-where S = new stage number (0=Prepare, 1=Research, 2=Ideas, 3=Done, 4=Solved)
-and R = rating of this child's message (1=ok, 2=good, 3=excellent).
-Example: [S:1|R:2]`;
+IMPORTANT: End EVERY reply with this tag on a new line: [S:N|R:N]
+S = stage to set (0/1/2/3 = current stages, 4 = task fully solved and done)
+R = rating of child's last message (1=ok, 2=good, 3=excellent)
+Use S:4 ONLY when child gave a complete working solution and you said "Задача решена!".
+Example: [S:2|R:3]`;
   }
 
   // Build messages array
