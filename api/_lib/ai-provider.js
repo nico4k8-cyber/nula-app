@@ -1,51 +1,39 @@
 import { PERSONAS, getPersona } from "./personas.js";
 
-// Stage letter → numeric index
-const STAGE_MAP = { "П": 0, "Р": 1, "И": 2, "З": 3, "✨": 4 };
-
+/**
+ * Parse the response tag [S:N|R:N] where S=stage (0-4), R=rating (1-3)
+ * Using simple ASCII numbers — much more reliable than Cyrillic letters.
+ */
 function parseTag(rawText) {
-    // 1. Remove everything before the last actual response text (Gemma often outputs Drafts)
-    let cleanText = rawText;
-    
-    // Split by common thinking markers and take the last block
-    const blocks = rawText.split(/\*?\*?(?:Draft|Final|Response|Draft \d):?\*?\*?/i);
-    if (blocks.length > 1) {
-        cleanText = blocks[blocks.length - 1].trim();
-    }
+    let cleanText = rawText.trim();
 
-    // 2. Extract Tag
-    const tagMatch = cleanText.match(/\[ПРИЗ:([ПРИЗз✨]+)\|⭐:(\d)\]/);
-    let prizStep = 0;
-    let stars = 0;
+    // Extract tag: [S:0|R:1] ... [S:4|R:3]
+    const tagMatch = cleanText.match(/\[S:([0-4])\|R:([1-3])\]/);
+    let prizStep = null; // null = no tag found, keep current stage
+    let stars = 1; // default 1 star
 
     if (tagMatch) {
-       prizStep = STAGE_MAP[tagMatch[1]] ?? 0;
-       stars = parseInt(tagMatch[2], 10);
+        prizStep = parseInt(tagMatch[1], 10);
+        stars = parseInt(tagMatch[2], 10);
     }
 
-    // 3. Cleanup garbage (bullets, persona markers, etc.)
+    // Remove the tag from response text
     cleanText = cleanText
-        .replace(/\[ПРИЗ:[ПРИЗз✨]+\|⭐:\d\]/g, '') // remove tag
-        .replace(/^\s*\*[^*\n]+\*\s*$/gm, '')       // remove bullet lines
-        .replace(/\n{2,}/g, '\n\n')                // normalize double lines
-        .replace(/^["'\s]+|["'\s]+$/g, '')         // strip wrapper quotes
+        .replace(/\[S:[0-4]\|R:[1-3]\]/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/^["'\s]+|["'\s]+$/g, '')
         .trim();
 
-    // Final safety check: if cleanText is too short and rawText has better content
-    if (cleanText.length < 5 && rawText.includes('"')) {
-        const quoteMatch = rawText.match(/"([^"]{10,})"/);
-        if (quoteMatch) cleanText = quoteMatch[1];
+    // If AI wrote "задача решена" → force stage 4 completion
+    if (cleanText.toLowerCase().includes("задача решена")) {
+        return { cleanText, prizStep: 4, stars: Math.max(stars, 2) };
     }
 
-    if (cleanText.toLowerCase().includes("задача решена")) {
-       return { cleanText, prizStep: 4, stars: 2 };
-    }
-    
     return { cleanText, prizStep, stars };
 }
 
 /**
- * Direct call to Google Gemini API.
+ * Direct call to Polza API (Claude 3 Haiku).
  */
 export async function getClaudeResponse({
   userMessage,
@@ -55,42 +43,61 @@ export async function getClaudeResponse({
   prizStep = 0,
   systemPromptOverride = null
 }) {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) throw new Error("GEMINI_API_KEY is not configured on the server");
+  const polzaKey = process.env.POLZA_API_KEY;
+  if (!polzaKey) throw new Error("POLZA_API_KEY is not configured on the server");
 
   // Determine persona and system prompt
   let systemPrompt = systemPromptOverride;
   if (!systemPrompt) {
     const persona = personaId ? PERSONAS[personaId] : getPersona(task?.difficulty || 1);
-    
+
     let taskContext = "";
     if (task) {
       const resourcesLine = Array.isArray(task.resources)
-        ? `РЕСУРСЫ: ${task.resources.map(r => typeof r === 'string' ? r : `${r.id} (${r.properties})`).join(", ")}`
-        : `РЕСУРСЫ: ${task.resources || "не ограничены"}`;
-        
-      taskContext = `Задача: ${task.title || "Новая задача"}\nУсловие: ${task.condition || "Разгадай загадку"}\n${resourcesLine}`;
+        ? `RESOURCES: ${task.resources.map(r => typeof r === 'string' ? r : `${r.id} (${r.properties})`).join(", ")}`
+        : `RESOURCES: ${task.resources || "unrestricted"}`;
+
+      taskContext = `Task: ${task.title || "New task"}\nCondition: ${task.condition || task.teaser || "Solve the riddle"}\n${resourcesLine}\nCorrect answer hint: ${task.trick || task.ikr || "use available resources creatively"}`;
     }
 
-    const STAGE_LABELS = {
-      0: "П — Подготовка: пойми задачу, задай 1 вопрос про суть проблемы.",
-      1: "Р — Разведка: что мешает? какие есть ресурсы рядом?",
-      2: "И — Идеи: ребёнок уже предложил идею — развей её, попроси уточнить или предложить ещё одну.",
-      3: "З — Зачет: решение найдено! Похвали конкретно, скажи что именно хорошо в идее. Напиши 'задача решена'."
+    const STAGE_GUIDE = {
+      0: "STAGE P (Prepare): Ask 1 short question to make sure the child understands the problem.",
+      1: "STAGE R (Research): Ask about obstacles or what resources are available nearby.",
+      2: "STAGE I (Ideas): The child proposed an idea — ask them to develop it further OR propose one more variant. Do NOT accept the first idea immediately.",
+      3: "STAGE Z (Done): The child gave a solid solution. Praise them specifically (mention what exactly is good). End with 'задача решена'.",
     };
 
-    let stageHint = `\nТЕКУЩАЯ СТАДИЯ: ${STAGE_LABELS[prizStep] || STAGE_LABELS[0]}`;
-    if (prizStep === 3) {
-      stageHint += `\n⚡ ВАЖНО: Ребёнок уже дал хорошее решение. Похвали его КОНКРЕТНО и заверши диалог фразой "задача решена".`;
-    }
+    const currentGuide = STAGE_GUIDE[prizStep] || STAGE_GUIDE[0];
 
-    systemPrompt = `${persona.prompt}\n\n${taskContext}\n${stageHint}\n\nПРАВИЛА: Отвечай ОЧЕНЬ коротко (1-2 предложения максимум). Задавай только ОДИН вопрос за раз. Не повторяй вопросы. Не объясняй теорию — только веди диалог. Если ребёнок уже назвал рабочее решение — хвали и завершай.`;
+    // Determine next valid stages (AI can stay or advance, never go back)
+    const nextStages = prizStep < 3
+      ? `You may keep stage ${prizStep} or advance to ${prizStep + 1} (or higher if fully solved).`
+      : `Stay at stage 3 and end the task.`;
+
+    systemPrompt = `${persona.prompt}
+
+${taskContext}
+
+CURRENT STAGE: ${currentGuide}
+${nextStages}
+
+RULES:
+- Reply in Russian, max 2 short sentences.
+- Ask only ONE question per reply.
+- Do not repeat questions already asked.
+- Do not explain TRIZ theory — just guide the child's thinking.
+- If the child already gave a working solution → praise specifically and say "задача решена".
+
+IMPORTANT: End EVERY reply with a tag on a new line: [S:N|R:N]
+where S = new stage number (0=Prepare, 1=Research, 2=Ideas, 3=Done, 4=Solved)
+and R = rating of this child's message (1=ok, 2=good, 3=excellent).
+Example: [S:1|R:2]`;
   }
 
-  // Build messages array with real history for proper context
+  // Build messages array
   const conversationMessages = [];
   if (history.length > 0) {
-    const recent = history.slice(-8); // last 8 messages max
+    const recent = history.slice(-10);
     for (const m of recent) {
       const isBot = m.role === "assistant" || m.role === "bot" || m.from === "bot" || m.type === "bot";
       conversationMessages.push({
@@ -99,52 +106,44 @@ export async function getClaudeResponse({
       });
     }
   }
-  // Add current message
   conversationMessages.push({ role: "user", content: userMessage });
 
-  try {
-    const polzaKey = process.env.POLZA_API_KEY;
-    if (!polzaKey) throw new Error("POLZA_API_KEY is not configured on the server");
-
-    const response = await fetch("https://api.polza.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${polzaKey}`
-      },
-      body: JSON.stringify({
-        model: "anthropic/claude-3-haiku",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...conversationMessages
-        ],
-        temperature: 0.7,
-        max_tokens: 400
-      })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Polza API Error: ${errText}`);
-    }
-
-    const data = await response.json();
-    const rawText = data.choices[0].message.content;
-    const { cleanText, stars, prizStep: newStep } = parseTag(rawText);
-
-    return {
-      text: cleanText,
-      stars,
-      prizStep: newStep || prizStep,
+  const response = await fetch("https://api.polza.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${polzaKey}`
+    },
+    body: JSON.stringify({
       model: "anthropic/claude-3-haiku",
-      usage: {
-        promptTokens: data.usage?.prompt_tokens || 0,
-        completionTokens: data.usage?.completion_tokens || 0,
-        totalTokens: data.usage?.total_tokens || 0,
-      },
-    };
-  } catch (e) {
-    console.error("[Polza Provider] Error:", e);
-    throw e;
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...conversationMessages
+      ],
+      temperature: 0.7,
+      max_tokens: 300
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Polza API Error: ${errText}`);
   }
+
+  const data = await response.json();
+  const rawText = data.choices[0].message.content;
+  const { cleanText, stars, prizStep: newStep } = parseTag(rawText);
+
+  return {
+    text: cleanText,
+    stars,
+    // If AI returned a valid stage → use it; otherwise keep current
+    prizStep: newStep !== null ? newStep : prizStep,
+    model: "anthropic/claude-3-haiku",
+    usage: {
+      promptTokens: data.usage?.prompt_tokens || 0,
+      completionTokens: data.usage?.completion_tokens || 0,
+      totalTokens: data.usage?.total_tokens || 0,
+    },
+  };
 }
