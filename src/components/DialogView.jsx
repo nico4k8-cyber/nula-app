@@ -11,6 +11,7 @@ export default function DialogView({
   prizStep,
   sessionStars,
   totalStars,
+  isTutorial,
   onBack,
   onShowAnswer,
   onSelectResource,
@@ -26,6 +27,11 @@ export default function DialogView({
 }) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+
+  // Автоскролл к последнему сообщению
+  useEffect(() => {
+    bottomRef?.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     return () => {
@@ -218,6 +224,16 @@ export default function DialogView({
               disabled={isTyping}
               t={t}
             />
+          </div>
+        )}
+
+        {/* Tutorial hint above input */}
+        {isTutorial && messages.filter(m => m.role === 'user').length === 0 && (
+          <div className="mb-2 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2">
+            <span className="text-lg">🐉</span>
+            <p className="text-[13px] text-amber-800 font-semibold">
+              Напиши свою идею — любую! Орин поможет её улучшить.
+            </p>
           </div>
         )}
 

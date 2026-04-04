@@ -102,7 +102,8 @@ export default function App() {
   const [activeCategory, setActiveCategory] = useState(saved?.activeCategory || "library");
   const [unlockedBuildingId, setUnlockedBuildingId] = useState(null);
   const [activeIslandId, setActiveIslandId] = useState(saved?.activeIslandId || null);
-  
+  const [isTutorial, setIsTutorial] = useState(false);
+
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -242,6 +243,9 @@ export default function App() {
     const text = input.trim();
     if (!text || isTyping) return;
 
+    // Clear tutorial after first message
+    if (isTutorial) setIsTutorial(false);
+
     setInput("");
     const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
     const newMessages = [...messages, { type: "child", text, timestamp }];
@@ -338,7 +342,16 @@ export default function App() {
         )}
 
         {phase === "dragon-bubble" && (
-          <DragonBubbleScreen t={t} theme={theme} onStart={() => { setHasSeenOnboarding(true); setPhase("city"); }} />
+          <DragonBubbleScreen t={t} theme={theme} lang={lang} onStart={(opts) => {
+            setHasSeenOnboarding(true);
+            if (opts?.tutorial) {
+              setTask(TASKS[0]);
+              setIsTutorial(true);
+              setPhase("task-preview");
+            } else {
+              setPhase("city");
+            }
+          }} />
         )}
 
         {phase === "city" && (
@@ -381,12 +394,13 @@ export default function App() {
         )}
 
         {phase === "task-preview" && (
-          <TaskPreview 
-            task={task} 
-            t={t} 
-            lang={lang} 
-            onBack={() => setPhase("picker")} 
-            onStart={startDialog} 
+          <TaskPreview
+            task={task}
+            t={t}
+            lang={lang}
+            isTutorial={isTutorial}
+            onBack={() => { setIsTutorial(false); setPhase("picker"); }}
+            onStart={startDialog}
           />
         )}
 
@@ -397,21 +411,23 @@ export default function App() {
             isTyping={isTyping} 
             trizState={trizState}
             prizStep={prizStep} 
-            sessionStars={sessionStars} 
+            sessionStars={sessionStars}
             totalStars={totalStars}
+            isTutorial={isTutorial}
             t={t}
             lang={lang}
             onBack={() => {
               if (messages.length > 2) {
                 setShowConfirmDialog(true);
               } else {
+                setIsTutorial(false);
                 setPhase("picker");
               }
-            }} 
+            }}
             onSendMessage={handleUserMessage}
-            input={input} 
-            setInput={setInput} 
-            inputRef={inputRef} 
+            input={input}
+            setInput={setInput}
+            inputRef={inputRef}
             bottomRef={bottomRef}
           />
         )}

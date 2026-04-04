@@ -39,18 +39,16 @@ export default function SettingsMenu({
         
         <div className="flex flex-col gap-4">
           {!user ? (
-            <button 
+            <button
               onClick={handleLogin}
-              className="btn-premium"
+              className="w-full group flex items-center gap-4 bg-orange-500 hover:bg-orange-600 active:translate-y-0.5 rounded-[28px] px-6 py-5 shadow-lg shadow-orange-900/30 border-b-4 border-orange-700 active:border-b-0 transition-all"
             >
-              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform">
-                ☁️
-              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl shrink-0">☁️</div>
               <div className="flex-1 text-left">
-                 <h3 className="text-white font-black text-lg uppercase tracking-tight">{t('save_progress')}</h3>
-                 <p className="text-white/10 text-xs font-bold uppercase tracking-widest">{t('login_google')}</p>
+                <h3 className="text-white font-black text-[16px] uppercase tracking-tight leading-tight">{t('save_progress')}</h3>
+                <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest mt-0.5">{t('login_google')}</p>
               </div>
-              <span className="text-white/40 text-2xl group-hover:translate-x-2 transition-transform">→</span>
+              <span className="text-white/50 text-xl group-hover:translate-x-1 transition-transform">→</span>
             </button>
           ) : (
             <div className="w-full bg-emerald-50 p-6 rounded-[32px] border-2 border-emerald-100 flex items-center gap-6">
@@ -101,15 +99,16 @@ export default function SettingsMenu({
             </button>
           </div>
 
-          <button onClick={() => { window.__openCity = true; onClose(); }}
-            className="btn-premium"
+          <button
+            onClick={() => { window.__openCity = true; onClose(); }}
+            className="w-full group flex items-center gap-4 bg-orange-500 hover:bg-orange-600 active:translate-y-0.5 rounded-[28px] px-6 py-5 shadow-lg shadow-orange-900/30 border-b-4 border-orange-700 active:border-b-0 transition-all"
           >
-            <span className="text-3xl transition-transform group-hover:scale-110">🗺️</span>
-            <div className="flex-1">
-              <h3 className="font-black text-[18px] uppercase tracking-tight">{t('world_map')}</h3>
-              <p className="text-white/40 text-[11px] font-bold uppercase tracking-widest">{t('back_to_islands')}</p>
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl shrink-0">🗺️</div>
+            <div className="flex-1 text-left">
+              <h3 className="text-white font-black text-[16px] uppercase tracking-tight leading-tight">{t('world_map')}</h3>
+              <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest mt-0.5">{t('back_to_islands')}</p>
             </div>
-            <span className="text-white/20 text-2xl group-hover:translate-x-2 transition-transform">→</span>
+            <span className="text-white/50 text-xl group-hover:translate-x-1 transition-transform">→</span>
           </button>
 
           {user?.email === "k.sunstroke@gmail.com" && (

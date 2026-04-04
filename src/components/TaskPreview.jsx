@@ -1,32 +1,42 @@
 import React from 'react';
 
-export default function TaskPreview({ task, onStart, onBack, t, lang }) {
+export default function TaskPreview({ task, onStart, onBack, t, lang, isTutorial }) {
   const title = lang === 'en' ? (task.title_en || task.title) : task.title;
   const question = lang === 'en' ? (task.question_en || task.question_ru) : task.question_ru;
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-white animate-fade-in relative overflow-hidden">
+      {/* Tutorial hint banner */}
+      {isTutorial && (
+        <div className="absolute top-0 inset-x-0 z-30 bg-amber-400 text-slate-900 text-center text-[13px] font-bold py-2 px-4 flex items-center justify-center gap-2">
+          <span>🐉</span>
+          <span>Прочитай задачу и нажми кнопку внизу</span>
+        </div>
+      )}
+
       {/* Top Image Header */}
       <div className="relative h-[45vh] w-full overflow-hidden">
-        <img 
+        <img
           src={task.image_url || task.imgUrl || "/assets/webp/main_island.webp"}
           className="w-full h-full object-cover"
           alt={title}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/20" />
-        
-        <button 
-          onClick={onBack}
-          className="absolute top-8 left-8 w-12 h-12 flex items-center justify-center bg-white/90 rounded-2xl text-slate-800 text-xl shadow-xl active:scale-95 transition-all z-20"
-        >
-          ←
-        </button>
+
+        {!isTutorial && (
+          <button
+            onClick={onBack}
+            className="absolute top-8 left-8 w-12 h-12 flex items-center justify-center bg-white/90 rounded-2xl text-slate-800 text-xl shadow-xl active:scale-95 transition-all z-20"
+          >
+            ←
+          </button>
+        )}
       </div>
 
       {/* Content Area */}
       <div className="flex-1 px-8 pt-2 pb-32 -mt-12 relative z-10 bg-white rounded-t-[40px] shadow-[0_-20px_40px_rgba(0,0,0,0.05)] flex flex-col">
         <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mt-4 mb-8" />
-        
+
         <div className="flex items-center gap-3 mb-4">
            <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
              {t?.('picker.missions') || 'МИССИЯ'}
@@ -59,9 +69,12 @@ export default function TaskPreview({ task, onStart, onBack, t, lang }) {
       {/* Fixed Bottom Button */}
       <div className="fixed bottom-0 inset-x-0 flex justify-center pointer-events-none">
         <div className="w-full max-w-md px-8 pb-8 pt-16 bg-gradient-to-t from-white via-white to-transparent">
+          {isTutorial && (
+            <div className="text-center mb-2 animate-bounce text-amber-500 text-xl pointer-events-none">↓</div>
+          )}
           <button
             onClick={onStart}
-            className="btn-premium w-full pointer-events-auto flex items-center justify-center gap-2"
+            className={`btn-premium w-full pointer-events-auto flex items-center justify-center gap-2 ${isTutorial ? 'ring-4 ring-amber-400 ring-offset-2' : ''}`}
           >
             {t?.('start_solving') || 'К РЕШЕНИЮ'}
             <span className="text-xl">🚀</span>
