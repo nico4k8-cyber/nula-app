@@ -62,7 +62,9 @@ export default function TaskPreview({ task, onStart, onBack, t, lang, isTutorial
            <div className="p-6 bg-indigo-50 rounded-[32px] border-2 border-indigo-100/50 mb-8 flex items-start gap-4">
               <span className="text-2xl mt-1">🔭</span>
               <p className="text-[14px] text-indigo-900 font-bold leading-snug">
-                {t?.('preview_tip') || 'Используй метод ПРИЗ, чтобы найти самое сильное решение этой задачи!'}
+                {isTutorial
+                  ? 'Орин задаст тебе вопросы. Отвечай честно — правильных и неправильных ответов нет!'
+                  : (t?.('preview_tip') || 'Орин поможет найти самое неожиданное решение — расскажи ему свою идею!')}
               </p>
            </div>
         </div>
