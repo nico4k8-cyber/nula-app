@@ -2,7 +2,9 @@ import React from 'react';
 
 export default function TaskPreview({ task, onStart, onBack, t, lang, isTutorial }) {
   const title = lang === 'en' ? (task.title_en || task.title) : task.title;
-  const question = lang === 'en' ? (task.question_en || task.question_ru) : task.question_ru;
+  const question = lang === 'en'
+    ? (task.puzzle?.question_en || task.teaser_en || task.puzzle?.question || task.teaser)
+    : (task.puzzle?.question || task.teaser);
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-white animate-fade-in relative overflow-hidden">
@@ -66,11 +68,11 @@ export default function TaskPreview({ task, onStart, onBack, t, lang, isTutorial
         </div>
       </div>
 
-      {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 inset-x-0 flex justify-center pointer-events-none">
-        <div className="w-full max-w-md px-8 pb-8 pt-16 bg-gradient-to-t from-white via-white to-transparent">
+      {/* Bottom Button */}
+      <div className="fixed bottom-0 inset-x-0 flex justify-center pointer-events-none z-20">
+        <div className="w-full max-w-md px-8 pb-10 pt-16 bg-gradient-to-t from-white via-white to-transparent pointer-events-none">
           {isTutorial && (
-            <div className="text-center mb-2 animate-bounce text-amber-500 text-xl pointer-events-none">↓</div>
+            <div className="text-center mb-2 animate-bounce text-amber-500 text-2xl pointer-events-none">↓</div>
           )}
           <button
             onClick={onStart}
