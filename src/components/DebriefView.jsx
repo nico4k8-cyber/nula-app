@@ -42,17 +42,6 @@ export default function DebriefView({
         </p>
       </div>
 
-      {/* What did we learn — simple */}
-      {task?.trick?.name && (
-        <div className="mx-5 mt-4 bg-white border-2 border-slate-100 rounded-[24px] p-5 shadow-sm">
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Что ты открыл</p>
-          <p className="text-[20px] font-black text-slate-800 mb-1">{task.trick.name}</p>
-          {task.trick.animalName && (
-            <p className="text-[12px] text-slate-400 font-bold uppercase tracking-wide">{task.trick.animalName}</p>
-          )}
-        </div>
-      )}
-
       <div className="flex-1" />
 
       {/* CTA */}
