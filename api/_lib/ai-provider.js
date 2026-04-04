@@ -94,20 +94,21 @@ export async function getClaudeResponse({
   }
 
   try {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    if (!anthropicKey) throw new Error("ANTHROPIC_API_KEY is not configured on the server");
+    const polzaKey = process.env.POLZA_API_KEY;
+    if (!polzaKey) throw new Error("POLZA_API_KEY is not configured on the server");
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://api.polza.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01"
+        "Authorization": `Bearer ${polzaKey}`
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5",
-        system: `${systemPrompt}\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ НАСТАВНИКА! В КОНЦЕ ОБЯЗАТЕЛЬНО ПОСТАВЬ ТЕГ [ПРИЗ:X|⭐:N].`,
-        messages: [{ role: "user", content: userMessage }],
+        model: "anthropic/claude-haiku-4-5",
+        messages: [
+          { role: "system", content: `${systemPrompt}\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ НАСТАВНИКА! В КОНЦЕ ОБЯЗАТЕЛЬНО ПОСТАВЬ ТЕГ [ПРИЗ:X|⭐:N].` },
+          { role: "user", content: userMessage }
+        ],
         temperature: 0.7,
         max_tokens: 500
       })
@@ -115,22 +116,22 @@ export async function getClaudeResponse({
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Anthropic API Error: ${errText}`);
+      throw new Error(`Polza API Error: ${errText}`);
     }
 
     const data = await response.json();
-    const rawText = data.content[0].text;
+    const rawText = data.choices[0].message.content;
     const { cleanText, stars, prizStep: newStep } = parseTag(rawText);
 
     return {
       text: cleanText,
       stars,
       prizStep: newStep || prizStep,
-      model: "claude-haiku-4-5",
+      model: "anthropic/claude-haiku-4-5",
       usage: {
-        promptTokens: data.usage?.input_tokens || 0,
-        completionTokens: data.usage?.output_tokens || 0,
-        totalTokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
+        promptTokens: data.usage?.prompt_tokens || 0,
+        completionTokens: data.usage?.completion_tokens || 0,
+        totalTokens: data.usage?.total_tokens || 0,
       },
     };
   } catch (e) {
