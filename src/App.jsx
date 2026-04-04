@@ -30,6 +30,7 @@ import Paywall from "./components/Paywall";
 import BredomakerView from "./components/BredomakerView";
 import TsarMountainView from "./components/TsarMountainView";
 import UpsellView, { getUpsellMessage } from "./components/UpsellView";
+import DailyChallenge from "./components/DailyChallenge";
 
 // Utils
 import { 
@@ -216,11 +217,20 @@ export default function App() {
     
     // Auto-create TRIZ state if it's a TRIZ task
     if (task.core_problem && task.ikr) {
-      const newState = createNewState(task.id, difficulty >= 2 ? 14 : 10);
+      // difficulty 1 → ПРИЗ-базовый (3 фазы, age<8 в движке)
+      // difficulty 2 → ПРИЗ-стандарт (5 фаз, age 8-12)
+      // difficulty 3 → ПРИЗ-про (7 фаз, age 13+)
+      const ageForEngine = task.difficulty === 1 ? 7 : task.difficulty === 2 ? 10 : 14;
+      const newState = createNewState(task.id, ageForEngine);
       setTrizState(newState);
+      const hook = (task.difficulty >= 2 ? task.puzzle?.hookSenior : task.puzzle?.hookJunior)
+        || task.teaser
+        || task.puzzle?.question_ru
+        || task.puzzle?.question
+        || "Что здесь является главным противоречием?";
       setMessages([
         { type: "bot", text: "🐉 Давай решим эту задачу вместе!" },
-        { type: "bot", text: difficulty >= 2 ? task.puzzle?.hookSenior : task.puzzle?.hookJunior }
+        { type: "bot", text: hook },
       ]);
     }
     
@@ -332,7 +342,18 @@ export default function App() {
         )}
 
         {phase === "city" && (
-          <City 
+          <div className="flex flex-col flex-1 min-h-screen relative overflow-hidden">
+            <div className="absolute top-20 left-0 right-0 z-[55] pointer-events-none">
+              <div className="pointer-events-auto">
+                <DailyChallenge
+                  TASKS={TASKS}
+                  completedTasks={completedTasks}
+                  onStartTask={startTaskPreview}
+                  t={t}
+                />
+              </div>
+            </div>
+            <City 
             theme={theme} 
             totalStars={totalStars} 
             t={t} 
@@ -350,6 +371,7 @@ export default function App() {
             activeIslandId={activeIslandId}
             setActiveIslandId={setActiveIslandId}
           />
+          </div>
         )}
 
         {phase === "picker" && (

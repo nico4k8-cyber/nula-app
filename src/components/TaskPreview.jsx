@@ -57,14 +57,16 @@ export default function TaskPreview({ task, onStart, onBack, t, lang }) {
       </div>
 
       {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 inset-x-0 p-8 bg-gradient-to-t from-white via-white to-transparent pointer-events-none">
-        <button 
-          onClick={onStart}
-          className="btn-premium pointer-events-auto"
-        >
-          {t?.('start_solving') || 'К РЕШЕНИЮ'}
-          <span className="text-xl">🚀</span>
-        </button>
+      <div className="fixed bottom-0 inset-x-0 flex justify-center pointer-events-none">
+        <div className="w-full max-w-md px-8 pb-8 pt-16 bg-gradient-to-t from-white via-white to-transparent">
+          <button
+            onClick={onStart}
+            className="btn-premium w-full pointer-events-auto flex items-center justify-center gap-2"
+          >
+            {t?.('start_solving') || 'К РЕШЕНИЮ'}
+            <span className="text-xl">🚀</span>
+          </button>
+        </div>
       </div>
     </div>
   );

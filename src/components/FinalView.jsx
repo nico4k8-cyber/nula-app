@@ -1,5 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import { thinkingType } from "../utils/gameUtils";
+
+function ShareButton({ totalStars, completedCount }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleShare() {
+    const text = `Я решил ${completedCount} задач и заработал ${totalStars} звёзд ТРИЗ-мышления! 🧠⭐\nПопробуй сам: https://shariel.app`;
+    if (navigator.share) {
+      navigator.share({ text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  }
+
+  return (
+    <button
+      onClick={handleShare}
+      className="w-full py-4 rounded-[22px] bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-black text-[15px] shadow-lg shadow-indigo-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+    >
+      {copied ? '✅ Скопировано!' : '📤 Поделиться результатом'}
+    </button>
+  );
+}
 
 export default function FinalView({
   totalStars,
@@ -51,18 +76,14 @@ export default function FinalView({
            </p>
            
            <div className="flex flex-col w-full gap-4">
+              <ShareButton totalStars={totalStars} completedCount={completedTasks.length} />
+
               <button onClick={onBackToCity}
                 className="w-full bg-slate-900 text-white text-[16px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-xl hover:bg-black"
               >
                 {t('world_map')} →
               </button>
-              
-              <button onClick={onUgc}
-                className="w-full bg-emerald-500 text-white text-[16px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-xl hover:bg-emerald-600 border-b-4 border-emerald-700"
-              >
-                {t('final.create_own')}
-              </button>
-              
+
               <button onClick={onRestart}
                 className="w-full text-slate-400 text-[14px] font-bold py-2 hover:text-slate-600 transition-all"
               >
