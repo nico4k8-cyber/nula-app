@@ -496,7 +496,8 @@ export default function App() {
         )}
 
         {phase === "picker" && (
-          <TaskPicker activeCategory={activeCategory} onBack={() => setPhase("city")} 
+          <TaskPicker activeCategory={activeCategory} onBack={() => setPhase("city")}
+            onOpenMenu={() => setMenuOpen(true)}
             TASKS={TASKS} completedTasks={completedTasks} onStartTask={startTaskPreview} t={t} lang={lang}
           />
         )}

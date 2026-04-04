@@ -12,6 +12,7 @@ function getDailyTask(tasks) {
 export default function TaskPicker({
   activeCategory,
   onBack,
+  onOpenMenu,
   TASKS,
   completedTasks,
   onStartTask,
@@ -42,12 +43,20 @@ export default function TaskPicker({
           activeCategory === 'city-hall' ? 'bg-gradient-to-br from-blue-600 to-indigo-900 border-b-4 border-blue-900' :
           'bg-gradient-to-br from-slate-600 to-slate-900 border-b-4 border-slate-900'}
       `}>
-        <button 
+        <button
           onClick={onBack}
           className="absolute top-28 left-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-[13px] font-black uppercase tracking-widest transition-all active:scale-95"
         >
           ← НА ОСТРОВ
         </button>
+        {onOpenMenu && (
+          <button
+            onClick={onOpenMenu}
+            className="absolute top-28 right-6 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xl transition-all active:scale-90"
+          >
+            👤
+          </button>
+        )}
         
         <div className="mt-8 text-center" style={{ viewTransitionName: 'building-header' }}>
            <div className="text-6xl mb-4 filter drop-shadow-lg scale-110">
