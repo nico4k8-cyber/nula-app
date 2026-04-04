@@ -51,7 +51,7 @@ export const translations = {
       locked_desc: "Чтобы открыть этот регион, нужно решить ещё несколько задач на других островах.",
       locked_ok: "ПРИНЯТО! ✨"
     },
-    preview_tip: "Используй метод ПРИЗ, чтобы найти самое сильное решение этой задачи!",
+    preview_tip: "Орин поможет найти самое неожиданное решение — расскажи ему свою идею!",
     start_solving: "К РЕШЕНИЮ",
     hud: {
        guest: "Гость",
@@ -167,7 +167,7 @@ export const translations = {
       locked_desc: "To unlock this region, you need to solve more tasks on other islands.",
       locked_ok: "UNDERSTOOD! ✨"
     },
-    preview_tip: "Use the PRIZ method to find the strongest solution to this challenge!",
+    preview_tip: "Orin will help find the most unexpected solution — just share your idea!",
     start_solving: "START SOLVING",
     hud: {
        guest: "Guest",
