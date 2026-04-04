@@ -1,10 +1,19 @@
 import React from "react";
 
-export default function TaskPicker({ 
-  activeCategory, 
-  onBack, 
-  TASKS, 
-  completedTasks, 
+function getDailyTask(tasks) {
+  const today = new Date().toISOString().slice(0, 10);
+  let hash = 0;
+  for (let i = 0; i < today.length; i++) {
+    hash = (hash * 31 + today.charCodeAt(i)) >>> 0;
+  }
+  return tasks[hash % tasks.length];
+}
+
+export default function TaskPicker({
+  activeCategory,
+  onBack,
+  TASKS,
+  completedTasks,
   onStartTask,
   t,
   lang = 'ru'
@@ -12,6 +21,9 @@ export default function TaskPicker({
   const filtered = TASKS
     .filter(taskItem => taskItem.category === activeCategory)
     .sort((a, b) => (a.difficulty || 1) - (b.difficulty || 1));
+
+  const dailyTask = getDailyTask(TASKS);
+  const isDailyInThisCategory = dailyTask?.category === activeCategory;
 
   const doneCount = filtered.filter(t => completedTasks.includes(t.id)).length;
 
@@ -86,21 +98,58 @@ export default function TaskPicker({
       {/* Tasks Grid */}
       <div className="flex-1 overflow-y-auto px-6 pb-24 pt-4 custom-scrollbar">
          <div className="grid grid-cols-2 gap-4 max-w-[600px] mx-auto">
+           {/* Daily task card — full width, only if it belongs to this category */}
+           {isDailyInThisCategory && (() => {
+             const isDone = completedTasks.includes(dailyTask.id);
+             const idx = TASKS.findIndex(t => t.id === dailyTask.id);
+             return (
+               <button key={`daily-${dailyTask.id}`}
+                 onClick={() => onStartTask(idx)}
+                 className={`col-span-2 rounded-[28px] p-5 flex items-center gap-4 text-left transition-all active:scale-[0.98] border-2 shadow-lg
+                   ${isDone
+                     ? "bg-emerald-50 border-emerald-200"
+                     : "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 hover:shadow-amber-100 hover:shadow-xl"}`}
+               >
+                 <div className="text-5xl flex-shrink-0">{dailyTask.icon || dailyTask.puzzle?.emoji || "❓"}</div>
+                 <div className="flex-1 min-w-0">
+                   <div className="flex items-center gap-2 mb-1">
+                     <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">🔥 Задача дня</span>
+                   </div>
+                   <p className={`text-[15px] font-black leading-tight ${isDone ? "text-emerald-700" : "text-slate-800"}`}>
+                     {getTitle(dailyTask)}
+                   </p>
+                   <div className="flex gap-0.5 mt-1">
+                     {[...Array(dailyTask.difficulty || 1)].map((_, i) => (
+                       <span key={i} className="text-[11px]">⭐</span>
+                     ))}
+                   </div>
+                 </div>
+                 {isDone
+                   ? <div className="bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0">✓</div>
+                   : <div className="text-amber-400 text-xl flex-shrink-0">→</div>
+                 }
+               </button>
+             );
+           })()}
+
            {filtered.length === 0 ? (
              <div className="col-span-2 py-20 text-center opacity-40">
-                <div className="text-5xl mb-4">📜</div>
-                <p className="font-bold uppercase tracking-widest text-xs">Задач пока нет</p>
+               <div className="text-5xl mb-4">📜</div>
+               <p className="font-bold uppercase tracking-widest text-xs">Задач пока нет</p>
              </div>
            ) : (
              filtered.map((taskItem) => {
                const originalIdx = TASKS.findIndex(task => task.id === taskItem.id);
                const isDone = completedTasks.includes(taskItem.id);
+               const isDaily = isDailyInThisCategory && taskItem.id === dailyTask.id;
                return (
                  <button key={taskItem.id}
                    onClick={() => onStartTask(originalIdx)}
                    className={`relative overflow-hidden aspect-square h-[170px] rounded-[36px] p-4 flex flex-col items-center justify-center text-center transition-all active:scale-95 border-4 group shadow-lg
-                     ${isDone 
-                       ? "bg-emerald-50 border-emerald-200" 
+                     ${isDone
+                       ? "bg-emerald-50 border-emerald-200"
+                       : isDaily
+                       ? "bg-amber-50 border-amber-300"
                        : "bg-white border-white hover:border-orange-200 hover:shadow-orange-100 hover:shadow-2xl"}`}
                  >
                    <div className="text-5xl mb-3 flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
@@ -112,16 +161,16 @@ export default function TaskPicker({
                        {getTitle(taskItem)}
                      </span>
                      <div className="flex items-center justify-center gap-0.5 mt-1">
-                        {[...Array(taskItem.difficulty || 1)].map((_, i) => (
-                          <span key={i} className="text-[10px]">⭐</span>
-                        ))}
+                       {[...Array(taskItem.difficulty || 1)].map((_, i) => (
+                         <span key={i} className="text-[10px]">⭐</span>
+                       ))}
                      </div>
                    </div>
-                   
                    {isDone && (
-                     <div className="absolute top-4 right-4 bg-emerald-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-lg">
-                        ✓
-                     </div>
+                     <div className="absolute top-4 right-4 bg-emerald-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-lg">✓</div>
+                   )}
+                   {isDaily && !isDone && (
+                     <div className="absolute top-3 left-3 text-[9px] font-black bg-amber-400 text-white px-2 py-0.5 rounded-full">🔥</div>
                    )}
                  </button>
                );
