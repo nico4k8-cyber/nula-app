@@ -71,23 +71,88 @@ function TabTasks({ TASKS, onBack }) {
     setEditingTask(newTask);
   };
 
+  // Island → locations mapping
+  const ISLANDS = [
+    { id: 'main',    label: '🏝 Главный остров', locations: ['library', 'city-hall', 'nature-reserve'] },
+    { id: 'craft',   label: '⚙️ Мастерская',     locations: ['workshop', 'farm'] },
+    { id: 'science', label: '🔬 Наука',           locations: ['laboratory'] },
+    { id: 'summit',  label: '🏔 Вершина',         locations: ['tsar'] },
+  ];
+  const LOCATION_LABELS = {
+    'library': '📚 Библиотека', 'city-hall': '🏛 Ратуша', 'nature-reserve': '🏞 Заповедник',
+    'workshop': '🔧 Мастерская', 'farm': '🚜 Ферма', 'laboratory': '🔬 Лаборатория', 'tsar': '👑 Царь-гора',
+  };
+
+  // Check if task has content (not just template)
+  const isIncomplete = (task) => {
+    const hasTeaser = task.teaser && task.teaser.length > 5 && !task.teaser.includes('TODO') && !task.teaser.includes('...');
+    const hasCondition = task.condition || task.core_problem?.need || task.puzzle?.question || task.puzzle?.question_ru;
+    return !hasTeaser || !hasCondition;
+  };
+
   return (
     <div className="flex flex-1 overflow-hidden">
-      {/* Список */}
-      <div className="w-1/3 border-r border-slate-800 overflow-y-auto p-4 flex flex-col gap-3">
-        <button onClick={addNewTask} className="w-full py-3 rounded-xl bg-indigo-700 text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all">+ Добавить задачу</button>
-        {localTasks.map(task => (
-          <button key={task.id} onClick={() => setEditingTask(task)}
-            className={`p-4 rounded-2xl text-left border-2 transition-all ${editingTask?.id === task.id ? 'bg-indigo-600/20 border-indigo-500' : 'bg-slate-900 border-transparent hover:border-slate-700'}`}>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{task.icon || '❓'}</span>
-              <div className="min-w-0">
-                <p className="text-[13px] font-black truncate">{task.title}</p>
-                <p className="text-[10px] text-slate-500 uppercase font-black">{task.category} · ★{task.difficulty}</p>
-              </div>
+      {/* Список — по островам и локациям */}
+      <div className="w-1/3 border-r border-slate-800 overflow-y-auto p-3 flex flex-col gap-1">
+        <button onClick={addNewTask} className="w-full py-2.5 rounded-xl bg-indigo-700 text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all mb-2">+ Добавить задачу</button>
+
+        {ISLANDS.map(island => {
+          const islandTasks = localTasks.filter(t => island.locations.includes(t.category));
+          if (islandTasks.length === 0) return null;
+          return (
+            <div key={island.id} className="mb-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2 py-1 mb-1">{island.label}</div>
+              {island.locations.map(loc => {
+                const locTasks = islandTasks.filter(t => t.category === loc);
+                if (locTasks.length === 0) return null;
+                return (
+                  <div key={loc} className="mb-2">
+                    <div className="text-[10px] font-bold text-slate-600 px-3 py-0.5 bg-slate-800/50 rounded-lg mb-1">
+                      {LOCATION_LABELS[loc] || loc} · {locTasks.length} задач
+                    </div>
+                    {locTasks.map(task => {
+                      const incomplete = isIncomplete(task);
+                      return (
+                        <button key={task.id} onClick={() => setEditingTask(task)}
+                          className={`w-full p-3 rounded-xl text-left border transition-all mb-0.5 ${editingTask?.id === task.id ? 'bg-indigo-600/20 border-indigo-500' : 'bg-slate-900/60 border-transparent hover:border-slate-700'}`}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg flex-shrink-0">{task.icon || '❓'}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[12px] font-black truncate">{task.title}</p>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="text-[9px] text-slate-500">★{task.difficulty}</span>
+                                {incomplete && <span className="text-[9px] bg-red-900/50 text-red-400 px-1.5 py-0.5 rounded font-black">⚠ нет текста</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
-          </button>
-        ))}
+          );
+        })}
+
+        {/* Tasks without known location */}
+        {(() => {
+          const allKnown = ISLANDS.flatMap(i => i.locations);
+          const orphans = localTasks.filter(t => !allKnown.includes(t.category));
+          if (!orphans.length) return null;
+          return (
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-red-500 px-2 py-1 mb-1">⚠ Без локации</div>
+              {orphans.map(task => (
+                <button key={task.id} onClick={() => setEditingTask(task)}
+                  className={`w-full p-3 rounded-xl text-left border transition-all mb-0.5 ${editingTask?.id === task.id ? 'bg-indigo-600/20 border-indigo-500' : 'bg-red-900/20 border-red-900/40 hover:border-red-700'}`}>
+                  <span className="text-[12px] font-black">{task.icon} {task.title}</span>
+                  <span className="text-[9px] text-red-400 ml-2">{task.category}</span>
+                </button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       {/* Редактор */}
       <div className="flex-1 overflow-y-auto p-8 bg-slate-900/20">

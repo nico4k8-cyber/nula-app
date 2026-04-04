@@ -18,8 +18,9 @@ function logUsage({ action, model, usage, userId }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
   if (!url || !key || !usage?.totalTokens) return;
-  // Стоимость: Gemini 2.0 Flash ~$0.075 / 1M токенов
-  const costUsd = (usage.totalTokens / 1_000_000) * 0.075;
+  // Claude 3 Haiku: $0.25/1M input + $1.25/1M output
+  const costUsd = ((usage.promptTokens || 0) / 1_000_000) * 0.25
+                + ((usage.completionTokens || 0) / 1_000_000) * 1.25;
   const supabase = createClient(url, key);
   supabase.from('token_usage').insert({
     user_id: userId || null,
