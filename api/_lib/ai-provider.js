@@ -114,7 +114,7 @@ export async function getClaudeResponse({
         "Authorization": `Bearer ${polzaKey}`
       },
       body: JSON.stringify({
-        model: "anthropic/claude-haiku-4-5",
+        model: "anthropic/claude-3-haiku",
         messages: [
           { role: "system", content: systemPrompt },
           ...conversationMessages
@@ -137,7 +137,7 @@ export async function getClaudeResponse({
       text: cleanText,
       stars,
       prizStep: newStep || prizStep,
-      model: "anthropic/claude-haiku-4-5",
+      model: "anthropic/claude-3-haiku",
       usage: {
         promptTokens: data.usage?.prompt_tokens || 0,
         completionTokens: data.usage?.completion_tokens || 0,
