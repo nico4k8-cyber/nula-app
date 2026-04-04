@@ -94,44 +94,43 @@ export async function getClaudeResponse({
   }
 
   try {
-    const polzaKey = process.env.POLZA_API_KEY;
-    if (!polzaKey) throw new Error("POLZA_API_KEY is not configured on the server");
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (!anthropicKey) throw new Error("ANTHROPIC_API_KEY is not configured on the server");
 
-    const response = await fetch(`https://api.polza.ai/v1/chat/completions`, {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${polzaKey}`
+        "x-api-key": anthropicKey,
+        "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
-        messages: [
-          { role: "system", content: `${systemPrompt}\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ НАСТАВНИКА! В КОНЦЕ ОБЯЗАТЕЛЬНО ПОСТАВЬ ТЕГ [ПРИЗ:X|⭐:N].` },
-          { role: "user", content: userMessage }
-        ],
+        model: "claude-haiku-4-5",
+        system: `${systemPrompt}\nВАЖНО: ВЫВЕДИ ТОЛЬКО ИТОГОВУЮ РЕПЛИКУ НАСТАВНИКА! В КОНЦЕ ОБЯЗАТЕЛЬНО ПОСТАВЬ ТЕГ [ПРИЗ:X|⭐:N].`,
+        messages: [{ role: "user", content: userMessage }],
         temperature: 0.7,
         max_tokens: 500
       })
     });
 
     if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Polza API Error: ${errText}`);
+      const errText = await response.text();
+      throw new Error(`Anthropic API Error: ${errText}`);
     }
 
     const data = await response.json();
-    const rawText = data.choices[0].message.content;
+    const rawText = data.content[0].text;
     const { cleanText, stars, prizStep: newStep } = parseTag(rawText);
 
     return {
       text: cleanText,
       stars,
       prizStep: newStep || prizStep,
-      model: "google/gemini-2.0-flash-001",
+      model: "claude-haiku-4-5",
       usage: {
-        promptTokens: data.usage?.prompt_tokens || 0,
-        completionTokens: data.usage?.completion_tokens || 0,
-        totalTokens: data.usage?.total_tokens || 0,
+        promptTokens: data.usage?.input_tokens || 0,
+        completionTokens: data.usage?.output_tokens || 0,
+        totalTokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
       },
     };
   } catch (e) {
