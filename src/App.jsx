@@ -73,6 +73,7 @@ export default function App() {
     difficulty, user, setUser, dailyTasksCount, isPremium, resetDailyCountIfNeeded,
     islands, unlockRequirements, checkUnlocks, unlockedBuildings,
     streak, updateStreak, upsellShownAt, markUpsellShown,
+    useHint, getHintsLeft,
   } = useGameStore();
 
   // Navigation & UI State
@@ -93,6 +94,7 @@ export default function App() {
   const [debriefBingo, setDebriefBingo] = useState(false);
   const [twistChoice, setTwistChoice] = useState(null);
   const [prizStep, setPrizStep] = useState(0);
+  const [isHinting, setIsHinting] = useState(false);
   const [bingoFlash, setBingoFlash] = useState(false);
   const [upsellMessage, setUpsellMessage] = useState(null);
   
@@ -226,6 +228,8 @@ export default function App() {
     setMessages([]);
     setSessionStars(0);
     setTwistChoice(null);
+    setPrizStep(0);
+    setIsHinting(false);
     
     // Auto-create TRIZ state if it's a TRIZ task
     if (task.core_problem && task.ikr) {
@@ -293,6 +297,28 @@ export default function App() {
       setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз." }]);
     } finally {
       setIsTyping(false);
+    }
+  }
+
+  async function handleHint() {
+    if (getHintsLeft() === 0) return;
+    useHint();
+    setIsHinting(true);
+    try {
+      const history = messages.map(m => ({ role: m.type === "bot" ? "bot" : "user", text: m.text }));
+      const result = await askTriz(
+        "[ПОДСКАЗКА] Ребёнок просит подсказку. Дай один наводящий вопрос — не ответ, только вопрос который поможет думать дальше.",
+        task,
+        { ...(trizState || {}), phase: prizStep },
+        history,
+        difficulty
+      );
+      const hintText = result.reply || result.text || "Подумай: какие ресурсы уже есть рядом с местом проблемы?";
+      setMessages(prev => [...prev, { type: "bot", text: hintText, isHint: true }]);
+    } catch {
+      setMessages(prev => [...prev, { type: "bot", text: "Подумай: что уже есть рядом, что можно использовать?", isHint: true }]);
+    } finally {
+      setIsHinting(false);
     }
   }
 
@@ -501,6 +527,7 @@ export default function App() {
             task={task}
             messages={messages}
             isTyping={isTyping}
+            isHinting={isHinting}
             trizState={trizState}
             prizStep={prizStep}
             sessionStars={sessionStars}
@@ -509,19 +536,10 @@ export default function App() {
             t={t}
             lang={lang}
             childMsgCount={messages.filter(m => m.type === "child").length}
-            onBack={() => {
-              if (messages.length > 2) {
-                setShowConfirmDialog(true);
-              } else {
-                setIsTutorial(false);
-                setPhase("picker");
-              }
-            }}
-            onShowAnswer={() => {
-              const answer = task?.trick || task?.ikr || "Решение: используй то, что уже есть!";
-              setMessages(prev => [...prev, { type: "show-answer", text: answer }]);
-              setTimeout(() => setPhase("debrief"), 3000);
-            }}
+            hintsLeft={getHintsLeft()}
+            onHint={handleHint}
+            onBack={() => { setIsTutorial(false); setPhase("picker"); }}
+            onSkip={() => { setIsTutorial(false); setPhase("picker"); }}
             onSendMessage={handleUserMessage}
             input={input}
             setInput={setInput}

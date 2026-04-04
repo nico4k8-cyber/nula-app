@@ -144,6 +144,27 @@ export const useGameStore = create(
       setCurrentTask: (task) => set({ currentTask: task }),
       setDifficulty: (level) => set({ difficulty: level }),
       
+      // ---- HINTS ----
+      // Free users: 3 hints per day. Premium: unlimited.
+      hintsUsedToday: 0,
+      lastHintReset: null, // ISO date string
+
+      useHint: () => set((state) => {
+        const today = new Date().toISOString().slice(0, 10);
+        const lastReset = state.lastHintReset;
+        const hintsUsed = lastReset === today ? state.hintsUsedToday : 0;
+        return { hintsUsedToday: hintsUsed + 1, lastHintReset: today };
+      }),
+
+      getHintsLeft: () => {
+        const state = get();
+        if (state.isPremium) return Infinity;
+        const FREE_HINTS_PER_DAY = 3;
+        const today = new Date().toISOString().slice(0, 10);
+        const used = state.lastHintReset === today ? state.hintsUsedToday : 0;
+        return Math.max(0, FREE_HINTS_PER_DAY - used);
+      },
+
       // ---- AUTH ACTIONS ----
       setUser: (user) => set({ user }),
       setPremium: (isPremium) => set({ isPremium }),

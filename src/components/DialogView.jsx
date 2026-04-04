@@ -13,7 +13,10 @@ export default function DialogView({
   totalStars,
   isTutorial,
   onBack,
-  onShowAnswer,
+  onSkip,
+  onHint,
+  hintsLeft,
+  isHinting,
   onSelectResource,
   onSendMessage,
   input,
@@ -26,9 +29,9 @@ export default function DialogView({
   lang
 }) {
   const [isListening, setIsListening] = useState(false);
+  const [showExitSheet, setShowExitSheet] = useState(false);
   const recognitionRef = useRef(null);
 
-  // Автоскролл к последнему сообщению
   useEffect(() => {
     bottomRef?.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -52,7 +55,7 @@ export default function DialogView({
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert(t?.('dialog.no_mic') || "Голосовой ввод недоступен в вашем браузере (попробуйте Chrome или Safari).");
+      alert(t?.('dialog.no_mic') || "Голосовой ввод недоступен в вашем браузере.");
       return;
     }
 
@@ -62,13 +65,12 @@ export default function DialogView({
     recognition.continuous = true;
 
     recognition.onstart = () => setIsListening(true);
-    
+
     let baseInput = input.trim() ? input.trim() + " " : "";
 
     recognition.onresult = (event) => {
       let finalTranscript = "";
       let interimTranscript = "";
-
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript;
@@ -76,45 +78,36 @@ export default function DialogView({
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      
       if (finalTranscript) {
-         baseInput += finalTranscript + " ";
-         setInput(baseInput);
+        baseInput += finalTranscript + " ";
+        setInput(baseInput);
       } else if (interimTranscript) {
-         setInput(baseInput + interimTranscript);
+        setInput(baseInput + interimTranscript);
       }
     };
 
-    recognition.onerror = (e) => {
-      console.error(e);
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
 
     recognitionRef.current = recognition;
-    try {
-      recognition.start();
-    } catch(e) {
-      console.error("Mic start failed", e);
-    }
+    try { recognition.start(); } catch(e) { console.error("Mic start failed", e); }
   };
 
   const isTriz = (t) => t?.core_problem && t?.ikr && t?.resources;
+  const hintsExhausted = hintsLeft === 0;
 
   return (
     <div className="flex flex-col h-[100dvh] bg-white relative animate-fade-in-up overflow-hidden">
+
       {/* HUD Header */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4 bg-white/80 backdrop-blur-md sticky top-0 z-20">
         <button
-          onClick={onBack}
+          onClick={() => setShowExitSheet(true)}
           className="w-11 h-11 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all hover:bg-slate-200 active:scale-90"
         >
           <span className="text-xl">←</span>
         </button>
-        
+
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 bg-indigo-50 px-4 py-2.5 rounded-full border border-indigo-100 shadow-sm">
             <span className="text-sm">⭐</span>
@@ -129,10 +122,10 @@ export default function DialogView({
       </div>
 
       {/* Progress Steps */}
-      <PhaseIndicator 
-        trizPhase={trizState?.phase ?? -1} 
-        prizStep={prizStep} 
-        cycleCount={trizState?.cycleCount ?? 0} 
+      <PhaseIndicator
+        trizPhase={trizState?.phase ?? -1}
+        prizStep={prizStep}
+        cycleCount={trizState?.cycleCount ?? 0}
         t={t}
       />
 
@@ -154,6 +147,15 @@ export default function DialogView({
                 <div key={i} className="flex justify-center p-2">
                   <div className="bg-emerald-500 rounded-[18px] px-6 py-3 text-[15px] font-black text-white shadow-lg animate-bounce border-2 border-emerald-300">
                     ✨ {m.text}
+                  </div>
+                </div>
+              );
+            }
+            if (m.isHint) {
+              return (
+                <div key={i} className="flex justify-center p-2 animate-fade-in">
+                  <div className="bg-amber-50 border-2 border-amber-200 rounded-[18px] px-5 py-3 text-[14px] text-amber-800 font-semibold max-w-[88%] shadow-sm">
+                    💡 {m.text}
                   </div>
                 </div>
               );
@@ -182,14 +184,10 @@ export default function DialogView({
               </div>
             </div>
           );
-          if (m.type === "show-answer") return (
-            <div key={i} className="bg-blue-600 rounded-[22px] px-6 py-4 text-[16px] text-white shadow-xl animate-fade-in border-4 border-blue-400 font-medium italic">
-              <span className="font-black uppercase tracking-tighter mr-2">{t?.('dialog.wisdom') || 'МУДРОСТЬ:'}</span> {m.text}
-            </div>
-          );
           return null;
         })}
-        {isTyping && (
+
+        {(isTyping || isHinting) && (
           <div className="flex gap-3 items-end px-2">
             <img src="/img/webp/ugolok.webp" alt="Орин" className="w-10 h-10 flex-shrink-0 rounded-full object-cover blur-[0.5px] opacity-70" />
             <div className="bg-slate-100 rounded-[22px] rounded-bl-[4px] px-5 py-3.5 flex gap-1.5 shadow-inner">
@@ -204,14 +202,6 @@ export default function DialogView({
 
       {/* Action Footer */}
       <div className="px-5 pb-6 pt-3 bg-white border-t border-slate-100 shadow-up">
-        {/* Helper: Show answer button */}
-        {childMsgCount >= 3 && !messages.some(m => m.type === "show-answer") && !isTyping && (
-          <button onClick={onShowAnswer}
-            className="w-full mb-3 py-3 rounded-[20px] bg-indigo-50 text-indigo-600 text-[14px] font-black uppercase tracking-wider border-2 border-indigo-100 active:scale-95 transition-all"
-          >
-            {t?.('dialog.show_answer') || '🔍 Показать ответ'}
-          </button>
-        )}
 
         {/* Resources Helper (TRIZ Phase 3-4) */}
         {task && isTriz(task) && task.resources && trizState && (trizState.phase === 3 || trizState.phase === 4) && (
@@ -228,13 +218,32 @@ export default function DialogView({
         )}
 
         {/* Tutorial hint above input */}
-        {isTutorial && messages.filter(m => m.role === 'user').length === 0 && (
+        {isTutorial && messages.filter(m => m.type === "child").length === 0 && (
           <div className="mb-2 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2">
             <span className="text-lg">🐉</span>
             <p className="text-[13px] text-amber-800 font-semibold">
               Напиши свою идею — любую! Орин поможет её улучшить.
             </p>
           </div>
+        )}
+
+        {/* Hint button */}
+        {childMsgCount >= 1 && !isTyping && !isHinting && (
+          <button
+            onClick={hintsExhausted ? null : onHint}
+            className={`w-full mb-3 py-2.5 rounded-[18px] text-[13px] font-black uppercase tracking-wider border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${
+              hintsExhausted
+                ? "bg-slate-50 text-slate-300 border-slate-100 cursor-default"
+                : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+            }`}
+          >
+            💡 Подсказка
+            {hintsLeft !== Infinity && (
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${hintsExhausted ? "bg-slate-100 text-slate-300" : "bg-amber-200 text-amber-800"}`}>
+                {hintsExhausted ? "исчерпано" : `осталось ${hintsLeft}`}
+              </span>
+            )}
+          </button>
         )}
 
         {/* Chat Input */}
@@ -247,7 +256,7 @@ export default function DialogView({
           >
             🎤
           </button>
-          
+
           <input
             ref={inputRef}
             value={input}
@@ -257,18 +266,50 @@ export default function DialogView({
             className={`flex-1 border-2 bg-slate-100 rounded-[24px] px-5 py-4 text-[16px] outline-none transition-all font-medium ${
               isListening ? "border-red-400 placeholder:text-red-300 shadow-inner" : "border-transparent focus:border-orange-200 focus:bg-white placeholder:text-slate-400 shadow-inner"
             }`}
-            disabled={isTyping}
+            disabled={isTyping || isHinting}
           />
-          
+
           <button
             onClick={onSendMessage}
-            disabled={!input.trim() || isTyping}
+            disabled={!input.trim() || isTyping || isHinting}
             className="bg-gradient-to-br from-orange-400 to-orange-600 text-white rounded-full w-14 h-14 flex items-center justify-center disabled:opacity-30 active:scale-90 transition-all shadow-lg shadow-orange-200 flex-shrink-0"
           >
             <span className="text-2xl">↑</span>
           </button>
         </div>
       </div>
+
+      {/* Exit Bottom Sheet */}
+      {showExitSheet && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowExitSheet(false)} />
+          <div className="relative bg-white rounded-t-[32px] px-6 pb-10 pt-6 shadow-2xl animate-fade-in-up">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
+            <h3 className="text-[18px] font-black text-slate-800 text-center mb-1">Уходишь?</h3>
+            <p className="text-[14px] text-slate-400 text-center mb-6">Прогресс этой задачи не сохранится</p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setShowExitSheet(false)}
+                className="w-full py-4 bg-orange-500 text-white font-black text-[16px] rounded-[20px] active:scale-95 transition-all"
+              >
+                Продолжить задачу
+              </button>
+              <button
+                onClick={() => { setShowExitSheet(false); onSkip?.(); }}
+                className="w-full py-4 bg-slate-100 text-slate-600 font-black text-[16px] rounded-[20px] active:scale-95 transition-all"
+              >
+                Пропустить задачу
+              </button>
+              <button
+                onClick={() => { setShowExitSheet(false); onBack?.(); }}
+                className="w-full py-3 text-slate-400 font-bold text-[14px] active:scale-95 transition-all"
+              >
+                Выйти без сохранения
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
