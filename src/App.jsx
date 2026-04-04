@@ -549,16 +549,12 @@ export default function App() {
         )}
 
         {phase === "debrief" && (
-          <DebriefView 
-            task={task} 
-            completedTasks={completedTasks} 
-            taskIdx={taskIdx} 
-            debriefBingo={debriefBingo} 
-            sessionStars={sessionStars} 
-            TASKS={TASKS} 
+          <DebriefView
+            task={task}
+            sessionStars={sessionStars}
             t={t}
             lang={lang}
-            onNext={() => setPhase("twist")} 
+            onNext={goOutcome}
           />
         )}
 
