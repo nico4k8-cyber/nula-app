@@ -79,7 +79,7 @@ export default function BredomakerView({ onBack, t }) {
       score = words > 10 ? 20 : words > 5 ? 15 : 10;
       reaction = score >= 20
         ? "Вау! Такого ещё не было — это настоящее изобретение! 🚀"
-        : "Хорошая мысль! Уголёк записывает в копилочку 📜";
+        : "Хорошая мысль! Орин записывает в копилочку 📜";
     }
 
     const patent = {
@@ -200,7 +200,7 @@ export default function BredomakerView({ onBack, t }) {
     return (
       <div className="flex flex-col min-h-[100dvh] bg-white items-center justify-center gap-6 animate-fade-in">
         <div className="text-6xl animate-bounce">⚙️</div>
-        <p className="font-black text-slate-700 uppercase tracking-widest text-sm">Уголёк оценивает...</p>
+        <p className="font-black text-slate-700 uppercase tracking-widest text-sm">Орин оценивает...</p>
       </div>
     );
   }

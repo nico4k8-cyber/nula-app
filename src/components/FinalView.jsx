@@ -94,7 +94,7 @@ export default function FinalView({
 
         {/* Mentor coal footer */}
         <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '0.8s' }}>
-           <img src="./img/ugolok_3d.png" alt="Уголёк" className="w-10 h-10 rounded-full" />
+           <img src="./img/ugolok_3d.png" alt="Орин" className="w-10 h-10 rounded-full" />
            <p className="text-slate-400 font-bold text-[12px] uppercase tracking-widest italic">{t('final.mentor_footer')}</p>
         </div>
       </div>

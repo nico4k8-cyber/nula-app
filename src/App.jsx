@@ -250,6 +250,16 @@ export default function App() {
     setTimeout(() => inputRef.current?.focus(), 200);
   };
 
+  // Auto-advance prizStep based on child message count
+  // П(0): 0-1 msg, Р(1): 2-3 msg, И(2): 4-5 msg, З(3): 6+ msg
+  function calcPrizStep(msgs) {
+    const count = msgs.filter(m => m.type === "child").length;
+    if (count <= 1) return 0;
+    if (count <= 3) return 1;
+    if (count <= 5) return 2;
+    return 3;
+  }
+
   async function handleUserMessage() {
     const text = input.trim();
     if (!text || isTyping) return;
@@ -263,20 +273,38 @@ export default function App() {
     setMessages(newMessages);
     setIsTyping(true);
 
+    // Advance stage based on message count
+    const newPrizStep = calcPrizStep(newMessages);
+    setPrizStep(newPrizStep);
+
+    // Count child messages for auto-complete
+    const childCount = newMessages.filter(m => m.type === "child").length;
+
     try {
       const history = newMessages.map(m => ({ role: m.type === "bot" ? "bot" : "user", text: m.text }));
-      const result = await askTriz(text, task, trizState, history.slice(0, -1), difficulty);
-      
+      const result = await askTriz(text, task, { ...(trizState || {}), phase: newPrizStep }, history.slice(0, -1), difficulty);
+
       if (result.newState) setTrizState(result.newState);
-      if (result.stars > 0) setSessionStars(s => s + result.stars);
+      // Always give at least 1 star per message
+      const earnedStars = Math.max(1, result.stars || 0);
+      setSessionStars(s => s + earnedStars);
 
-      setMessages(prev => [...prev, { type: "bot", text: result.reply, stars: result.stars, timestamp }]);
+      // Check if AI says task is solved
+      const replyText = result.reply || result.text || "";
+      const isSolved = replyText.toLowerCase().includes("задача решена") ||
+                       replyText.toLowerCase().includes("молодец") && childCount >= 5;
 
-      if (result.resultType === "session_complete") {
+      setMessages(prev => [...prev, { type: "bot", text: replyText, stars: earnedStars, timestamp }]);
+
+      // Auto-complete: after 8 child messages OR AI signals completion
+      if (childCount >= 8 || isSolved) {
         setTimeout(() => {
-          setMessages(prev => [...prev, { type: "bot", text: `✨ Задача решена!`, isDiscovery: true }]);
-          setTimeout(() => setPhase("debrief"), 1500);
-        }, 1000);
+          setMessages(prev => [...prev, { type: "bot", text: `Отличная работа! Ты решил эту задачу 🎉`, isDiscovery: true }]);
+          setTimeout(() => {
+            setPrizStep(4);
+            setTimeout(() => setPhase("debrief"), 1500);
+          }, 1200);
+        }, 800);
       }
     } catch (err) {
       setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз." }]);
@@ -486,17 +514,18 @@ export default function App() {
         )}
 
         {phase === "dialog" && (
-          <DialogView 
-            task={task} 
-            messages={messages} 
-            isTyping={isTyping} 
+          <DialogView
+            task={task}
+            messages={messages}
+            isTyping={isTyping}
             trizState={trizState}
-            prizStep={prizStep} 
+            prizStep={prizStep}
             sessionStars={sessionStars}
             totalStars={totalStars}
             isTutorial={isTutorial}
             t={t}
             lang={lang}
+            childMsgCount={messages.filter(m => m.type === "child").length}
             onBack={() => {
               if (messages.length > 2) {
                 setShowConfirmDialog(true);
@@ -504,6 +533,11 @@ export default function App() {
                 setIsTutorial(false);
                 setPhase("picker");
               }
+            }}
+            onShowAnswer={() => {
+              const answer = task?.trick || task?.ikr || "Решение: используй то, что уже есть!";
+              setMessages(prev => [...prev, { type: "show-answer", text: answer }]);
+              setTimeout(() => setPhase("debrief"), 3000);
             }}
             onSendMessage={handleUserMessage}
             input={input}

@@ -60,7 +60,7 @@ export default function UpsellView({ message, onDismiss, onSignup }) {
           <div className="flex gap-4 items-start mb-6">
             <img
               src="/img/webp/ugolok.webp"
-              alt="Уголёк"
+              alt="Орин"
               className="w-16 h-16 rounded-full object-cover border-2 border-orange-200 flex-shrink-0 shadow-md"
             />
             <div className="flex-1 bg-orange-50 rounded-[24px] px-5 py-4 border border-orange-100">

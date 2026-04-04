@@ -88,7 +88,7 @@ export default async function handler(req, res) {
     console.error("[Chat API Error]:", err);
     return res.status(503).json({ 
       error: "AI service error", 
-      reply: "Уголёк задумался слишком глубоко. Давай попробуем ещё раз через минуту!",
+      reply: "Орин задумался слишком глубоко. Давай попробуем ещё раз через минуту!",
       details: err.message 
     });
   }

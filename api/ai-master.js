@@ -74,7 +74,7 @@ export default async function handler(req) {
       const result = await getClaudeResponse({
         userMessage: `Ребёнок придумал изобретение на основе предмета "${item}" (${itemHint || ''}): "${invention}". Оцени оригинальность от 5 до 30 (только число). Затем напиши краткую реакцию (1–2 предложения, с восхищением, для ребёнка 7–12 лет).`,
         history: [],
-        systemPromptOverride: `Ты — весёлый изобретатель Уголёк, помощник детей. Оценивай детские идеи тепло и подбадривающе. Формат ответа: первая строка — число (оценка 5–30), вторая строка — реакция.`,
+        systemPromptOverride: `Ты — весёлый изобретатель Орин, помощник детей. Оценивай детские идеи тепло и подбадривающе. Формат ответа: первая строка — число (оценка 5–30), вторая строка — реакция.`,
       });
 
       logUsage({ action: 'evaluate_invention', model: result.model, usage: result.usage, userId });
@@ -82,7 +82,7 @@ export default async function handler(req) {
       const lines = (result.text || '').trim().split('\n').filter(Boolean);
       const scoreMatch = lines[0]?.match(/\d+/);
       const score = scoreMatch ? Math.min(30, Math.max(5, parseInt(scoreMatch[0]))) : 15;
-      const reaction = lines.slice(1).join(' ').trim() || "Отличная идея! Уголёк записывает в копилочку 📜";
+      const reaction = lines.slice(1).join(' ').trim() || "Отличная идея! Орин записывает в копилочку 📜";
 
       return new Response(JSON.stringify({ score, reaction }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },

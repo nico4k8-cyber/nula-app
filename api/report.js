@@ -117,7 +117,7 @@ export default async function handler(req, res) {
     const conversationText = messages
         .slice(-20)
         .filter(m => m.text && m.text.trim())
-        .map(m => `${m.role === "user" ? "Ребёнок" : "Уголёк"}: ${m.text.trim()}`)
+        .map(m => `${m.role === "user" ? "Ребёнок" : "Орин"}: ${m.text.trim()}`)
         .join("\n");
 
     const prompt = REPORT_PROMPT

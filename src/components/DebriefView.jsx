@@ -30,7 +30,7 @@ export default function DebriefView({
         <div className="bg-amber-50 border-2 border-amber-100 rounded-[24px] p-5 text-[15px] text-amber-900 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">💡</div>
           <div className="flex gap-4">
-            <img src="./img/ugolok_3d.png" alt="Уголёк" className="w-12 h-12 flex-shrink-0 rounded-full object-cover shadow-md border-2 border-white" />
+            <img src="./img/ugolok_3d.png" alt="Орин" className="w-12 h-12 flex-shrink-0 rounded-full object-cover shadow-md border-2 border-white" />
             <p className="leading-relaxed">
               <span className="font-black block mb-1 text-amber-600 uppercase text-[11px] tracking-wider">{t('debrief.mentor_says')}</span>
               {lang === 'ru' 

@@ -164,7 +164,7 @@ export default function TsarMountainView({ onBack, onComplete }) {
           <div className="text-8xl">🏔️</div>
           <h1 className="text-3xl font-black uppercase tracking-tight text-white">Царь-гора</h1>
           <div className="bg-white/10 rounded-[28px] p-6 max-w-xs text-white/80 text-[15px] leading-relaxed space-y-2 text-left">
-            <p>🎯 Уголёк загадывает слово</p>
+            <p>🎯 Орин загадывает слово</p>
             <p>❓ Ты задаёшь вопросы — он отвечает <strong className="text-white">Да</strong> или <strong className="text-white">Нет</strong></p>
             <p>⚡ Угадал быстро — больше очков</p>
             <p>❌ Назвал неверное слово — падаешь с горы и начинаешь снова</p>
