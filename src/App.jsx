@@ -474,16 +474,6 @@ export default function App() {
 
         {phase === "city" && (
           <div className="flex flex-col flex-1 min-h-screen relative overflow-hidden">
-            <div className="absolute top-20 left-0 right-0 z-[55] pointer-events-none">
-              <div className="pointer-events-auto">
-                <DailyChallenge
-                  TASKS={TASKS}
-                  completedTasks={completedTasks}
-                  onStartTask={startTaskPreview}
-                  t={t}
-                />
-              </div>
-            </div>
             <City 
             theme={theme} 
             totalStars={totalStars} 
