@@ -59,7 +59,7 @@ export async function getClaudeResponse({
     const STAGE_GUIDE = {
       0: "STAGE 0 (П): Ask 1 short question to check the child understands the problem.",
       1: "STAGE 1 (Р): Ask what resources or tools are nearby that could help.",
-      2: "STAGE 2 (И): The child proposed an idea — ask ONE clarifying question to develop it. Do NOT accept the first idea immediately.",
+      2: "STAGE 2 (И): The child proposed an idea. CRITICAL RULE: if the child's message already contains BOTH what to use AND how (e.g. 'use Rapunzel's hair as a rope to climb up') — set S:3 immediately, do NOT ask follow-up questions. Only ask ONE clarifying question if the idea is vague or incomplete (e.g. just 'hair' without explaining how).",
       3: `STAGE 3 (З): The child gave a complete solution. Write EXACTLY 2 sentences: first praise what specifically is good, second say 'Задача решена!' Nothing else.\n\nFor the R rating in the tag, evaluate solution QUALITY based on TRIZ principles:\n- R:3 = child's idea uses the EXACT resources already present in the task (matching the IKR). This is the elegant TRIZ solution.\n- R:2 = child found a working solution through analysis but uses new/external resources not mentioned in the task.\n- R:1 = child found any solution (correct but without elegant resource use).\nTask IKR: ${task?.ikr || ''}\nTask resources: ${Array.isArray(task?.resources) ? task.resources.map(r => r.id || r).join(', ') : (task?.resources || '')}`,
     };
 
@@ -78,11 +78,12 @@ STRICT RULES — follow exactly:
 - Do NOT repeat ANY question already asked in the conversation history above.
 - If child says "не знаю" or gives vague answer — ask something DIFFERENT, more specific.
 - When stage is 3: say "Задача решена!" only, nothing about science.
+- NEVER ask "а как именно?" or similar follow-ups if the child already described a complete mechanism.
 
 IMPORTANT: End EVERY reply with this tag on a new line: [S:N|R:N]
 S = stage to set: 0=П, 1=Р, 2=И, 3=З
 R = rating of child's last message: 1=ok, 2=good, 3=excellent
-Use S:3 when the child gave a complete working solution.
+Use S:3 when the child gave a complete working solution. If in doubt — lean toward accepting.
 Example: [S:2|R:3]`;
   }
 
