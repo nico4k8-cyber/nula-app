@@ -143,22 +143,8 @@ export default function App() {
             setPhase('city');
           }
 
-          // Ensure session is set on the client before any DB calls
-          await supabase.auth.setSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-          });
-
-          // 1. Save local progress to cloud FIRST (so nothing is lost)
-          const localState = useGameStore.getState();
-          const syncResult = await syncProgress(session.user.id, {
-            stars: localState.totalStars,
-            completedTasks: localState.completedTasks,
-            unlockedBuildings: localState.unlockedBuildings,
-          });
-          if (!syncResult) console.warn('[auth] syncProgress returned null — possible RLS/insert error');
-
-          // 2. Load cloud and merge (union of both)
+          // Load cloud → store userId so the merge effect can run
+          // (We do NOT read getState() here to avoid hydration race condition)
           const cloudData = await loadProgress(session.user.id);
           if (cloudData) {
             useGameStore.setState((state) => ({
@@ -176,13 +162,14 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Cloud Sync Effect (triggered when user progress changes)
+  // Cloud Sync Effect — runs after React renders with hydrated Zustand state
+  // This is the ONLY place we write local → cloud (safe, no hydration race)
   useEffect(() => {
     if (user && user.id) {
-       syncProgress(user.id, { 
-          stars: totalStars, 
-          completedTasks, 
-          unlockedBuildings 
+       syncProgress(user.id, {
+          stars: totalStars,
+          completedTasks,
+          unlockedBuildings
        });
     }
   }, [totalStars, completedTasks.length, unlockedBuildings.length, user]);
