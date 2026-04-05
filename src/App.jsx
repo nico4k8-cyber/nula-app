@@ -197,6 +197,27 @@ export default function App() {
       }
     });
 
+    // Check premium status from server on login
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetch('/api/payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'check_premium', userId: session.user.id }),
+        }).then(r => r.json()).then(d => {
+          if (d.isPremium) useGameStore.getState().setPremium(true);
+        }).catch(() => {});
+      }
+    });
+
+    // Detect return from payment (ЮКасса redirect)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success' || params.get('payment') === 'mock_success') {
+      trackEvent(EVENTS.PAYWALL_PURCHASE_COMPLETED, { plan: params.get('plan') });
+      useGameStore.getState().setPremium(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -411,6 +432,7 @@ export default function App() {
       const upsell = getUpsellMessage(nextCount, upsellShownAt);
       if (upsell) {
         markUpsellShown(upsell.trigger);
+        trackEvent(EVENTS.UPSELL_SHOWN, { trigger: upsell.trigger, type: upsell.type });
         setTimeout(() => setUpsellMessage(upsell), 2000);
       }
       setUnlockedBuildingId(task.id);
@@ -428,8 +450,9 @@ export default function App() {
       {upsellMessage && (
         <UpsellView
           message={upsellMessage}
-          onDismiss={() => setUpsellMessage(null)}
-          onSignup={() => { setUpsellMessage(null); window.open("https://t.me/ugolok_triz", "_blank"); }}
+          onDismiss={() => { trackEvent(EVENTS.UPSELL_DISMISSED, { trigger: upsellMessage.trigger }); setUpsellMessage(null); }}
+          onSignup={() => { trackEvent(EVENTS.UPSELL_CTA_CLICKED, { trigger: upsellMessage.trigger, type: upsellMessage.type }); setUpsellMessage(null); window.open("https://t.me/ugolok_triz", "_blank"); }}
+          onPromo={() => { trackEvent(EVENTS.PROMO_CTA_CLICKED, { trigger: upsellMessage.trigger }); setUpsellMessage(null); setPhase("paywall"); }}
         />
       )}
 
@@ -716,16 +739,28 @@ export default function App() {
 
         {phase === "paywall" && (
           <Paywall
-            onBack={() => setPhase("task-preview")}
-            onSelectPlan={() => setPhase("task-preview")}
+            onBack={() => setPhase(task ? "task-preview" : "city")}
+            onSelectPlan={(planId) => {
+              trackEvent(EVENTS.PAYWALL_PLAN_SELECTED, { plan: planId });
+              useGameStore.getState().setPremium(true);
+              setPhase(task ? "task-preview" : "city");
+            }}
             onDonate={() => setPhase("city")}
+            userId={user?.id}
+            userEmail={user?.email}
+            isPromo={completedTasks.length >= 10 && !isPremium}
           />
         )}
 
       </div>
 
       <SettingsMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onResetProgress={() => resetGame()}
-        onStartOnboarding={() => { localStorage.removeItem("nula-onboarding-done"); onboarding.startOnboarding(); }}
+        onStartOnboarding={() => {
+          localStorage.removeItem("nula-onboarding-done");
+          setMenuOpen(false);
+          setPhase("city");
+          setTimeout(() => onboarding.startOnboarding(), 400);
+        }}
         completedTasks={completedTasks} audio={audio} audioTracks={AUDIO_TRACKS} lang={lang} setLang={setLang} t={t} user={user} setUser={setUser}
       />
 

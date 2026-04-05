@@ -3,23 +3,31 @@ import { useState } from "react";
 const MESSAGES = [
   {
     trigger: 3,
+    type: "soft", // мягкий — ведёт на Telegram
     text: "Ты уже решил 3 задачи — это настоящий учёный! Знаешь, я веду живые онлайн-занятия по ТРИЗ. Там мы решаем задачи вместе, в команде. Хочешь попробовать?",
     emoji: "🔥",
+    cta: "Хочу на живые занятия! 🎓",
   },
   {
     trigger: 6,
+    type: "soft",
     text: "6 задач! Ты растёшь быстрее, чем я ожидал. На живых занятиях мы разбираем ещё более крутые изобретения — и у тебя будет личный наставник. Интересно?",
     emoji: "⭐",
+    cta: "Хочу на живые занятия! 🎓",
   },
   {
     trigger: 10,
-    text: "Десять задач! Ты уже думаешь как изобретатель. Хочешь пойти дальше? На живых занятиях я покажу тебе приёмы, которых нет в этой игре.",
-    emoji: "🏆",
+    type: "pro", // жёсткий — ведёт на paywall promo
+    text: "Уже 10 задач! Ты думаешь как настоящий изобретатель. Открой все острова и занимайся без ограничений — первый месяц Pro за 99 ₽.",
+    emoji: "🎁",
+    cta: "Попробовать Pro за 99 ₽ 🚀",
   },
   {
     trigger: 15,
-    text: "Пятнадцать задач — это серьёзно! Ты готов к настоящим ТРИЗ-проектам. Приходи на живое занятие — там решают задачи, которые меняют мир.",
-    emoji: "🚀",
+    type: "pro",
+    text: "15 задач — это серьёзно! Ты готов к настоящим ТРИЗ-проектам. Открой все острова и инструменты — первый месяц Pro за 99 ₽.",
+    emoji: "🏆",
+    cta: "Открыть всё за 99 ₽ 🚀",
   },
 ];
 
@@ -34,7 +42,7 @@ export function getUpsellMessage(completedCount, shownAt) {
   return null;
 }
 
-export default function UpsellView({ message, onDismiss, onSignup }) {
+export default function UpsellView({ message, onDismiss, onSignup, onPromo }) {
   const [leaving, setLeaving] = useState(false);
 
   function handleDismiss() {
@@ -73,10 +81,10 @@ export default function UpsellView({ message, onDismiss, onSignup }) {
           {/* Кнопки */}
           <div className="flex flex-col gap-3">
             <button
-              onClick={onSignup}
+              onClick={message.type === 'pro' && onPromo ? onPromo : onSignup}
               className="w-full py-4 rounded-[20px] bg-orange-500 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-orange-200 active:scale-95 transition-all"
             >
-              Хочу на живые занятия! 🎓
+              {message.cta || 'Хочу на живые занятия! 🎓'}
             </button>
             <button
               onClick={handleDismiss}

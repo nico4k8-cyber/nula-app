@@ -36,10 +36,25 @@ export const EVENTS = {
   DRAGON_INFO_OPENED: "dragon_info_opened",
   DRAGON_GREETING_CLOSED: "dragon_greeting_closed",
 
-  // PAYWALL
-  PAYWALL_SHOWN: "paywall_shown",
-  PAYWALL_ASK_PARENT: "paywall_ask_parent",
-  PAYWALL_PURCHASE_COMPLETED: "paywall_purchase_completed",
+  // PAYWALL FUNNEL
+  PAYWALL_SHOWN: "paywall_shown",           // открыл paywall (дневной лимит)
+  PAYWALL_PLAN_SELECTED: "paywall_plan_selected", // выбрал тариф
+  PAYWALL_CTA_CLICKED: "paywall_cta_clicked",     // нажал "Начать обучение"
+  PAYWALL_GATE_SHOWN: "paywall_gate_shown",        // показана проверка для родителей
+  PAYWALL_GATE_PASSED: "paywall_gate_passed",      // родитель решил пример
+  PAYWALL_REDIRECT: "paywall_redirect",            // редирект на ЮКасса
+  PAYWALL_PURCHASE_COMPLETED: "paywall_purchase_completed", // вернулся с payment=success
+  PAYWALL_DISMISSED: "paywall_dismissed",          // нажал "Отдохнуть до завтра"
+  PAYWALL_DONATE_CLICKED: "paywall_donate_clicked",
+
+  // UPSELL FUNNEL
+  UPSELL_SHOWN: "upsell_shown",             // появился upsell после N задач
+  UPSELL_CTA_CLICKED: "upsell_cta_clicked", // нажал кнопку в upsell
+  UPSELL_DISMISSED: "upsell_dismissed",
+
+  // PROMO OFFER
+  PROMO_SHOWN: "promo_shown",               // показан спец-оффер 99₽
+  PROMO_CTA_CLICKED: "promo_cta_clicked",
 
   // DEV
   DEBUG_RESET_TRIGGERED: "debug_reset_triggered",

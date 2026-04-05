@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { trackEvent, EVENTS } from '../analytics';
 
 const PERKS = [
   { icon: '♾️', text: 'Безлимитные задачи каждый день' },
@@ -14,7 +15,7 @@ const PLANS = [
     label: 'Годовой',
     badge: 'ВЫГОДНЕЕ НА 60%',
     price: '199 ₽ / мес',
-    sub: '2 388 ₽ / год',
+    sub: '2 388 ₽ / год · отмена в любой момент',
     highlight: true,
   },
   {
@@ -52,25 +53,71 @@ function GateScreen({ onSubmit, onCancel, task }) {
   );
 }
 
-export default function Paywall({ onSelectPlan, onBack, onDonate }) {
+export default function Paywall({ onSelectPlan, onBack, onDonate, userId, userEmail, isPromo = false }) {
   const [gateOpen, setGateOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const mathTask = { q: '24 + 18', a: 42 };
   const [pendingPlan, setPendingPlan] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState('year');
+  const [selectedPlan, setSelectedPlan] = useState(isPromo ? 'promo' : 'year');
 
-  function handlePlanClick(planId) {
+  useEffect(() => {
+    trackEvent(isPromo ? EVENTS.PROMO_SHOWN : EVENTS.PAYWALL_SHOWN, { isPromo });
+  }, []);
+
+  async function handlePlanClick(planId) {
+    trackEvent(EVENTS.PAYWALL_CTA_CLICKED, { plan: planId, isPromo });
     setPendingPlan(planId);
     setGateOpen(true);
+    trackEvent(EVENTS.PAYWALL_GATE_SHOWN, { plan: planId });
   }
 
-  function handleGateSubmit(val) {
-    if (val === mathTask.a) {
-      setGateOpen(false);
-      onSelectPlan(pendingPlan);
-    } else {
+  async function handleGateSubmit(val) {
+    if (val !== mathTask.a) {
       alert('Неправильно. Попробуй ещё раз!');
+      return;
+    }
+    trackEvent(EVENTS.PAYWALL_GATE_PASSED, { plan: pendingPlan });
+    setGateOpen(false);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_payment',
+          planId: pendingPlan,
+          userId,
+          userEmail,
+          returnUrl: window.location.origin + '/?payment=success',
+        }),
+      });
+      const data = await res.json();
+
+      if (data.mock) {
+        // Dev mode — simulate success
+        onSelectPlan(pendingPlan);
+        return;
+      }
+
+      if (data.confirmation_url) {
+        trackEvent(EVENTS.PAYWALL_REDIRECT, { plan: pendingPlan, mock: !!data.mock });
+        window.location.href = data.confirmation_url;
+      } else {
+        throw new Error(data.error || 'Ошибка оплаты');
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
   }
+
+  const displayPlans = isPromo
+    ? [{ id: 'promo', label: 'Первый месяц', badge: '🎁 СКИДКА 80%', price: '99 ₽', sub: 'Затем 499 ₽/мес · отмена в любой момент', highlight: true }, ...PLANS.slice(1)]
+    : PLANS;
 
   return (
     <div className="flex flex-col flex-1 px-6 py-10 items-center justify-start bg-slate-900 text-white animate-fade-in relative overflow-hidden h-full overflow-y-auto">
@@ -80,10 +127,16 @@ export default function Paywall({ onSelectPlan, onBack, onDonate }) {
         <div className="relative z-10 w-full max-w-sm flex flex-col items-center pt-4 pb-20">
           {/* Hero */}
           <div className="w-20 h-20 mb-5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-3xl flex items-center justify-center shadow-2xl animate-float">
-            <span className="text-4xl">💎</span>
+            <span className="text-4xl">{isPromo ? '🎁' : '💎'}</span>
           </div>
-          <h2 className="text-3xl font-black mb-1 text-center leading-tight">Дневной лимит<br/>исчерпан</h2>
-          <p className="text-slate-400 text-sm text-center mb-6">Подключи полный доступ и учись без ограничений</p>
+          <h2 className="text-3xl font-black mb-1 text-center leading-tight">
+            {isPromo ? 'Специальное предложение!' : 'Дневной лимит\nисчерпан'}
+          </h2>
+          <p className="text-slate-400 text-sm text-center mb-6">
+            {isPromo
+              ? 'Ты решил уже столько задач! Первый месяц Pro — за 99 ₽'
+              : 'Подключи полный доступ и учись без ограничений'}
+          </p>
 
           {/* Perks */}
           <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-5 mb-6 space-y-3">
@@ -97,7 +150,7 @@ export default function Paywall({ onSelectPlan, onBack, onDonate }) {
 
           {/* Plan selector */}
           <div className="w-full space-y-3 mb-6">
-            {PLANS.map(plan => (
+            {displayPlans.map(plan => (
               <button key={plan.id} onClick={() => setSelectedPlan(plan.id)}
                 className={`w-full p-4 rounded-2xl border-2 flex items-center gap-4 transition-all active:scale-95 text-left ${
                   selectedPlan === plan.id
@@ -123,10 +176,19 @@ export default function Paywall({ onSelectPlan, onBack, onDonate }) {
             ))}
           </div>
 
+          {error && (
+            <div className="w-full mb-4 p-3 bg-red-900/30 border border-red-500/30 rounded-2xl text-red-300 text-sm text-center">
+              {error}
+            </div>
+          )}
+
           {/* CTA */}
-          <button onClick={() => handlePlanClick(selectedPlan)}
-            className="w-full py-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 font-black text-lg shadow-xl shadow-indigo-900/50 active:scale-95 transition-all mb-3">
-            Начать обучение 🚀
+          <button
+            onClick={() => handlePlanClick(selectedPlan)}
+            disabled={loading}
+            className="w-full py-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 font-black text-lg shadow-xl shadow-indigo-900/50 active:scale-95 transition-all mb-3 disabled:opacity-60"
+          >
+            {loading ? 'Загрузка...' : isPromo ? 'Попробовать за 99 ₽ 🚀' : 'Начать обучение 🚀'}
           </button>
 
           <div className="flex items-center gap-4 w-full mb-4">
@@ -135,12 +197,12 @@ export default function Paywall({ onSelectPlan, onBack, onDonate }) {
             <div className="h-px bg-white/10 flex-1" />
           </div>
 
-          <button onClick={onDonate}
+          <button onClick={() => { trackEvent(EVENTS.PAYWALL_DONATE_CLICKED); onDonate(); }}
             className="w-full py-4 text-emerald-400 font-bold border-2 border-emerald-400/20 rounded-2xl hover:bg-emerald-400/10 active:scale-95 transition-all mb-2">
             ☕ Поддержать проектом (Донат)
           </button>
-          <button onClick={onBack} className="w-full py-3 text-slate-500 font-bold text-sm">
-            Отдохнуть до завтра
+          <button onClick={() => { trackEvent(EVENTS.PAYWALL_DISMISSED, { isPromo }); onBack(); }} className="w-full py-3 text-slate-500 font-bold text-sm">
+            {isPromo ? 'Не сейчас' : 'Отдохнуть до завтра'}
           </button>
 
           {/* Soft upsell */}
