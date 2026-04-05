@@ -300,8 +300,8 @@ export default function App() {
       if (newPrizStep === 3 && prizStep < 3) {
         setTimeout(() => {
           setPrizStep(4); // light up ✨ briefly
-          setTimeout(() => setPhase("debrief"), 1200);
-        }, 1000);
+          setTimeout(() => setPhase("debrief"), 2500);
+        }, 2000);
       }
     } catch (err) {
       setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз." }]);
