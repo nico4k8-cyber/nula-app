@@ -36,8 +36,8 @@ export default function DebriefView({
         />
         <p className="text-[15px] text-amber-900 leading-relaxed font-medium">
           {lang === 'en'
-            ? `Great thinking! You used the idea of a mediator — something that helps two things work together without conflict.`
-            : `Отличное мышление! Ты использовал идею посредника — что-то, что помогает двум вещам работать вместе без конфликта.`
+            ? `Great job! You found a creative solution — that's exactly what inventors do.`
+            : `Молодец! Ты нашёл творческое решение — именно так и думают настоящие изобретатели.`
           }
         </p>
       </div>
