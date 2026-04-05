@@ -523,7 +523,7 @@ function TabAnalytics() {
   const totalCalls = byDay.reduce((s, d) => s + d.calls, 0);
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 space-y-8">
+    <div className="absolute inset-0 overflow-y-auto p-8 space-y-8">
       {/* Алерты игроков */}
       {alerts.length > 0 && (
         <section className="bg-amber-900/30 border border-amber-600/40 rounded-2xl p-6">
@@ -860,7 +860,7 @@ export default function AdminView({ TASKS, onBack, t }) {
       </div>
 
       {/* Контент */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {tab === 'islands'   && <TabIslands TASKS={TASKS} />}
         {tab === 'tasks'     && <TabTasks TASKS={TASKS} onBack={onBack} />}
         {tab === 'tsar'      && <TabTsarWords />}
