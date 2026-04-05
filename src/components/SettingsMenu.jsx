@@ -132,6 +132,14 @@ export default function SettingsMenu({
             if (confirm("Вы уверены? Весь прогресс и звёзды будут удалены.")) {
                onResetProgress();
                onClose();
+               // Полная очистка localStorage — иначе hasSeenOnboarding остаётся и сплэш пропускается
+               localStorage.removeItem('nula-game-storage');    // Zustand store
+               localStorage.removeItem('razgadai_v1');         // App global state (hasSeenOnboarding etc)
+               localStorage.removeItem('razgadai_triz_state'); // TRIZ state
+               localStorage.removeItem('razgadai_user_id');
+               localStorage.removeItem('razgadai_session_id');
+               localStorage.removeItem('nula-onboarding-done');
+               localStorage.removeItem('nula-last-visit');
                setTimeout(() => window.location.reload(), 300);
             }
           }}
