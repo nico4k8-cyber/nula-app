@@ -2,6 +2,7 @@
 _work_repo_scraps/
 local-api-server.js
 *.mjs
+*.py
 *.png
 *.html
 *.docx
