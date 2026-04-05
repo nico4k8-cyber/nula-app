@@ -38,12 +38,20 @@ export default function City({
                  />
                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
                  
-                 <button 
+                 <button
                   onClick={() => setSelectedIslandId(null)}
                    className="absolute top-8 left-8 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-2xl text-white text-xl transition-all active:scale-95 z-20 backdrop-blur-md border border-white/10"
                  >
                    ←
                  </button>
+                 {onLogoClick && (
+                   <button
+                     onClick={onLogoClick}
+                     className="absolute top-8 right-8 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-2xl text-white text-xl transition-all active:scale-95 z-20 backdrop-blur-md border border-white/10"
+                   >
+                     👤
+                   </button>
+                 )}
                  
                  <div className="absolute bottom-10 left-10 text-white">
                     <h2 className="text-4xl font-black uppercase tracking-tighter mb-1 font-display">{t(`buildings.${selectedIslandId}`)}</h2>
