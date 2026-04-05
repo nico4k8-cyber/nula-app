@@ -91,6 +91,7 @@ export default function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [trizState, setTrizState] = useState(saved?.trizState || null);
   const [sessionStars, setSessionStars] = useState(0);
+  const [taskRating, setTaskRating] = useState(1); // 1-3 stars, set when task is solved
   const [debriefBingo, setDebriefBingo] = useState(false);
   const [twistChoice, setTwistChoice] = useState(null);
   const [prizStep, setPrizStep] = useState(0);
@@ -253,6 +254,7 @@ export default function App() {
     }
     setMessages([]);
     setSessionStars(0);
+    setTaskRating(1);
     setTwistChoice(null);
     setPrizStep(0);
     setIsHinting(false);
@@ -305,15 +307,14 @@ export default function App() {
         : prizStep;
       setPrizStep(newPrizStep);
 
-      // Always give at least 1 star per message
-      const earnedStars = Math.max(1, result.stars || 0);
-      setSessionStars(s => s + earnedStars);
-
       const replyText = result.reply || result.text || "";
-      setMessages(prev => [...prev, { type: "bot", text: replyText, stars: earnedStars, timestamp }]);
+      setMessages(prev => [...prev, { type: "bot", text: replyText, timestamp }]);
 
-      // Stage 3 (З) = task solved → show ✨ then go to debrief
+      // Stage 3 (З) = task solved → record rating, show ✨ then go to debrief
       if (newPrizStep === 3 && prizStep < 3) {
+        const rating = Math.min(3, Math.max(1, result.stars || 1));
+        setTaskRating(rating);
+        setSessionStars(rating); // sessionStars = task reward (1-3)
         setTimeout(() => {
           setPrizStep(4); // light up ✨ briefly
           setTimeout(() => setPhase("debrief"), 2500);
@@ -445,6 +446,12 @@ export default function App() {
 
         {renderHUD && (
           <div className="fixed top-6 right-6 z-50 flex items-center gap-2">
+            {/* Звёзды */}
+            {totalStars > 0 && (
+              <div className="flex items-center gap-1 bg-amber-400 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg shadow-amber-900/20">
+                ⭐ {totalStars}
+              </div>
+            )}
             {/* Стрик */}
             {streak >= 2 && (
               <div className="flex items-center gap-1 bg-orange-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg shadow-orange-900/30">
@@ -569,6 +576,7 @@ export default function App() {
           <DebriefView
             task={task}
             sessionStars={sessionStars}
+            totalStars={totalStars}
             t={t}
             lang={lang}
             onNext={goOutcome}

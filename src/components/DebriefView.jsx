@@ -3,11 +3,12 @@ import React from "react";
 export default function DebriefView({
   task,
   sessionStars,
+  totalStars,
   onNext,
   t,
   lang
 }) {
-  const stars = Math.min(sessionStars, 5);
+  const stars = Math.min(Math.max(1, sessionStars), 3);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-white animate-fade-in-up overflow-hidden">
@@ -18,11 +19,17 @@ export default function DebriefView({
         <h2 className="text-[28px] font-black text-slate-800 text-center leading-tight mb-2">
           Ты решил задачу!
         </h2>
-        {stars > 0 && (
-          <div className="flex gap-1 mt-1">
-            {Array.from({ length: stars }).map((_, i) => (
-              <span key={i} className="text-2xl animate-pulse" style={{ animationDelay: `${i * 0.15}s` }}>⭐</span>
-            ))}
+        <div className="flex gap-1 mt-2">
+          {Array.from({ length: stars }).map((_, i) => (
+            <span key={i} className="text-3xl" style={{ animation: `bounceIn 0.4s ease ${i * 0.2}s both` }}>⭐</span>
+          ))}
+        </div>
+        <p className="text-slate-500 text-sm mt-1 font-medium">
+          {stars === 3 ? 'Отлично! Сразу нашёл решение' : stars === 2 ? 'Хорошо! Думал правильно' : 'Справился — практика поможет'}
+        </p>
+        {totalStars > 0 && (
+          <div className="mt-3 px-4 py-2 bg-amber-50 rounded-full border border-amber-200">
+            <span className="text-amber-700 text-sm font-black">Всего звёзд: ⭐ {totalStars + stars}</span>
           </div>
         )}
       </div>
