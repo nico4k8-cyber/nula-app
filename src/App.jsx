@@ -143,14 +143,24 @@ export default function App() {
             setPhase('city');
           }
 
-          // Download Cloud Progress and merge it to local!
+          // 1. Save local progress to cloud FIRST (so nothing is lost)
+          const localState = useGameStore.getState();
+          if (localState.completedTasks.length > 0 || localState.totalStars > 0) {
+            await syncProgress(session.user.id, {
+              stars: localState.totalStars,
+              completedTasks: localState.completedTasks,
+              unlockedBuildings: localState.unlockedBuildings,
+            });
+          }
+
+          // 2. Load cloud and merge (union of both)
           const cloudData = await loadProgress(session.user.id);
           if (cloudData) {
-             useGameStore.setState((state) => ({
-                totalStars: Math.max(state.totalStars, cloudData.stars || 0),
-                completedTasks: Array.from(new Set([...state.completedTasks, ...(cloudData.completedTasks || [])])),
-                unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...(cloudData.unlockedBuildings || [])]))
-             }));
+            useGameStore.setState((state) => ({
+              totalStars: Math.max(state.totalStars, cloudData.stars || 0),
+              completedTasks: Array.from(new Set([...state.completedTasks, ...(cloudData.completedTasks || [])])),
+              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...(cloudData.unlockedBuildings || [])]))
+            }));
           }
         }
       } else {
