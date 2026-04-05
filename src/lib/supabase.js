@@ -198,6 +198,20 @@ export const getPlayerStats = async () => {
   return { totalPlayers, totalTasksSolved, totalStars };
 };
 
+// App config (island mapping etc.)
+export const loadAppConfig = async (key) => {
+  if (isPlaceholder()) return null;
+  const { data, error } = await supabase.from('app_config').select('value').eq('key', key).single();
+  if (error) return null;
+  return data?.value;
+};
+
+export const saveAppConfig = async (key, value) => {
+  if (isPlaceholder()) return false;
+  const { error } = await supabase.from('app_config').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  return !error;
+};
+
 export const getPlayerAlerts = async (totalWords) => {
   if (isPlaceholder()) return null;
   const { data, error } = await supabase

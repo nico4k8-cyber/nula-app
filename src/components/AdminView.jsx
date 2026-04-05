@@ -3,6 +3,7 @@ import {
   loadTsarWords, saveTsarWord, deleteTsarWord,
   loadBredomakerItems, saveBredomakerItem, deleteBredomakerItem,
   getTokenStats, getPlayerAlerts, getPlayerStats,
+  loadAppConfig, saveAppConfig,
 } from '../lib/supabase';
 import { TWENTY_Q_WORDS } from '../bot/twenty-q-words';
 import { BREDO_ITEMS } from '../bot/bredo-items';
@@ -667,6 +668,12 @@ function TabIslands({ TASKS }) {
   const [islandDefs, setIslandDefs] = useState(ISLAND_DEFS);
   const [movingLocId, setMovingLocId] = useState(null); // id локации в режиме перемещения
 
+  useEffect(() => {
+    loadAppConfig('island_mapping').then(saved => {
+      if (saved && Array.isArray(saved)) setIslandDefs(saved);
+    });
+  }, []);
+
   const island = islandDefs.find(i => i.id === selectedIsland);
 
   const isIncomplete = (task) => {
@@ -720,14 +727,9 @@ function TabIslands({ TASKS }) {
         buildings: isl.locations.map(l => ({ id: l.id, ...(LOCATION_META[l.id] || { name: l.label, icon: l.emoji, color: 'bg-slate-600' }) }))
       };
     });
-    try {
-      const r = await fetch('http://localhost:3001/api/save-island-mapping', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mapping }),
-      });
-      if (r.ok) alert(`✅ Локация "${loc.label}" перемещена на ${newDefs.find(i=>i.id===targetIslandId)?.label}!\nПерезапусти сервер чтобы увидеть изменения.`);
-      else alert("❌ Запусти dev-api-server.mjs");
-    } catch { alert("❌ Нет dev-сервера"); }
+    const ok = await saveAppConfig('island_mapping', newDefs);
+    if (ok) alert(`✅ Локация "${loc.label}" перемещена на ${newDefs.find(i=>i.id===targetIslandId)?.label}!\nИзменения применятся после перезагрузки.`);
+    else alert("❌ Ошибка сохранения — проверь Supabase");
   };
 
   const moveTask = (taskId, newCategory) => {
