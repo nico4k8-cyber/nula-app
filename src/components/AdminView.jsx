@@ -74,9 +74,9 @@ function TabTasks({ TASKS, onBack }) {
   // Island → locations mapping
   const ISLANDS = [
     { id: 'main',    label: '🏝 Главный остров', locations: ['library', 'city-hall', 'nature-reserve'] },
-    { id: 'craft',   label: '⚙️ Мастерская',     locations: ['workshop', 'farm'] },
-    { id: 'science', label: '🔬 Наука',           locations: ['laboratory'] },
-    { id: 'summit',  label: '🏔 Вершина',         locations: ['tsar'] },
+    { id: 'craft',   label: '🌿 Заповедник',          locations: ['workshop', 'farm'] },
+    { id: 'science', label: '🔬 Остров Науки',       locations: ['laboratory'] },
+    { id: 'summit',  label: '🏔 Пик Изобретателей',  locations: ['tsar'] },
   ];
   const LOCATION_LABELS = {
     'library': '📚 Библиотека', 'city-hall': '🏛 Ратуша', 'nature-reserve': '🏞 Заповедник',
@@ -633,14 +633,14 @@ const ISLAND_DEFS = [
     { id: 'city-hall',     emoji: '🏛', label: 'Ратуша' },
     { id: 'nature-reserve',emoji: '🏞', label: 'Заповедник' },
   ]},
-  { id: 'craft',   emoji: '⚙️', label: 'Мастерская',    locations: [
+  { id: 'craft',   emoji: '🌿', label: 'Заповедник',         locations: [
     { id: 'workshop', emoji: '🔧', label: 'Мастерская' },
     { id: 'farm',     emoji: '🚜', label: 'Ферма' },
   ]},
-  { id: 'science', emoji: '🔬', label: 'Наука',          locations: [
+  { id: 'science', emoji: '🔬', label: 'Остров Науки',      locations: [
     { id: 'laboratory', emoji: '🔬', label: 'Лаборатория' },
   ]},
-  { id: 'summit',  emoji: '🏔', label: 'Вершина',        locations: [
+  { id: 'summit',  emoji: '🏔', label: 'Пик Изобретателей', locations: [
     { id: 'tsar', emoji: '👑', label: 'Царь-гора' },
   ]},
 ];
