@@ -187,16 +187,21 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Cloud Sync Effect — runs after React renders with hydrated Zustand state
-  // This is the ONLY place we write local → cloud (safe, no hydration race)
+  // Cloud Sync Effect — always merges Zustand state with localStorage to avoid hydration race
   useEffect(() => {
-    if (user && user.id) {
-       syncProgress(user.id, {
-          stars: totalStars,
-          completedTasks,
-          unlockedBuildings
-       });
-    }
+    if (!user?.id) return;
+    // Always union with localStorage in case Zustand hasn't hydrated yet
+    let mergedCompleted = completedTasks;
+    let mergedStars = totalStars;
+    let mergedBuildings = unlockedBuildings;
+    try {
+      const raw = localStorage.getItem('nula-game-storage');
+      const s = (raw ? JSON.parse(raw) : {}).state || {};
+      mergedCompleted = Array.from(new Set([...completedTasks, ...(s.completedTasks || [])]));
+      mergedStars = Math.max(totalStars, s.totalStars || 0);
+      mergedBuildings = Array.from(new Set([...unlockedBuildings, ...(s.unlockedBuildings || [])]));
+    } catch {}
+    syncProgress(user.id, { stars: mergedStars, completedTasks: mergedCompleted, unlockedBuildings: mergedBuildings });
   }, [totalStars, completedTasks.length, unlockedBuildings.length, user]);
 
   useEffect(() => {
