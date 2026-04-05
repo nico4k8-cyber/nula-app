@@ -320,7 +320,7 @@ export default function App() {
       // difficulty 1 → ПРИЗ-базовый (3 фазы, age<8 в движке)
       // difficulty 2 → ПРИЗ-стандарт (5 фаз, age 8-12)
       // difficulty 3 → ПРИЗ-про (7 фаз, age 13+)
-      const ageForEngine = task.difficulty === 1 ? 7 : task.difficulty === 2 ? 10 : 14;
+      const ageForEngine = task.difficulty === 1 ? 10 : task.difficulty === 2 ? 12 : 14;
       const newState = createNewState(task.id, ageForEngine);
       setTrizState(newState);
       const hook = (task.difficulty >= 2 ? task.puzzle?.hookSenior : task.puzzle?.hookJunior)
