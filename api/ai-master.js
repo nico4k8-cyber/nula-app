@@ -17,7 +17,8 @@ const corsHeaders = {
 function logUsage({ action, model, usage, userId }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-  if (!url || !key || !usage?.totalTokens) return;
+  if (!url || !key) return;
+  // Log even if tokens=0 so we can see failed/empty responses
   // Claude 3 Haiku via Polza: 23.09 ₽/1M input + 115.46 ₽/1M output
   const costRub = ((usage.promptTokens || 0) / 1_000_000) * 23.09
                 + ((usage.completionTokens || 0) / 1_000_000) * 115.46;

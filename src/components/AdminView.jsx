@@ -572,7 +572,7 @@ function TabAnalytics() {
               {[
                 { label: 'Токенов', value: totalTokens.toLocaleString(), color: 'text-violet-300' },
                 { label: 'Запросов', value: totalCalls.toLocaleString(), color: 'text-blue-300' },
-                { label: 'Стоимость', value: `$${totalCost.toFixed(4)}`, color: 'text-emerald-300' },
+                { label: 'Стоимость', value: `${(totalCost * 90).toFixed(2)} ₽`, color: 'text-emerald-300' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-slate-800/60 rounded-2xl p-5 text-center">
                   <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -589,8 +589,8 @@ function TabAnalytics() {
 
             {/* График стоимости */}
             <div className="bg-slate-800/40 rounded-2xl p-6">
-              <p className="text-[10px] uppercase text-slate-500 font-black mb-3">Стоимость по дням (USD)</p>
-              <BarChart data={byDay} valueKey="cost" labelKey="label" color="#10b981" height={100} />
+              <p className="text-[10px] uppercase text-slate-500 font-black mb-3">Стоимость по дням (₽)</p>
+              <BarChart data={byDay.map(d => ({ ...d, costRub: d.cost * 90 }))} valueKey="costRub" labelKey="label" color="#10b981" height={100} />
             </div>
 
             {stats === null && (
@@ -606,8 +606,228 @@ function TabAnalytics() {
   );
 }
 
+// ── Вкладка: Острова ─────────────────────────────────────────────────────────
+const ISLAND_DEFS = [
+  { id: 'main',    emoji: '🏝', label: 'Главный остров', locations: [
+    { id: 'library',       emoji: '📚', label: 'Библиотека' },
+    { id: 'city-hall',     emoji: '🏛', label: 'Ратуша' },
+    { id: 'nature-reserve',emoji: '🏞', label: 'Заповедник' },
+  ]},
+  { id: 'craft',   emoji: '⚙️', label: 'Мастерская',    locations: [
+    { id: 'workshop', emoji: '🔧', label: 'Мастерская' },
+    { id: 'farm',     emoji: '🚜', label: 'Ферма' },
+  ]},
+  { id: 'science', emoji: '🔬', label: 'Наука',          locations: [
+    { id: 'laboratory', emoji: '🔬', label: 'Лаборатория' },
+  ]},
+  { id: 'summit',  emoji: '🏔', label: 'Вершина',        locations: [
+    { id: 'tsar', emoji: '👑', label: 'Царь-гора' },
+  ]},
+];
+
+function TabIslands({ TASKS }) {
+  const [selectedIsland, setSelectedIsland] = useState(ISLAND_DEFS[0].id);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
+  const [localTasks, setLocalTasks] = useState(TASKS);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const island = ISLAND_DEFS.find(i => i.id === selectedIsland);
+
+  const isIncomplete = (task) => {
+    const hasTeaser = task.teaser && task.teaser.length > 5;
+    const hasCondition = task.condition || task.core_problem?.need || task.puzzle?.question || task.puzzle?.question_ru;
+    return !hasTeaser || !hasCondition;
+  };
+
+  const handleSaveAll = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/save-tasks', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks: localTasks }),
+      });
+      if (response.ok) alert("✅ Задачи сохранены!");
+      else alert("❌ Запусти dev-api-server.mjs");
+    } catch (e) { alert("❌ Нет dev-сервера"); }
+    finally { setIsSaving(false); }
+  };
+
+  const moveTask = (taskId, newCategory) => {
+    setLocalTasks(prev => prev.map(t => t.id === taskId ? { ...t, category: newCategory } : t));
+  };
+
+  const locTasks = selectedLocation
+    ? localTasks.filter(t => t.category === selectedLocation)
+    : [];
+
+  const unassigned = localTasks.filter(t =>
+    !ISLAND_DEFS.flatMap(i => i.locations.map(l => l.id)).includes(t.category)
+  );
+
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      {/* Колонка 1: Острова */}
+      <div className="w-[160px] border-r border-slate-800 flex flex-col">
+        <div className="p-3 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800">Острова</div>
+        <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+          {ISLAND_DEFS.map(isl => (
+            <button key={isl.id}
+              onClick={() => { setSelectedIsland(isl.id); setSelectedLocation(null); setEditingTask(null); }}
+              className={`w-full text-left px-3 py-3 rounded-xl text-[12px] font-black transition-all ${selectedIsland === isl.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+              {isl.emoji} {isl.label}
+              <div className="text-[10px] font-normal opacity-60 mt-0.5">
+                {localTasks.filter(t => isl.locations.map(l=>l.id).includes(t.category)).length} задач
+              </div>
+            </button>
+          ))}
+          {unassigned.length > 0 && (
+            <button onClick={() => { setSelectedIsland('_orphan'); setSelectedLocation(null); }}
+              className={`w-full text-left px-3 py-3 rounded-xl text-[12px] font-black transition-all ${selectedIsland === '_orphan' ? 'bg-red-700 text-white' : 'text-red-400 hover:bg-slate-800'}`}>
+              ⚠ Без острова
+              <div className="text-[10px] opacity-60 mt-0.5">{unassigned.length} задач</div>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Колонка 2: Локации острова */}
+      <div className="w-[180px] border-r border-slate-800 flex flex-col">
+        <div className="p-3 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800">Локации</div>
+        <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+          {selectedIsland === '_orphan' ? (
+            <div className="px-3 py-2 text-[11px] text-red-400">Задачи без категории</div>
+          ) : island?.locations.map(loc => {
+            const count = localTasks.filter(t => t.category === loc.id).length;
+            const incomplete = localTasks.filter(t => t.category === loc.id && isIncomplete(t)).length;
+            return (
+              <button key={loc.id}
+                onClick={() => { setSelectedLocation(loc.id); setEditingTask(null); }}
+                className={`w-full text-left px-3 py-3 rounded-xl text-[12px] font-black transition-all ${selectedLocation === loc.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+                {loc.emoji} {loc.label}
+                <div className="flex gap-2 mt-0.5">
+                  <span className="text-[10px] opacity-60">{count} задач</span>
+                  {incomplete > 0 && <span className="text-[10px] text-red-400">⚠{incomplete}</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Колонка 3: Задачи локации */}
+      <div className="w-[200px] border-r border-slate-800 flex flex-col">
+        <div className="p-3 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800 flex items-center justify-between">
+          <span>Задачи</span>
+          {isSaving
+            ? <span className="text-[9px] text-slate-500">Сохранение...</span>
+            : <button onClick={handleSaveAll} className="text-[9px] bg-emerald-700 text-white px-2 py-1 rounded-lg font-black hover:bg-emerald-600">💾 Сохранить</button>
+          }
+        </div>
+        <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+          {(selectedIsland === '_orphan' ? unassigned : locTasks).map(task => {
+            const incomplete = isIncomplete(task);
+            return (
+              <button key={task.id}
+                onClick={() => setEditingTask(task)}
+                className={`w-full text-left px-3 py-2.5 rounded-xl text-[11px] font-black transition-all border ${editingTask?.id === task.id ? 'bg-indigo-600/20 border-indigo-500 text-white' : `bg-slate-900/60 border-transparent hover:border-slate-700 ${incomplete ? 'text-red-300' : 'text-slate-300'}`}`}>
+                <div className="flex items-center gap-1.5">
+                  <span>{task.icon || '❓'}</span>
+                  <span className="truncate">{task.title}</span>
+                </div>
+                <div className="flex gap-1 mt-0.5">
+                  <span className="text-[9px] opacity-50">★{task.difficulty}</span>
+                  {incomplete && <span className="text-[9px] text-red-400">⚠ нет текста</span>}
+                </div>
+              </button>
+            );
+          })}
+          {(selectedIsland !== '_orphan' && !selectedLocation) && (
+            <div className="text-slate-600 text-[11px] text-center py-8">← Выбери локацию</div>
+          )}
+        </div>
+      </div>
+
+      {/* Колонка 4: Редактор задачи */}
+      <div className="flex-1 overflow-y-auto p-6 bg-slate-900/20">
+        {editingTask ? (
+          <div className="max-w-xl space-y-5">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-3xl">{editingTask.icon}</span>
+              <div>
+                <h3 className="text-lg font-black text-white">{editingTask.title}</h3>
+                <p className="text-[11px] text-slate-500 uppercase">ID: {editingTask.id} · ★{editingTask.difficulty}</p>
+              </div>
+            </div>
+
+            {/* Переназначить в другую локацию */}
+            <div>
+              <label className="text-[10px] uppercase text-slate-500 font-black block mb-2">Локация</label>
+              <select
+                value={editingTask.category}
+                onChange={e => {
+                  const newCat = e.target.value;
+                  moveTask(editingTask.id, newCat);
+                  setEditingTask(prev => ({ ...prev, category: newCat }));
+                }}
+                className="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none text-sm">
+                {ISLAND_DEFS.flatMap(isl => isl.locations.map(loc => (
+                  <option key={loc.id} value={loc.id}>{isl.emoji} {isl.label} → {loc.emoji} {loc.label}</option>
+                )))}
+              </select>
+            </div>
+
+            {/* Teaser */}
+            <div>
+              <label className="text-[10px] uppercase text-slate-500 font-black block mb-2">
+                Тизер (вопрос задачи)
+                {(!editingTask.teaser || editingTask.teaser.length < 5) && <span className="text-red-400 ml-2">⚠ пусто</span>}
+              </label>
+              <textarea rows={3} value={editingTask.teaser || ''}
+                onChange={e => {
+                  const v = e.target.value;
+                  setLocalTasks(prev => prev.map(t => t.id === editingTask.id ? { ...t, teaser: v } : t));
+                  setEditingTask(prev => ({ ...prev, teaser: v }));
+                }}
+                className="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none text-sm resize-none"
+                placeholder="Как принцу забраться наверх без лестниц?" />
+            </div>
+
+            {/* Condition */}
+            <div>
+              <label className="text-[10px] uppercase text-slate-500 font-black block mb-2">
+                Условие задачи (полное)
+                {!editingTask.condition && <span className="text-amber-400 ml-2">⚠ нет</span>}
+              </label>
+              <textarea rows={4} value={editingTask.condition || ''}
+                onChange={e => {
+                  const v = e.target.value;
+                  setLocalTasks(prev => prev.map(t => t.id === editingTask.id ? { ...t, condition: v } : t));
+                  setEditingTask(prev => ({ ...prev, condition: v }));
+                }}
+                className="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none text-sm resize-none"
+                placeholder="Принцесса заперта в башне. Принц хочет к ней попасть..." />
+            </div>
+
+            <button onClick={handleSaveAll} disabled={isSaving}
+              className={`w-full py-3 rounded-xl text-sm font-black uppercase ${isSaving ? 'bg-slate-700' : 'bg-emerald-600 hover:bg-emerald-500'} transition-all`}>
+              {isSaving ? 'Сохранение...' : '💾 Сохранить все изменения'}
+            </button>
+          </div>
+        ) : (
+          <div className="h-full flex items-center justify-center flex-col gap-3 text-slate-600">
+            <div className="text-6xl opacity-20">🏝</div>
+            <p className="text-xs font-black uppercase tracking-widest">Выбери задачу для редактирования</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Главный AdminView ─────────────────────────────────────────────────────────
 const TABS = [
+  { id: 'islands',   label: '🏝 Острова' },
   { id: 'tasks',     label: '📋 Задачи' },
   { id: 'tsar',      label: '🏔️ Царь-гора' },
   { id: 'bredo',     label: '⚙️ Бредо' },
@@ -641,6 +861,7 @@ export default function AdminView({ TASKS, onBack, t }) {
 
       {/* Контент */}
       <div className="flex flex-1 overflow-hidden">
+        {tab === 'islands'   && <TabIslands TASKS={TASKS} />}
         {tab === 'tasks'     && <TabTasks TASKS={TASKS} onBack={onBack} />}
         {tab === 'tsar'      && <TabTsarWords />}
         {tab === 'bredo'     && <TabBredomaker />}
