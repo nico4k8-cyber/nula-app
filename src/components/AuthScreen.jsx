@@ -20,9 +20,11 @@ export default function AuthScreen({ onGuest, returnPhase }) {
   const [loading, setLoading] = useState(null);
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState("");
   const [country, setCountry] = useState(null); // null=loading, 'RU'=russia, else=outside
 
-  // Save return phase before any redirect
+  // Save return phase (for Google OAuth redirect only)
   useEffect(() => {
     if (returnPhase) saveReturnPhase(returnPhase);
   }, [returnPhase]);
@@ -37,19 +39,41 @@ export default function AuthScreen({ onGuest, returnPhase }) {
 
   const showGoogle = country !== null && country !== 'RU';
 
-  const handleMagicLink = async () => {
+  // Step 1: send OTP code (no redirect — user stays on the page)
+  const handleSendCode = async () => {
     if (!email.includes('@')) return;
     setLoading('email');
     trackEvent(EVENTS.AUTH_STARTED, { provider: 'email' });
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: window.location.origin },
+        options: { shouldCreateUser: true },
+        // No emailRedirectTo → Supabase sends a 6-digit code
       });
       if (error) throw error;
       setSent(true);
     } catch (err) {
       alert('Ошибка: ' + err.message);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  // Step 2: verify 6-digit code
+  const handleVerifyCode = async () => {
+    if (code.length < 6) return;
+    setLoading('verify');
+    setCodeError('');
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code.trim(),
+        type: 'email',
+      });
+      if (error) throw error;
+      // onAuthStateChange in App.jsx will handle the rest
+    } catch (err) {
+      setCodeError('Неверный код. Попробуй ещё раз или запроси новый.');
     } finally {
       setLoading(null);
     }
@@ -88,7 +112,7 @@ export default function AuthScreen({ onGuest, returnPhase }) {
         </p>
 
         <div className="w-full space-y-3">
-          {/* Magic link — always */}
+          {/* Email OTP — stays on same page, no redirect */}
           {!sent ? (
             <div className="bg-white/80 backdrop-blur-md rounded-3xl p-2 shadow-2xl flex flex-col gap-2 border border-white">
               <input
@@ -96,26 +120,50 @@ export default function AuthScreen({ onGuest, returnPhase }) {
                 placeholder="Твой email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleMagicLink()}
+                onKeyDown={e => e.key === 'Enter' && handleSendCode()}
                 className="w-full px-5 py-3.5 rounded-2xl bg-white/60 border-none focus:ring-2 focus:ring-sky-500 font-bold text-slate-800 transition-all outline-none text-[16px]"
               />
               <button
-                onClick={handleMagicLink}
+                onClick={handleSendCode}
                 disabled={!!loading || !email.includes('@')}
                 className="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl flex items-center justify-center font-black text-[15px] transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg gap-2"
               >
                 {loading === 'email'
                   ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : <><span>✉️</span> Войти по ссылке на почту</>}
+                  : <><span>✉️</span> Получить код на почту</>}
               </button>
             </div>
           ) : (
-            <div className="bg-emerald-500 rounded-3xl p-6 text-center text-white shadow-xl">
-              <div className="text-4xl mb-3">✉️</div>
-              <p className="font-black text-lg leading-tight mb-2">Ссылка отправлена!</p>
-              <p className="text-white/80 text-sm">
-                Открой письмо на <strong>{email}</strong> и нажми кнопку — вернёшься сюда автоматически.
-              </p>
+            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-4 shadow-2xl flex flex-col gap-3 border border-white">
+              <div className="text-center pt-2">
+                <div className="text-3xl mb-1">✉️</div>
+                <p className="font-black text-slate-800 text-sm">Код отправлен на {email}</p>
+                <p className="text-slate-500 text-xs mt-0.5">Введи 6-значный код из письма</p>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="_ _ _ _ _ _"
+                maxLength={6}
+                value={code}
+                onChange={e => { setCode(e.target.value.replace(/\D/g, '')); setCodeError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleVerifyCode()}
+                className="w-full px-5 py-4 rounded-2xl bg-white border-2 border-sky-200 focus:border-sky-500 font-black text-slate-800 text-center text-2xl tracking-[0.5em] outline-none transition-all"
+                autoFocus
+              />
+              {codeError && <p className="text-red-500 text-xs text-center font-bold">{codeError}</p>}
+              <button
+                onClick={handleVerifyCode}
+                disabled={!!loading || code.length < 6}
+                className="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl flex items-center justify-center font-black text-[15px] transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg gap-2"
+              >
+                {loading === 'verify'
+                  ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <>Войти →</>}
+              </button>
+              <button onClick={() => setSent(false)} className="text-slate-400 text-xs text-center hover:text-slate-600 transition-colors">
+                ← Изменить email
+              </button>
             </div>
           )}
 
