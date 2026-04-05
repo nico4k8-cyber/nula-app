@@ -15,7 +15,9 @@ export const syncProgress = async (userId, data) => {
     .from('profiles')
     .upsert({
       id: userId,
-      ...data,
+      stars: data.stars ?? data.totalStars ?? 0,
+      completed_tasks: data.completedTasks || [],
+      unlocked_buildings: data.unlockedBuildings || [],
       updated_at: new Date().toISOString()
     })
     .select();
@@ -29,12 +31,19 @@ export const loadProgress = async (userId) => {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('stars, completed_tasks, unlocked_buildings')
     .eq('id', userId)
     .single();
 
-  if (error) console.error('Supabase load error:', error);
-  return data;
+  if (error && error.code !== 'PGRST116') console.error('Supabase load error:', error);
+  if (!data) return null;
+
+  // Map snake_case → camelCase for the app
+  return {
+    stars: data.stars || 0,
+    completedTasks: data.completed_tasks || [],
+    unlockedBuildings: data.unlocked_buildings || [],
+  };
 };
 
 // ---- PATENTS (Bredo) ----

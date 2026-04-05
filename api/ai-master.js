@@ -13,26 +13,26 @@ const corsHeaders = {
   "Cache-Control": "no-store, max-age=0, must-revalidate",
 };
 
-// Логируем токены в Supabase (fire-and-forget, не блокирует ответ)
-function logUsage({ action, model, usage, userId }) {
+// Логируем токены в Supabase (await — edge runtime убивает fire-and-forget)
+async function logUsage({ action, model, usage, userId }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
   if (!url || !key) return;
-  // Log even if tokens=0 so we can see failed/empty responses
   // Claude 3 Haiku via Polza: 23.09 ₽/1M input + 115.46 ₽/1M output
-  const costRub = ((usage.promptTokens || 0) / 1_000_000) * 23.09
-                + ((usage.completionTokens || 0) / 1_000_000) * 115.46;
-  const costUsd = costRub / 90; // approximate RUB→USD
+  const costRub = ((usage?.promptTokens || 0) / 1_000_000) * 23.09
+                + ((usage?.completionTokens || 0) / 1_000_000) * 115.46;
+  const costUsd = costRub / 90;
   const supabase = createClient(url, key);
-  supabase.from('token_usage').insert({
+  const { error } = await supabase.from('token_usage').insert({
     user_id: userId || null,
     action,
     model: model || 'anthropic/claude-3-haiku',
-    prompt_tokens: usage.promptTokens || 0,
-    completion_tokens: usage.completionTokens || 0,
-    total_tokens: usage.totalTokens || 0,
+    prompt_tokens: usage?.promptTokens || 0,
+    completion_tokens: usage?.completionTokens || 0,
+    total_tokens: usage?.totalTokens || 0,
     cost_usd: costUsd,
-  }).then(({ error }) => { if (error) console.error('[token_usage log]', error); });
+  });
+  if (error) console.error('[token_usage log]', error);
 }
 
 export default async function handler(req) {
@@ -60,7 +60,7 @@ export default async function handler(req) {
         systemPromptOverride: `Ты ведущий игры "20 вопросов". Тебе известно загаданное слово. На вопрос отвечай ТОЛЬКО "Да" или "Нет" без объяснений.`,
       });
 
-      logUsage({ action: 'twenty_q_answer', model: result.model, usage: result.usage, userId });
+      await logUsage({ action: 'twenty_q_answer', model: result.model, usage: result.usage, userId });
 
       const raw = (result.text || '').trim();
       const answer = raw.startsWith('Да') ? 'Да' : raw.startsWith('Нет') ? 'Нет' : (Math.random() > 0.5 ? 'Да' : 'Нет');
@@ -80,7 +80,7 @@ export default async function handler(req) {
         systemPromptOverride: `Ты — весёлый изобретатель Орин, помощник детей. Оценивай детские идеи тепло и подбадривающе. Формат ответа: первая строка — число (оценка 5–30), вторая строка — реакция.`,
       });
 
-      logUsage({ action: 'evaluate_invention', model: result.model, usage: result.usage, userId });
+      await logUsage({ action: 'evaluate_invention', model: result.model, usage: result.usage, userId });
 
       const lines = (result.text || '').trim().split('\n').filter(Boolean);
       const scoreMatch = lines[0]?.match(/\d+/);
@@ -104,7 +104,7 @@ export default async function handler(req) {
       userMessage, history, task, prizStep, _forceHaiku: true,
     });
 
-    logUsage({ action: 'chat', model: result.model, usage: result.usage, userId });
+    await logUsage({ action: 'chat', model: result.model, usage: result.usage, userId });
 
     const persona = getPersona(task.difficulty);
     return new Response(JSON.stringify({
