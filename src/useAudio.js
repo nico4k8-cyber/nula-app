@@ -34,6 +34,8 @@ export function useAudio(tracks = []) {
       return true;
     }
   });
+  const isEnabledRef = useRef(isEnabled);
+  useEffect(() => { isEnabledRef.current = isEnabled; }, [isEnabled]);
 
   // Initialize music and handle track changes (don't change on isEnabled)
   useEffect(() => {
@@ -78,24 +80,19 @@ export function useAudio(tracks = []) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // Tab is hidden - pause music
         if (audioRef.current && !audioRef.current.paused) {
           audioRef.current.pause();
         }
       } else {
-        // Tab is visible - resume music if enabled
-        if (isEnabled && audioRef.current && audioRef.current.paused && audioRef.current.src) {
+        if (isEnabledRef.current && audioRef.current && audioRef.current.paused && audioRef.current.src) {
           audioRef.current.play().catch(() => {});
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isEnabled]);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []); // пустой массив — подписываемся один раз, isEnabled читаем через ref
 
   // Update track source when index changes (but keep playing smoothly)
   useEffect(() => {
