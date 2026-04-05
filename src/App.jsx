@@ -620,6 +620,11 @@ export default function App() {
             t={t}
             lang={lang}
             onNext={goOutcome}
+            onWantsMore={() => {
+              trackEvent(EVENTS.TASK_COMPLETED, { taskId: task?.id, wantsMore: true });
+              goOutcome();
+              setTimeout(() => setPhase("picker"), 400);
+            }}
           />
         )}
 

@@ -60,7 +60,7 @@ export async function getClaudeResponse({
       0: "STAGE 0 (П): Ask 1 short question to check the child understands the problem.",
       1: "STAGE 1 (Р): Ask what resources or tools are nearby that could help.",
       2: "STAGE 2 (И): The child proposed an idea — ask ONE clarifying question to develop it. Do NOT accept the first idea immediately.",
-      3: "STAGE 3 (З): The child gave a complete solution. Write EXACTLY 2 sentences: first praise what specifically is good, second say 'Задача решена!' Nothing else.",
+      3: `STAGE 3 (З): The child gave a complete solution. Write EXACTLY 2 sentences: first praise what specifically is good, second say 'Задача решена!' Nothing else.\n\nFor the R rating in the tag, evaluate solution QUALITY based on TRIZ principles:\n- R:3 = child's idea uses the EXACT resources already present in the task (matching the IKR). This is the elegant TRIZ solution.\n- R:2 = child found a working solution through analysis but uses new/external resources not mentioned in the task.\n- R:1 = child found any solution (correct but without elegant resource use).\nTask IKR: ${task?.ikr || ''}\nTask resources: ${Array.isArray(task?.resources) ? task.resources.map(r => r.id || r).join(', ') : (task?.resources || '')}`,
     };
 
     const currentGuide = STAGE_GUIDE[prizStep] || STAGE_GUIDE[0];
