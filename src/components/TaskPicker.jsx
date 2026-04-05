@@ -129,7 +129,7 @@ export default function TaskPicker({
                    </p>
                    <div className="flex gap-0.5 mt-1">
                      {[...Array(dailyTask.difficulty || 1)].map((_, i) => (
-                       <span key={i} className="text-[11px]">⭐</span>
+                       <span key={i} className="text-[11px]">💎</span>
                      ))}
                    </div>
                  </div>
@@ -171,7 +171,7 @@ export default function TaskPicker({
                      </span>
                      <div className="flex items-center justify-center gap-0.5 mt-1">
                        {[...Array(taskItem.difficulty || 1)].map((_, i) => (
-                         <span key={i} className="text-[10px]">⭐</span>
+                         <span key={i} className="text-[10px]">💎</span>
                        ))}
                      </div>
                    </div>
