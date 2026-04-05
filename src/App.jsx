@@ -113,6 +113,7 @@ export default function App() {
   const [activeIslandId, setActiveIslandId] = useState(saved?.activeIslandId || null);
   const [isTutorial, setIsTutorial] = useState(false);
   const [showIslandUnlock, setShowIslandUnlock] = useState(false);
+  const [showNewDayBubble, setShowNewDayBubble] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
 
   const bottomRef = useRef(null);
@@ -237,6 +238,18 @@ export default function App() {
     }
   }, [menuOpen]);
 
+  // "Новый день" bubble — показываем если уже играли раньше и сегодня первый заход
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const lastKey = "nula-last-visit";
+    const last = localStorage.getItem(lastKey);
+    if (last && last !== today && completedTasks.length > 0) {
+      setShowNewDayBubble(true);
+      setTimeout(() => setShowNewDayBubble(false), 6000);
+    }
+    localStorage.setItem(lastKey, today);
+  }, []);
+
   /* ═══ Handlers ═══ */
 
   function startTaskPreview(taskKey) {
@@ -269,6 +282,7 @@ export default function App() {
       setPhase("paywall");
       return;
     }
+    trackEvent(EVENTS.TASK_STARTED, { taskId: task?.id, difficulty: task?.difficulty });
     setMessages([]);
     setSessionStars(0);
     setTaskRating(1);
@@ -334,7 +348,10 @@ export default function App() {
         setSessionStars(rating); // sessionStars = task reward (1-3)
         setTimeout(() => {
           setPrizStep(4); // light up ✨ briefly
-          setTimeout(() => setPhase("debrief"), 2500);
+          setTimeout(() => {
+            trackEvent(EVENTS.DEBRIEF_VIEWED, { taskId: task?.id, stars: rating });
+            setPhase("debrief");
+          }, 2500);
         }, 2000);
       }
     } catch (err) {
@@ -414,6 +431,20 @@ export default function App() {
           onDismiss={() => setUpsellMessage(null)}
           onSignup={() => { setUpsellMessage(null); window.open("https://t.me/ugolok_triz", "_blank"); }}
         />
+      )}
+
+      {/* Новый день bubble */}
+      {showNewDayBubble && phase === "city" && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[150] animate-bounce-in">
+          <div className="bg-white rounded-[20px] shadow-2xl px-5 py-4 flex items-center gap-3 border border-orange-100 max-w-[300px]">
+            <span className="text-3xl">🌅</span>
+            <div>
+              <p className="font-black text-slate-800 text-[14px] leading-tight">Новый день!</p>
+              <p className="text-slate-500 text-[12px]">Тебя ждёт новая задача дня 🔥</p>
+            </div>
+            <button onClick={() => setShowNewDayBubble(false)} className="text-slate-300 text-lg ml-1">×</button>
+          </div>
+        </div>
       )}
 
       {/* Island Unlock Animation */}
@@ -534,7 +565,7 @@ export default function App() {
           <DragonBubbleScreen t={t} theme={theme} lang={lang} onStart={(opts) => {
             setHasSeenOnboarding(true);
             if (opts?.tutorial) {
-              setTask(TASKS[0]);
+              setTask(TASKS.find(t => t.id === 2) || TASKS[0]); // лабиринт Тесея
               setIsTutorial(true);
               setPhase("task-preview");
             } else {
@@ -609,7 +640,10 @@ export default function App() {
             childMsgCount={messages.filter(m => m.type === "child").length}
             hintsLeft={getHintsLeft()}
             onHint={handleHint}
-            onBack={() => { setIsTutorial(false); setPhase("picker"); }}
+            onBack={() => {
+              trackEvent(EVENTS.TASK_ABANDONED, { taskId: task?.id, msgCount: messages.filter(m => m.type !== "bot").length });
+              setIsTutorial(false); setPhase("picker");
+            }}
             onSkip={() => { setIsTutorial(false); setPhase("picker"); }}
             onSendMessage={handleUserMessage}
             input={input}

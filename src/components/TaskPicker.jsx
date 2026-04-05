@@ -23,6 +23,11 @@ export default function TaskPicker({
     .filter(taskItem => taskItem.category === activeCategory)
     .sort((a, b) => (a.difficulty || 1) - (b.difficulty || 1));
 
+  // Difficulty locking: difficulty:3 locked until all difficulty:1-2 in category are done
+  const easyTasks = filtered.filter(t => (t.difficulty || 1) < 3);
+  const allEasyDone = easyTasks.length > 0 && easyTasks.every(t => completedTasks.includes(t.id));
+  const isDifficultyLocked = (taskItem) => (taskItem.difficulty || 1) >= 3 && !allEasyDone;
+
   const dailyTask = getDailyTask(TASKS);
   const isDailyInThisCategory = dailyTask?.category === activeCategory;
 
@@ -151,23 +156,26 @@ export default function TaskPicker({
                const originalIdx = TASKS.findIndex(task => task.id === taskItem.id);
                const isDone = completedTasks.includes(taskItem.id);
                const isDaily = isDailyInThisCategory && taskItem.id === dailyTask.id;
+               const isLocked = isDifficultyLocked(taskItem);
                return (
                  <button key={taskItem.id}
-                   onClick={() => onStartTask(originalIdx)}
-                   className={`relative overflow-hidden aspect-square h-[170px] rounded-[36px] p-4 flex flex-col items-center justify-center text-center transition-all active:scale-95 border-4 group shadow-lg
-                     ${isDone
-                       ? "bg-emerald-50 border-emerald-200"
+                   onClick={() => !isLocked && onStartTask(originalIdx)}
+                   className={`relative overflow-hidden aspect-square h-[170px] rounded-[36px] p-4 flex flex-col items-center justify-center text-center transition-all border-4 group shadow-lg
+                     ${isLocked
+                       ? "bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed"
+                       : isDone
+                       ? "bg-emerald-50 border-emerald-200 active:scale-95"
                        : isDaily
-                       ? "bg-amber-50 border-amber-300"
-                       : "bg-white border-white hover:border-orange-200 hover:shadow-orange-100 hover:shadow-2xl"}`}
+                       ? "bg-amber-50 border-amber-300 active:scale-95"
+                       : "bg-white border-white hover:border-orange-200 hover:shadow-orange-100 hover:shadow-2xl active:scale-95"}`}
                  >
-                   <div className="text-5xl mb-3 flex-shrink-0 transition-transform group-hover:scale-110 duration-300">
-                     {taskItem.icon || taskItem.puzzle?.emoji || "❓"}
+                   <div className={`text-5xl mb-3 flex-shrink-0 transition-transform duration-300 ${!isLocked && "group-hover:scale-110"}`}>
+                     {isLocked ? "🔒" : (taskItem.icon || taskItem.puzzle?.emoji || "❓")}
                    </div>
                    <div className="flex flex-col gap-1 min-w-0">
                      <span className={`text-[12px] font-black uppercase tracking-tight leading-tight line-clamp-2
-                       ${isDone ? "text-emerald-700" : "text-slate-800"}`}>
-                       {getTitle(taskItem)}
+                       ${isLocked ? "text-slate-400" : isDone ? "text-emerald-700" : "text-slate-800"}`}>
+                       {isLocked ? "Реши все задачи 💎💎" : getTitle(taskItem)}
                      </span>
                      <div className="flex items-center justify-center gap-0.5 mt-1">
                        {[...Array(taskItem.difficulty || 1)].map((_, i) => (
@@ -175,10 +183,10 @@ export default function TaskPicker({
                        ))}
                      </div>
                    </div>
-                   {isDone && (
+                   {!isLocked && isDone && (
                      <div className="absolute top-4 right-4 bg-emerald-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-lg">✓</div>
                    )}
-                   {isDaily && !isDone && (
+                   {!isLocked && isDaily && !isDone && (
                      <div className="absolute top-3 left-3 text-[9px] font-black bg-amber-400 text-white px-2 py-0.5 rounded-full">🔥</div>
                    )}
                  </button>

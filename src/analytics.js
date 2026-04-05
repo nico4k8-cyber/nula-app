@@ -16,8 +16,11 @@ export const EVENTS = {
   // GAME FLOW
   TASK_STARTED: "task_started",
   TASK_COMPLETED: "task_completed",
+  TASK_ABANDONED: "task_abandoned",
+  DEBRIEF_VIEWED: "debrief_viewed",
   PUZZLE_SUBMITTED: "puzzle_submitted",
   BUILDING_UNLOCKED: "building_unlocked",
+  NEW_DAY_RETURN: "new_day_return",
 
   // NAVIGATION
   CITY_OPENED: "city_opened",

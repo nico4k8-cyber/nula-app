@@ -96,23 +96,52 @@ export default function City({
         )}
         
         {/* Floating Mini HUD (Bottom Progress) */}
-        {!selectedIslandId && (
-          <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex gap-4 pointer-events-none animate-fade-in">
-            <div className="px-8 py-4 glass-dark rounded-full border border-white/10 text-center flex items-center gap-8 shadow-premium">
-              <div className="flex flex-col items-center">
-                <p className="text-xl font-black text-white leading-none">{completedTasks.length}</p>
-                <p className="text-[8px] text-white/40 uppercase font-black tracking-[0.2em] mt-1">{t('hud.missions')}</p>
-              </div>
-              <div className="h-6 w-px bg-white/20" />
-              <div className="flex flex-col items-center">
-                <p className="text-xl font-black text-white leading-none">
-                   {Object.values(islands || {}).filter(i => i.status === 'active' || i.status === 'completed').length}
-                </p>
-                <p className="text-[8px] text-white/40 uppercase font-black tracking-[0.2em] mt-1">{t('hud.islands')}</p>
+        {!selectedIslandId && (() => {
+          // Find next locked island and how many tasks needed
+          const islandOrder = ['main', 'craft', 'science', 'summit'];
+          const islandNames = { craft: 'Заповедник', science: 'Наука', summit: 'Пик' };
+          const nextLocked = islandOrder.find(id => islands?.[id]?.status === 'locked');
+          const req = nextLocked ? unlockRequirements?.[nextLocked] : null;
+          const needed = req ? Math.max(0, req.count - completedTasks.length) : 0;
+          const progress = req ? Math.min(1, completedTasks.length / req.count) : 1;
+
+          return (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fade-in w-[calc(100%-48px)] max-w-[360px]">
+              <div className="glass-dark rounded-[28px] border border-white/10 shadow-premium px-6 py-4">
+                <div className="flex items-center gap-6 mb-3">
+                  <div className="flex flex-col items-center">
+                    <p className="text-xl font-black text-white leading-none">{completedTasks.length}</p>
+                    <p className="text-[8px] text-white/40 uppercase font-black tracking-[0.2em] mt-1">{t('hud.missions')}</p>
+                  </div>
+                  <div className="h-6 w-px bg-white/20" />
+                  <div className="flex flex-col items-center">
+                    <p className="text-xl font-black text-white leading-none">
+                      {Object.values(islands || {}).filter(i => i.status === 'active' || i.status === 'completed').length}
+                    </p>
+                    <p className="text-[8px] text-white/40 uppercase font-black tracking-[0.2em] mt-1">{t('hud.islands')}</p>
+                  </div>
+                  {nextLocked && needed > 0 && (
+                    <>
+                      <div className="h-6 w-px bg-white/20" />
+                      <div className="flex flex-col items-center flex-1 text-right">
+                        <p className="text-[11px] font-black text-orange-300 leading-none">🔒 {islandNames[nextLocked]}</p>
+                        <p className="text-[9px] text-white/40 font-black mt-0.5">ещё {needed} задач</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {nextLocked && req && (
+                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-orange-400 rounded-full transition-all duration-700"
+                      style={{ width: `${progress * 100}%` }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
