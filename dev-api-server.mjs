@@ -145,6 +145,23 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      // 5. Save Island Mapping (/api/save-island-mapping)
+      if (pathname === '/save-island-mapping' || pathname === '/api/save-island-mapping') {
+        const data = JSON.parse(body || '{}');
+        const { mapping } = data;
+        if (!mapping || typeof mapping !== 'object') {
+           res.writeHead(400); res.end(JSON.stringify({ error: 'mapping required' })); return;
+        }
+        const filePath = path.resolve(process.cwd(), 'src', 'utils', 'gameUtils.js');
+        let content = fs.readFileSync(filePath, 'utf-8');
+        // Replace ISLAND_MAPPING block
+        const newMapping = `export const ISLAND_MAPPING = ${JSON.stringify(mapping, null, 2)};`;
+        content = content.replace(/export const ISLAND_MAPPING = \{[\s\S]*?\};/, newMapping);
+        fs.writeFileSync(filePath, content, 'utf-8');
+        res.writeHead(200); res.end(JSON.stringify({ success: true }));
+        return;
+      }
+
       // Default 404
       console.log('404 Not Found:', pathname);
       res.writeHead(404);

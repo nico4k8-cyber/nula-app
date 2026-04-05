@@ -168,12 +168,24 @@ function TabTasks({ TASKS, onBack }) {
               <h3 className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em]">Основные поля</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] uppercase text-slate-500 font-black block mb-1">Категория</label>
+                  <label className="text-[10px] uppercase text-slate-500 font-black block mb-1">Локация / Остров</label>
                   <select value={editingTask.category} onChange={e => updateTask(editingTask.id, 'category', e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none">
-                    {['library','nature-reserve','city-hall','farm','workshop','laboratory'].map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                    <optgroup label="🏝 Главный остров">
+                      <option value="library">📚 Библиотека</option>
+                      <option value="city-hall">🏛 Ратуша</option>
+                      <option value="nature-reserve">🏞 Заповедник</option>
+                    </optgroup>
+                    <optgroup label="🌿 Заповедник (остров)">
+                      <option value="workshop">🔧 Мастерская</option>
+                      <option value="farm">🚜 Ферма</option>
+                    </optgroup>
+                    <optgroup label="🔬 Остров Науки">
+                      <option value="laboratory">🔬 Лаборатория</option>
+                    </optgroup>
+                    <optgroup label="🏔 Пик Изобретателей">
+                      <option value="tsar">👑 Царь-гора</option>
+                    </optgroup>
                   </select>
                 </div>
                 <div>
@@ -651,8 +663,11 @@ function TabIslands({ TASKS }) {
   const [editingTask, setEditingTask] = useState(null);
   const [localTasks, setLocalTasks] = useState(TASKS);
   const [isSaving, setIsSaving] = useState(false);
+  // Редактируемый маппинг островов
+  const [islandDefs, setIslandDefs] = useState(ISLAND_DEFS);
+  const [movingLocId, setMovingLocId] = useState(null); // id локации в режиме перемещения
 
-  const island = ISLAND_DEFS.find(i => i.id === selectedIsland);
+  const island = islandDefs.find(i => i.id === selectedIsland);
 
   const isIncomplete = (task) => {
     const hasTeaser = task.teaser && task.teaser.length > 5;
@@ -673,6 +688,48 @@ function TabIslands({ TASKS }) {
     finally { setIsSaving(false); }
   };
 
+  // Переместить локацию на другой остров
+  const moveLocation = async (locId, targetIslandId) => {
+    const loc = islandDefs.flatMap(i => i.locations).find(l => l.id === locId);
+    if (!loc) return;
+    const newDefs = islandDefs.map(isl => ({
+      ...isl,
+      locations: isl.id === targetIslandId
+        ? [...isl.locations.filter(l => l.id !== locId), loc]
+        : isl.locations.filter(l => l.id !== locId)
+    }));
+    setIslandDefs(newDefs);
+    setMovingLocId(null);
+    // Собрать ISLAND_MAPPING для gameUtils.js
+    const LOCATION_META = {
+      'library':        { name: 'Библиотека',   icon: '📚', color: 'bg-amber-600' },
+      'city-hall':      { name: 'Мэрия',         icon: '🏛️', color: 'bg-blue-600' },
+      'nature-reserve': { name: 'Заповедник',    icon: '🏞️', color: 'bg-teal-500' },
+      'workshop':       { name: 'Мастерская',    icon: '🔧', color: 'bg-slate-600' },
+      'farm':           { name: 'Ферма',         icon: '🚜', color: 'bg-emerald-600' },
+      'laboratory':     { name: 'Лаборатория',   icon: '🧪', color: 'bg-indigo-600' },
+      'bredo':          { name: 'Бредогенератор',icon: '⚙️', color: 'bg-rose-600' },
+      'tsar':           { name: 'Царь-гора',     icon: '🏔️', color: 'bg-violet-600' },
+    };
+    const ISLAND_IMG = { main: '/assets/webp/main_island.webp', craft: '/assets/webp/island_zapovednik.webp', science: '/assets/webp/island_laboratory.webp', summit: '/assets/webp/island_tsar.webp' };
+    const mapping = {};
+    newDefs.forEach(isl => {
+      mapping[isl.id] = {
+        name: isl.label,
+        imgUrl: ISLAND_IMG[isl.id] || '',
+        buildings: isl.locations.map(l => ({ id: l.id, ...(LOCATION_META[l.id] || { name: l.label, icon: l.emoji, color: 'bg-slate-600' }) }))
+      };
+    });
+    try {
+      const r = await fetch('http://localhost:3001/api/save-island-mapping', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mapping }),
+      });
+      if (r.ok) alert(`✅ Локация "${loc.label}" перемещена на ${newDefs.find(i=>i.id===targetIslandId)?.label}!\nПерезапусти сервер чтобы увидеть изменения.`);
+      else alert("❌ Запусти dev-api-server.mjs");
+    } catch { alert("❌ Нет dev-сервера"); }
+  };
+
   const moveTask = (taskId, newCategory) => {
     setLocalTasks(prev => prev.map(t => t.id === taskId ? { ...t, category: newCategory } : t));
   };
@@ -682,7 +739,7 @@ function TabIslands({ TASKS }) {
     : [];
 
   const unassigned = localTasks.filter(t =>
-    !ISLAND_DEFS.flatMap(i => i.locations.map(l => l.id)).includes(t.category)
+    !islandDefs.flatMap(i => i.locations.map(l => l.id)).includes(t.category)
   );
 
   return (
@@ -720,16 +777,37 @@ function TabIslands({ TASKS }) {
           ) : island?.locations.map(loc => {
             const count = localTasks.filter(t => t.category === loc.id).length;
             const incomplete = localTasks.filter(t => t.category === loc.id && isIncomplete(t)).length;
+            const isMoving = movingLocId === loc.id;
             return (
-              <button key={loc.id}
-                onClick={() => { setSelectedLocation(loc.id); setEditingTask(null); }}
-                className={`w-full text-left px-3 py-3 rounded-xl text-[12px] font-black transition-all ${selectedLocation === loc.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
-                {loc.emoji} {loc.label}
-                <div className="flex gap-2 mt-0.5">
-                  <span className="text-[10px] opacity-60">{count} задач</span>
-                  {incomplete > 0 && <span className="text-[10px] text-red-400">⚠{incomplete}</span>}
+              <div key={loc.id} className="flex flex-col gap-1">
+                <div className={`w-full text-left px-3 py-2.5 rounded-xl text-[12px] font-black transition-all flex items-start gap-1 ${selectedLocation === loc.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+                  <button className="flex-1 text-left" onClick={() => { setSelectedLocation(loc.id); setEditingTask(null); setMovingLocId(null); }}>
+                    {loc.emoji} {loc.label}
+                    <div className="flex gap-2 mt-0.5">
+                      <span className="text-[10px] opacity-60">{count} задач</span>
+                      {incomplete > 0 && <span className="text-[10px] text-red-400">⚠{incomplete}</span>}
+                    </div>
+                  </button>
+                  <button
+                    title="Переместить на другой остров"
+                    onClick={() => setMovingLocId(isMoving ? null : loc.id)}
+                    className={`text-[14px] px-1 rounded transition-all ${isMoving ? 'text-amber-400' : 'text-slate-600 hover:text-slate-300'}`}>
+                    ↗
+                  </button>
                 </div>
-              </button>
+                {isMoving && (
+                  <div className="bg-slate-800 rounded-xl p-2 flex flex-col gap-1">
+                    <p className="text-[9px] text-amber-400 font-black uppercase px-1 mb-1">Переместить на:</p>
+                    {islandDefs.filter(isl => isl.id !== selectedIsland).map(isl => (
+                      <button key={isl.id}
+                        onClick={() => moveLocation(loc.id, isl.id)}
+                        className="text-left text-[11px] px-2 py-1.5 rounded-lg bg-slate-700 hover:bg-indigo-700 text-slate-300 font-bold transition-all">
+                        {isl.emoji} {isl.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

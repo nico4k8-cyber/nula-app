@@ -3,8 +3,8 @@ import React from 'react';
 export default function TaskPreview({ task, onStart, onBack, t, lang, isTutorial }) {
   const title = lang === 'en' ? (task.title_en || task.title) : task.title;
   const question = lang === 'en'
-    ? (task.puzzle?.question_en || task.teaser_en || task.puzzle?.question || task.teaser)
-    : (task.puzzle?.question || task.teaser);
+    ? (task.teaser_en || task.puzzle?.question_en || task.teaser || task.puzzle?.question)
+    : (task.teaser || task.puzzle?.question);
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-white animate-fade-in relative overflow-hidden">
