@@ -186,6 +186,18 @@ export const getTokenStats = async (days = 7) => {
   return data;
 };
 
+export const getPlayerStats = async () => {
+  if (isPlaceholder()) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, completed_tasks, stars');
+  if (error) return null;
+  const totalPlayers = data.length;
+  const totalTasksSolved = data.reduce((sum, p) => sum + (p.completed_tasks?.length || 0), 0);
+  const totalStars = data.reduce((sum, p) => sum + (p.stars || 0), 0);
+  return { totalPlayers, totalTasksSolved, totalStars };
+};
+
 export const getPlayerAlerts = async (totalWords) => {
   if (isPlaceholder()) return null;
   const { data, error } = await supabase

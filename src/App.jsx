@@ -143,15 +143,20 @@ export default function App() {
             setPhase('city');
           }
 
+          // Ensure session is set on the client before any DB calls
+          await supabase.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          });
+
           // 1. Save local progress to cloud FIRST (so nothing is lost)
           const localState = useGameStore.getState();
-          if (localState.completedTasks.length > 0 || localState.totalStars > 0) {
-            await syncProgress(session.user.id, {
-              stars: localState.totalStars,
-              completedTasks: localState.completedTasks,
-              unlockedBuildings: localState.unlockedBuildings,
-            });
-          }
+          const syncResult = await syncProgress(session.user.id, {
+            stars: localState.totalStars,
+            completedTasks: localState.completedTasks,
+            unlockedBuildings: localState.unlockedBuildings,
+          });
+          if (!syncResult) console.warn('[auth] syncProgress returned null — possible RLS/insert error');
 
           // 2. Load cloud and merge (union of both)
           const cloudData = await loadProgress(session.user.id);

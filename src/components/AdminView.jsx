@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   loadTsarWords, saveTsarWord, deleteTsarWord,
   loadBredomakerItems, saveBredomakerItem, deleteBredomakerItem,
-  getTokenStats, getPlayerAlerts,
+  getTokenStats, getPlayerAlerts, getPlayerStats,
 } from '../lib/supabase';
 import { TWENTY_Q_WORDS } from '../bot/twenty-q-words';
 import { BREDO_ITEMS } from '../bot/bredo-items';
@@ -487,18 +487,21 @@ function BarChart({ data, valueKey, labelKey, color = '#8b5cf6', height = 120 })
 // ── Вкладка: Аналитика ────────────────────────────────────────────────────────
 function TabAnalytics() {
   const [stats, setStats] = useState(null);
+  const [playerStats, setPlayerStats] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(7);
 
   const refresh = async (days) => {
     setLoading(true);
-    const [tokenData, alertData] = await Promise.all([
+    const [tokenData, alertData, pStats] = await Promise.all([
       getTokenStats(days),
       getPlayerAlerts(TWENTY_Q_WORDS.length),
+      getPlayerStats(),
     ]);
     setStats(tokenData);
     setAlerts(alertData || []);
+    setPlayerStats(pStats);
     setLoading(false);
   };
 
@@ -546,6 +549,23 @@ function TabAnalytics() {
             ))}
           </div>
           <p className="text-amber-500/70 text-xs mt-3">💡 Этим игрокам стоит показать предложение записаться на живые занятия по ТРИЗ</p>
+        </section>
+      )}
+
+      {/* Игроки и задачи */}
+      {playerStats && (
+        <section className="grid grid-cols-3 gap-4">
+          {[
+            { label: 'Игроков', value: playerStats.totalPlayers, icon: '👤', color: 'text-sky-300' },
+            { label: 'Задач решено', value: playerStats.totalTasksSolved, icon: '✅', color: 'text-emerald-300' },
+            { label: 'Звёзд заработано', value: playerStats.totalStars, icon: '⭐', color: 'text-amber-300' },
+          ].map(({ label, value, icon, color }) => (
+            <div key={label} className="bg-slate-800/60 rounded-2xl p-5 text-center">
+              <p className="text-2xl mb-1">{icon}</p>
+              <p className={`text-2xl font-black ${color}`}>{value}</p>
+              <p className="text-slate-500 text-[10px] uppercase font-black mt-1">{label}</p>
+            </div>
+          ))}
         </section>
       )}
 
