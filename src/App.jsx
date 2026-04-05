@@ -92,6 +92,7 @@ export default function App() {
   const [trizState, setTrizState] = useState(saved?.trizState || null);
   const [sessionStars, setSessionStars] = useState(0);
   const [taskRating, setTaskRating] = useState(1); // 1-3 stars, set when task is solved
+  const [syncToast, setSyncToast] = useState(null); // { added: [...], alreadyHad: [...] }
   const [debriefBingo, setDebriefBingo] = useState(false);
   const [twistChoice, setTwistChoice] = useState(null);
   const [prizStep, setPrizStep] = useState(0);
@@ -164,19 +165,26 @@ export default function App() {
 
           // Load cloud and merge into Zustand (union)
           const cloudData = await loadProgress(session.user.id);
-          if (cloudData) {
-            useGameStore.setState((state) => ({
-              totalStars: Math.max(state.totalStars, localStars, cloudData.stars || 0),
-              completedTasks: Array.from(new Set([...state.completedTasks, ...localCompleted, ...(cloudData.completedTasks || [])])),
-              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...localBuildings, ...(cloudData.unlockedBuildings || [])]))
-            }));
-          } else if (localCompleted.length > 0) {
-            // No cloud profile yet — apply local data to state
-            useGameStore.setState((state) => ({
-              totalStars: Math.max(state.totalStars, localStars),
-              completedTasks: Array.from(new Set([...state.completedTasks, ...localCompleted])),
-              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...localBuildings]))
-            }));
+          const cloudCompleted = cloudData?.completedTasks || [];
+
+          // Figure out what's new vs already saved
+          const newlyAdded = localCompleted.filter(id => !cloudCompleted.includes(id));
+          const alreadyHad = localCompleted.filter(id => cloudCompleted.includes(id));
+
+          const mergedCompleted = Array.from(new Set([...cloudCompleted, ...localCompleted]));
+          const mergedStars = Math.max(localStars, cloudData?.stars || 0);
+          const mergedBuildings = Array.from(new Set([...(cloudData?.unlockedBuildings || []), ...localBuildings]));
+
+          useGameStore.setState((state) => ({
+            totalStars: Math.max(state.totalStars, mergedStars),
+            completedTasks: Array.from(new Set([...state.completedTasks, ...mergedCompleted])),
+            unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings]))
+          }));
+
+          // Show sync result toast
+          if (localCompleted.length > 0) {
+            setSyncToast({ added: newlyAdded, alreadyHad });
+            setTimeout(() => setSyncToast(null), 5000);
           }
         }
       } else {
@@ -448,6 +456,33 @@ export default function App() {
       )}
 
       <div className={`w-full ${phase === 'admin' ? 'max-w-[1920px]' : 'max-w-md'} h-full flex flex-col bg-white shadow-2xl relative overflow-hidden text-slate-800`}>
+
+        {/* Sync toast — shown after login merge */}
+        {syncToast && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-slide-down">
+            <div className="bg-slate-900 text-white rounded-2xl px-5 py-4 shadow-2xl max-w-xs text-center">
+              {syncToast.added.length > 0 ? (
+                <>
+                  <div className="text-2xl mb-1">✅</div>
+                  <p className="font-black text-sm">
+                    {syncToast.added.length === 1
+                      ? 'Задача добавлена к твоему прогрессу!'
+                      : `${syncToast.added.length} задач добавлено к прогрессу!`}
+                  </p>
+                  {syncToast.alreadyHad.length > 0 && (
+                    <p className="text-white/50 text-xs mt-1">{syncToast.alreadyHad.length} задач уже были пройдены</p>
+                  )}
+                </>
+              ) : syncToast.alreadyHad.length > 0 ? (
+                <>
+                  <div className="text-2xl mb-1">👍</div>
+                  <p className="font-black text-sm">Эта задача уже была в твоём прогрессе</p>
+                  <p className="text-white/50 text-xs mt-1">Ничего не изменилось</p>
+                </>
+              ) : null}
+            </div>
+          </div>
+        )}
 
         {renderHUD && (
           <div className="fixed top-6 right-6 z-50 flex items-center gap-2">
