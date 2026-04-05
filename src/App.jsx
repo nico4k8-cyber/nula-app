@@ -156,7 +156,7 @@ export default function App() {
             const raw = localStorage.getItem('nula-game-storage');
             const saved = raw ? JSON.parse(raw) : {};
             const s = saved.state || {};
-            localCompleted = s.completedTasks || [];
+            localCompleted = (s.completedTasks || []).map(String); // normalize IDs to strings
             localStars = s.totalStars || 0;
             localBuildings = s.unlockedBuildings || [];
           } catch {}
@@ -174,15 +174,16 @@ export default function App() {
 
           // 3. Save merged result back to cloud
           await syncProgress(session.user.id, {
+            email: session.user.email,
             stars: mergedStars,
             completedTasks: mergedCompleted,
             unlockedBuildings: mergedBuildings,
           });
 
-          // 4. Apply to Zustand
+          // 4. Apply to Zustand — normalize all IDs to strings for consistent includes() checks
           useGameStore.setState((state) => ({
             totalStars: Math.max(state.totalStars, mergedStars),
-            completedTasks: Array.from(new Set([...state.completedTasks, ...mergedCompleted])),
+            completedTasks: Array.from(new Set([...state.completedTasks.map(String), ...mergedCompleted])),
             unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings]))
           }));
 

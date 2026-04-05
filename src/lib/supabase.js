@@ -11,19 +11,22 @@ const isPlaceholder = () => supabaseUrl.includes('placeholder');
 export const syncProgress = async (userId, data) => {
   if (!userId || isPlaceholder()) return null;
 
+  const payload = {
+    id: userId,
+    stars: data.stars ?? data.totalStars ?? 0,
+    completed_tasks: (data.completedTasks || []).map(String), // normalize to strings
+    unlocked_buildings: data.unlockedBuildings || [],
+    updated_at: new Date().toISOString()
+  };
+  if (data.email) payload.email = data.email;
+
   const { data: result, error } = await supabase
     .from('profiles')
-    .upsert({
-      id: userId,
-      stars: data.stars ?? data.totalStars ?? 0,
-      completed_tasks: data.completedTasks || [],
-      unlocked_buildings: data.unlockedBuildings || [],
-      updated_at: new Date().toISOString()
-    })
+    .upsert(payload, { onConflict: 'id' })
     .select();
 
-  if (error) console.error('Supabase sync error:', error);
-  return result;
+  if (error) console.error('Supabase sync error:', error.message, error.details);
+  return error ? null : result;
 };
 
 export const loadProgress = async (userId) => {
@@ -41,7 +44,7 @@ export const loadProgress = async (userId) => {
   // Map snake_case → camelCase for the app
   return {
     stars: data.stars || 0,
-    completedTasks: data.completed_tasks || [],
+    completedTasks: (data.completed_tasks || []).map(String), // normalize to strings
     unlockedBuildings: data.unlocked_buildings || [],
   };
 };
