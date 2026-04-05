@@ -79,7 +79,7 @@ export default function DragonSplashScreen({ onAnimationEnd, t }) {
       <style>{`
         .splash-container {
           width: 100vw;
-          height: 100vh;
+          height: 100dvh;
           position: fixed;
           inset: 0;
           display: flex;
@@ -202,7 +202,7 @@ export default function DragonSplashScreen({ onAnimationEnd, t }) {
         }
 
         @media (max-width: 480px) {
-          .splash-bg { object-position: 65% center; }
+          .splash-bg { object-position: 60% top; }
         }
       `}</style>
     </div>
