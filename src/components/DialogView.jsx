@@ -285,26 +285,26 @@ export default function DialogView({
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowExitSheet(false)} />
           <div className="relative bg-white rounded-t-[32px] px-6 pb-10 pt-6 shadow-2xl animate-fade-in-up">
             <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
-            <h3 className="text-[18px] font-black text-slate-800 text-center mb-1">Уходишь?</h3>
-            <p className="text-[14px] text-slate-400 text-center mb-6">Прогресс этой задачи не сохранится</p>
+            <h3 className="text-[18px] font-black text-slate-800 text-center mb-1">Эта задачка не идёт?</h3>
+            <p className="text-[14px] text-slate-400 text-center mb-6">Это бывает. Что хочешь сделать?</p>
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => setShowExitSheet(false)}
                 className="w-full py-4 bg-orange-500 text-white font-black text-[16px] rounded-[20px] active:scale-95 transition-all"
               >
-                Продолжить задачу
+                Продолжаю думать →
               </button>
               <button
                 onClick={() => { setShowExitSheet(false); onSkip?.(); }}
                 className="w-full py-4 bg-slate-100 text-slate-600 font-black text-[16px] rounded-[20px] active:scale-95 transition-all"
               >
-                Пропустить задачу
+                Вернуться позже
               </button>
               <button
                 onClick={() => { setShowExitSheet(false); onBack?.(); }}
                 className="w-full py-3 text-slate-400 font-bold text-[14px] active:scale-95 transition-all"
               >
-                Выйти без сохранения
+                Пропустить совсем
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ export default function DebriefView({
   task,
   sessionStars,
   totalStars,
+  completedCount,
   onNext,
   onWantsMore,
   t,
@@ -28,6 +29,9 @@ export default function DebriefView({
   const keyResource = Array.isArray(task?.resources) && task.resources.length > 0
     ? (task.resources[0].id || task.resources[0])
     : null;
+
+  // Show TRIZ principle name only after task 5 (per GDD: tasks 1-5 = emotions only)
+  const showPrinciple = task?.trick?.name && (completedCount ?? 0) >= 5;
 
   return (
     <div className="flex flex-col h-[100dvh] bg-white animate-fade-in-up overflow-hidden">
@@ -66,6 +70,14 @@ export default function DebriefView({
             {keyResource ? `Ключ к задаче: ${keyResource}` : "Как думает изобретатель"}
           </div>
           <p className="text-[14px] text-emerald-900 leading-relaxed font-medium">{task.ikr}</p>
+        </div>
+      )}
+
+      {/* TRIZ principle — shown only after task 5 */}
+      {showPrinciple && (
+        <div className="mx-5 mb-3 bg-violet-50 border-2 border-violet-100 rounded-[20px] p-4">
+          <div className="text-[13px] text-violet-500 font-bold uppercase tracking-wide mb-1">Приём изобретателя</div>
+          <p className="text-[15px] text-violet-900 font-black">{task.trick.name}</p>
         </div>
       )}
 

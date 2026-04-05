@@ -681,13 +681,21 @@ export default function App() {
             task={task}
             sessionStars={sessionStars}
             totalStars={totalStars}
+            completedCount={completedTasks.length}
             t={t}
             lang={lang}
             onNext={goOutcome}
             onWantsMore={() => {
               trackEvent(EVENTS.TASK_COMPLETED, { taskId: task?.id, wantsMore: true });
-              goOutcome();
-              setTimeout(() => setPhase("picker"), 400);
+              const isFirstEver = !completedTasks.includes(task.id) && completedTasks.length === 0;
+              completeTask(task.id, sessionStars);
+              updateStreak();
+              if (isFirstEver) {
+                setShowIslandUnlock(true);
+                setTimeout(() => { setShowIslandUnlock(false); setPhase("picker"); }, 4000);
+              } else {
+                setPhase("picker");
+              }
             }}
           />
         )}
