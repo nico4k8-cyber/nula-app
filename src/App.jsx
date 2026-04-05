@@ -368,7 +368,7 @@ export default function App() {
   }
 
   /* ─── Render ─── */
-  const renderHUD = (phase !== "dragon-splash" && phase !== "auth");
+  const renderHUD = (phase !== "dragon-splash" && phase !== "auth" && phase !== "dialog" && phase !== "task-preview" && phase !== "debrief");
   
   return (
     <div className="min-h-[100dvh] flex flex-col items-center bg-slate-900 overflow-hidden" data-theme={theme}>
