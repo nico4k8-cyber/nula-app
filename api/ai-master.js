@@ -1,5 +1,6 @@
 import { getClaudeResponse } from "./_lib/ai-provider.js";
 import { getPersona } from "./_lib/personas.js";
+import { sanitizeUserMessage } from "./_lib/input-sanitizer.js";
 import { createClient } from "@supabase/supabase-js";
 
 export const config = {
@@ -98,6 +99,19 @@ export default async function handler(req) {
       return new Response(JSON.stringify({ error: "userMessage and task are required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // First-line defence: block injection before any processing
+    const { safe, threat } = sanitizeUserMessage(userMessage);
+    if (!safe) {
+      console.warn('[security] ai-master blocked:', threat, '| userId:', userId);
+      return new Response(JSON.stringify({
+        reply: "Давай решим задачу! Что ты думаешь?",
+        text:  "Давай решим задачу! Что ты думаешь?",
+        stars: 1,
+        prizStep,
+        _v: Date.now(),
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const result = await getClaudeResponse({
