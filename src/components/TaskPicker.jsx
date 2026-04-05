@@ -115,10 +115,9 @@ export default function TaskPicker({
            {/* Daily task card — full width, only if it belongs to this category */}
            {isDailyInThisCategory && (() => {
              const isDone = completedTasks.includes(dailyTask.id);
-             const idx = TASKS.findIndex(t => t.id === dailyTask.id);
              return (
                <button key={`daily-${dailyTask.id}`}
-                 onClick={() => onStartTask(idx)}
+                 onClick={() => onStartTask(dailyTask.id)}
                  className={`col-span-2 rounded-[28px] p-5 flex items-center gap-4 text-left transition-all active:scale-[0.98] border-2 shadow-lg
                    ${isDone
                      ? "bg-emerald-50 border-emerald-200"
@@ -153,13 +152,12 @@ export default function TaskPicker({
              </div>
            ) : (
              filtered.map((taskItem) => {
-               const originalIdx = TASKS.findIndex(task => task.id === taskItem.id);
                const isDone = completedTasks.includes(taskItem.id);
                const isDaily = isDailyInThisCategory && taskItem.id === dailyTask.id;
                const isLocked = isDifficultyLocked(taskItem);
                return (
                  <button key={taskItem.id}
-                   onClick={() => !isLocked && onStartTask(originalIdx)}
+                   onClick={() => !isLocked && onStartTask(taskItem.id)}
                    className={`relative overflow-hidden aspect-square h-[170px] rounded-[36px] p-4 flex flex-col items-center justify-center text-center transition-all border-4 group shadow-lg
                      ${isLocked
                        ? "bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed"
