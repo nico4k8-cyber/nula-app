@@ -143,14 +143,38 @@ export default function App() {
             setPhase('city');
           }
 
-          // Load cloud → store userId so the merge effect can run
-          // (We do NOT read getState() here to avoid hydration race condition)
+          // Read local progress directly from localStorage (bypasses Zustand hydration race)
+          let localCompleted = [], localStars = 0, localBuildings = [];
+          try {
+            const raw = localStorage.getItem('nula-game-storage');
+            const saved = raw ? JSON.parse(raw) : {};
+            const s = saved.state || {};
+            localCompleted = s.completedTasks || [];
+            localStars = s.totalStars || 0;
+            localBuildings = s.unlockedBuildings || [];
+          } catch {}
+
+          // Save local → cloud first
+          await syncProgress(session.user.id, {
+            stars: localStars,
+            completedTasks: localCompleted,
+            unlockedBuildings: localBuildings,
+          });
+
+          // Load cloud and merge into Zustand (union)
           const cloudData = await loadProgress(session.user.id);
           if (cloudData) {
             useGameStore.setState((state) => ({
-              totalStars: Math.max(state.totalStars, cloudData.stars || 0),
-              completedTasks: Array.from(new Set([...state.completedTasks, ...(cloudData.completedTasks || [])])),
-              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...(cloudData.unlockedBuildings || [])]))
+              totalStars: Math.max(state.totalStars, localStars, cloudData.stars || 0),
+              completedTasks: Array.from(new Set([...state.completedTasks, ...localCompleted, ...(cloudData.completedTasks || [])])),
+              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...localBuildings, ...(cloudData.unlockedBuildings || [])]))
+            }));
+          } else if (localCompleted.length > 0) {
+            // No cloud profile yet — apply local data to state
+            useGameStore.setState((state) => ({
+              totalStars: Math.max(state.totalStars, localStars),
+              completedTasks: Array.from(new Set([...state.completedTasks, ...localCompleted])),
+              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...localBuildings]))
             }));
           }
         }
