@@ -161,30 +161,34 @@ export default function App() {
             localBuildings = s.unlockedBuildings || [];
           } catch {}
 
-          // Save local → cloud first
-          await syncProgress(session.user.id, {
-            stars: localStars,
-            completedTasks: localCompleted,
-            unlockedBuildings: localBuildings,
-          });
-
-          // Load cloud and merge into Zustand (union)
+          // 1. Load cloud FIRST (before any write — don't overwrite with stale local data)
           const cloudData = await loadProgress(session.user.id);
           const cloudCompleted = cloudData?.completedTasks || [];
+          const cloudStars = cloudData?.stars || 0;
+          const cloudBuildings = cloudData?.unlockedBuildings || [];
 
-          // Figure out what's new vs already saved
-          const newlyAdded = localCompleted.filter(id => !cloudCompleted.includes(id));
-          const alreadyHad = localCompleted.filter(id => cloudCompleted.includes(id));
-
+          // 2. Merge: union of tasks, max stars, union of buildings
           const mergedCompleted = Array.from(new Set([...cloudCompleted, ...localCompleted]));
-          const mergedStars = Math.max(localStars, cloudData?.stars || 0);
-          const mergedBuildings = Array.from(new Set([...(cloudData?.unlockedBuildings || []), ...localBuildings]));
+          const mergedStars = Math.max(localStars, cloudStars);
+          const mergedBuildings = Array.from(new Set([...cloudBuildings, ...localBuildings]));
 
+          // 3. Save merged result back to cloud
+          await syncProgress(session.user.id, {
+            stars: mergedStars,
+            completedTasks: mergedCompleted,
+            unlockedBuildings: mergedBuildings,
+          });
+
+          // 4. Apply to Zustand
           useGameStore.setState((state) => ({
             totalStars: Math.max(state.totalStars, mergedStars),
             completedTasks: Array.from(new Set([...state.completedTasks, ...mergedCompleted])),
             unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings]))
           }));
+
+          // For toast: what was new vs already in cloud
+          const newlyAdded = localCompleted.filter(id => !cloudCompleted.includes(id));
+          const alreadyHad = localCompleted.filter(id => cloudCompleted.includes(id));
 
           // Show sync result toast
           if (localCompleted.length > 0) {
