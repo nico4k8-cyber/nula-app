@@ -1,16 +1,17 @@
 import { useGameStore } from '../store/gameStore';
 import { supabase } from '../lib/supabase';
 
-export default function SettingsMenu({ 
-  isOpen, 
-  onClose, 
-  onResetProgress, 
-  completedTasks, 
-  audio, 
-  audioTracks, 
-  lang, 
-  setLang, 
-  t 
+export default function SettingsMenu({
+  isOpen,
+  onClose,
+  onResetProgress,
+  onStartOnboarding,
+  completedTasks,
+  audio,
+  audioTracks,
+  lang,
+  setLang,
+  t
 }) {
   const { user, setUser } = useGameStore();
 
@@ -110,6 +111,14 @@ export default function SettingsMenu({
             </div>
             <span className="text-white/50 text-xl group-hover:translate-x-1 transition-transform">→</span>
           </button>
+
+          {onStartOnboarding && (
+            <button onClick={() => { onStartOnboarding(); onClose(); }}
+              className="w-full text-center py-4 text-slate-500 font-black text-[12px] uppercase tracking-widest hover:text-slate-400 transition-all mt-2 border-2 border-slate-200 rounded-2xl"
+            >
+              🧭 Показать подсказки (онбординг)
+            </button>
+          )}
 
           {user?.email === "k.sunstroke@gmail.com" && (
             <button onClick={() => { window.__openAdmin = true; onClose(); }}

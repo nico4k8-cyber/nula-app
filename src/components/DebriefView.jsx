@@ -13,10 +13,10 @@ export default function DebriefView({
 
   // Criterion explanation based on stars (from Gin's book: elegance = using resources already in task)
   const criterionText = stars === 3
-    ? "Ты использовал то, что уже было в задаче — именно так думают изобретатели! 🔥"
+    ? "Ты использовал то, что уже было в задаче — это главный секрет изобретателей! 🔥"
     : stars === 2
-    ? "Ты нашёл решение через анализ. В следующий раз попробуй: что уже есть в условии?"
-    : "Ты справился! Изобретатели ищут ресурсы прямо в задаче — это их секрет.";
+    ? "Твоё решение работает! Но изобретатели идут дальше: они ищут ресурсы прямо в условии — то, что уже есть рядом."
+    : "Ты справился! Секрет ТРИЗ: не приноси новое, а используй то, что уже есть в задаче.";
 
   const qualityLabel = stars === 3
     ? "Изобретательское решение!"
@@ -59,11 +59,11 @@ export default function DebriefView({
         <p className="text-[14px] text-blue-900 leading-relaxed font-medium">{criterionText}</p>
       </div>
 
-      {/* IKR reveal — what the author intended */}
+      {/* IKR reveal — Ideal Final Result */}
       {task?.ikr && (
         <div className="mx-5 mb-3 bg-emerald-50 border-2 border-emerald-100 rounded-[20px] p-4">
           <div className="text-[13px] text-emerald-500 font-bold uppercase tracking-wide mb-1">
-            {keyResource ? `Ключ: ${keyResource}` : "Замысел изобретателя"}
+            Идеальное решение (ИКР){keyResource ? ` — ресурс: ${keyResource}` : ""}
           </div>
           <p className="text-[14px] text-emerald-900 leading-relaxed font-medium">{task.ikr}</p>
         </div>

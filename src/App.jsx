@@ -30,6 +30,7 @@ import AdminView from "./components/AdminView";
 import Paywall from "./components/Paywall";
 import BredomakerView from "./components/BredomakerView";
 import TsarMountainView from "./components/TsarMountainView";
+import OnboardingTooltip, { useOnboarding } from "./components/OnboardingTooltip";
 import UpsellView, { getUpsellMessage } from "./components/UpsellView";
 import DailyChallenge from "./components/DailyChallenge";
 
@@ -100,6 +101,9 @@ export default function App() {
   const [bingoFlash, setBingoFlash] = useState(false);
   const [upsellMessage, setUpsellMessage] = useState(null);
   
+  // Onboarding
+  const onboarding = useOnboarding();
+
   // Modals & Overlays
   const [menuOpen, setMenuOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -402,6 +406,7 @@ export default function App() {
   
   return (
     <div className="min-h-[100dvh] flex flex-col items-center bg-slate-900 overflow-hidden" data-theme={theme}>
+      <OnboardingTooltip active={onboarding.active} onDone={() => onboarding.setActive(false)} />
       {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} t={t} />}
       {upsellMessage && (
         <UpsellView
@@ -505,7 +510,7 @@ export default function App() {
             >
             <div className="relative">
               {/* Круглая кнопка аватара */}
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl shadow-xl border-2 border-white/20">
+              <div data-onboard="profile-btn" className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl shadow-xl border-2 border-white/20">
                 {user ? '👤' : '☁️'}
               </div>
 
@@ -534,6 +539,8 @@ export default function App() {
               setPhase("task-preview");
             } else {
               setPhase("city");
+              // Start tooltip onboarding after city renders
+              setTimeout(() => onboarding.checkAndStart(), 600);
             }
           }} />
         )}
@@ -684,6 +691,7 @@ export default function App() {
       </div>
 
       <SettingsMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onResetProgress={() => resetGame()}
+        onStartOnboarding={() => { localStorage.removeItem("nula-onboarding-done"); onboarding.startOnboarding(); }}
         completedTasks={completedTasks} audio={audio} audioTracks={AUDIO_TRACKS} lang={lang} setLang={setLang} t={t} user={user} setUser={setUser}
       />
 

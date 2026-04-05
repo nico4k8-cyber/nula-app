@@ -143,9 +143,10 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
       onScroll={handleScroll}
+      data-onboard="world-map"
       className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden overscroll-none bg-sky-300 select-none scrollbar-hide"
     >
       <div className="absolute inset-0 pointer-events-none z-0">
