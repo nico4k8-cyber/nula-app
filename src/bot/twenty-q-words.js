@@ -1,4 +1,14 @@
 export const TWENTY_Q_WORDS = [
+  // Предметы лёгкие (соответствуют seed tsar_words difficulty:1)
+  { id: 'apple',      word: 'Яблоко',           emoji: '🍎', category: 'object',    difficulty: 1 },
+  { id: 'chair',      word: 'Стул',             emoji: '🪑', category: 'object',    difficulty: 1 },
+  { id: 'book',       word: 'Книга',            emoji: '📖', category: 'object',    difficulty: 1 },
+  { id: 'ball',       word: 'Мяч',              emoji: '⚽', category: 'object',    difficulty: 1 },
+  // Природа лёгкая
+  { id: 'rain',       word: 'Дождь',            emoji: '🌧️', category: 'nature',    difficulty: 1 },
+  { id: 'sun',        word: 'Солнце',           emoji: '☀️', category: 'nature',    difficulty: 1 },
+  { id: 'tree',       word: 'Дерево',           emoji: '🌳', category: 'nature',    difficulty: 1 },
+  { id: 'snow',       word: 'Снег',             emoji: '❄️', category: 'nature',    difficulty: 1 },
   // Животные лёгкие
   { id: 'cat',        word: 'Кот',              emoji: '🐱', category: 'animal',    difficulty: 1 },
   { id: 'dog',        word: 'Собака',           emoji: '🐶', category: 'animal',    difficulty: 1 },
