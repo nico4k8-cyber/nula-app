@@ -221,6 +221,29 @@ export const loadTasks = async (category) => {
   return data;
 };
 
+// ── UGC TASKS ─────────────────────────────────────────────────────────────────
+
+export const saveUgcTask = async (userId, ugcTask) => {
+  if (!userId || isPlaceholder()) {
+    try {
+      const existing = JSON.parse(localStorage.getItem('shariel_ugc_tasks') || '[]');
+      existing.push({ ...ugcTask, id: Date.now().toString(), created_at: new Date().toISOString() });
+      localStorage.setItem('shariel_ugc_tasks', JSON.stringify(existing));
+    } catch {}
+    return { id: Date.now().toString(), share_token: Math.random().toString(36).slice(2) };
+  }
+  const { data, error } = await supabase
+    .from('ugc_tasks')
+    .insert({ author_id: userId, ...ugcTask })
+    .select('id, share_token')
+    .single();
+  if (error) {
+    console.error('saveUgcTask error:', error);
+    return null;
+  }
+  return data;
+};
+
 // App config (island mapping etc.)
 export const loadAppConfig = async (key) => {
   if (isPlaceholder()) return null;
