@@ -9,6 +9,11 @@ export const useGameStore = create(
       completedTasks: [], // Array of task IDs
       currentTask: null,
       difficulty: 1, // 1: 6-9, 2: 10-11, 3: 12+
+      adaptiveData: {
+        adaptiveAge: 10,        // current ageForEngine override (10/12/14)
+        consecutiveClean: 0,    // tasks solved without hints in a row
+        recentStruggle: 0,      // tasks where hints>=2 in last 3
+      },
 
       // ---- AUTH & PREMIUM ----
       user: null, // { id, email, name, provider, country }
@@ -37,6 +42,36 @@ export const useGameStore = create(
         'bredo':       { type: 'tasks', count: 6 },
         'laboratory':  { type: 'tasks', count: 9 },
       },
+
+      updateAdaptive: (sessionData) => set((state) => {
+        // sessionData: { hints: number, attempts: number }
+        const ad = { ...state.adaptiveData };
+
+        // D-10: solved without hints + few attempts = clean
+        if (sessionData.hints === 0 && sessionData.attempts <= 3) {
+          ad.consecutiveClean += 1;
+          ad.recentStruggle = Math.max(0, ad.recentStruggle - 1);
+        } else if (sessionData.hints >= 2) {
+          // D-09: many hints = struggle
+          ad.recentStruggle += 1;
+          ad.consecutiveClean = 0;
+        } else {
+          ad.consecutiveClean = 0; // reset streak but no struggle
+        }
+
+        // D-05: raise after 3 clean in a row
+        if (ad.consecutiveClean >= 3 && ad.adaptiveAge < 14) {
+          ad.adaptiveAge = Math.min(14, ad.adaptiveAge + 2);
+          ad.consecutiveClean = 0;
+        }
+        // D-06: lower after 2 struggles in recent tasks
+        if (ad.recentStruggle >= 2 && ad.adaptiveAge > 10) {
+          ad.adaptiveAge = Math.max(10, ad.adaptiveAge - 2);
+          ad.recentStruggle = 0;
+        }
+
+        return { adaptiveData: ad };
+      }),
 
       checkUnlocks: () => set((state) => {
         const totalSolved = state.completedTasks.length;
@@ -217,6 +252,7 @@ export const useGameStore = create(
         completedTasks: [],
         currentTask: null,
         difficulty: 1,
+        adaptiveData: { adaptiveAge: 10, consecutiveClean: 0, recentStruggle: 0 },
         streak: 0,
         lastPlayDate: null,
         upsellShownAt: [],
@@ -233,7 +269,16 @@ export const useGameStore = create(
     }),
     {
       name: 'nula-game-storage',
-      version: 3,
+      version: 4,
+      migrate: (state, version) => {
+        if (version < 4) {
+          return {
+            ...state,
+            adaptiveData: { adaptiveAge: 10, consecutiveClean: 0, recentStruggle: 0 },
+          };
+        }
+        return state;
+      },
     }
   )
 );
