@@ -48,7 +48,7 @@ export default function TaskPreview({ task, onStart, onBack, t, lang, isTutorial
            </div>
         </div>
 
-        <h1 className="text-3xl font-black text-slate-900 leading-tight mb-6 uppercase tracking-tight font-display">
+        <h1 data-onboard="task-title" className="text-3xl font-black text-slate-900 leading-tight mb-6 uppercase tracking-tight font-display">
           {title}
         </h1>
 
@@ -77,6 +77,7 @@ export default function TaskPreview({ task, onStart, onBack, t, lang, isTutorial
             <div className="text-center mb-2 animate-bounce text-amber-500 text-2xl pointer-events-none">↓</div>
           )}
           <button
+            data-onboard="start-btn"
             onClick={onStart}
             className={`btn-premium w-full pointer-events-auto flex items-center justify-center gap-2 ${isTutorial ? 'ring-4 ring-amber-400 ring-offset-2' : ''}`}
           >

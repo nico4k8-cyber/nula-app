@@ -41,6 +41,12 @@ import {
   generateUUID, ISLAND_MAPPING, AUDIO_TRACKS 
 } from "./utils/gameUtils";
 
+/* ═══ Task Tutorial Steps ═══ */
+const TASK_TUTORIAL_STEPS = [
+  { anchor: "task-title", title: "Твоя задача!", text: "Прочитай — здесь описана проблема, которую нужно решить.", position: "bottom" },
+  { anchor: "start-btn", title: "Начинаем!", text: "Нажми кнопку и расскажи Орину свою идею.", position: "top" },
+];
+
 /* ═══ Persistence ═══ */
 function loadInitialState() {
   try {
@@ -461,6 +467,14 @@ export default function App() {
   return (
     <div className="min-h-[100dvh] flex flex-col items-center bg-slate-900 overflow-hidden" data-theme={theme}>
       <OnboardingTooltip active={onboarding.active} onDone={() => onboarding.setActive(false)} />
+      {isTutorial && phase === "task-preview" && (
+        <OnboardingTooltip
+          active={onboarding.active}
+          onDone={() => { onboarding.setActive(false); }}
+          steps={TASK_TUTORIAL_STEPS}
+          storageKey="nula-task-tutorial-done"
+        />
+      )}
       {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} t={t} />}
       {upsellMessage && (
         <UpsellView
@@ -606,6 +620,7 @@ export default function App() {
               setTask(TASKS.find(t => t.id === 2) || TASKS[0]); // лабиринт Тесея
               setIsTutorial(true);
               setPhase("task-preview");
+              setTimeout(() => onboarding.startOnboarding(), 400);
             } else {
               setPhase("city");
               // Start tooltip onboarding after city renders
