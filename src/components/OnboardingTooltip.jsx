@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 const ONBOARDING_KEY = "nula-onboarding-done";
 
 // Steps: each step highlights a CSS selector or a named anchor (data-onboard="name")
-const STEPS = [
+export const WORLD_MAP_STEPS = [
   {
     anchor: "world-map",        // data-onboard attribute on the element
     title: "Это твой остров! 🏝️",
@@ -48,12 +48,12 @@ export function useOnboarding() {
   return { active, startOnboarding, checkAndStart, setActive };
 }
 
-export default function OnboardingTooltip({ active, onDone }) {
+export default function OnboardingTooltip({ active, onDone, steps = WORLD_MAP_STEPS, storageKey = ONBOARDING_KEY }) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState(null);
   const [visible, setVisible] = useState(false);
 
-  const currentStep = STEPS[step];
+  const currentStep = steps[step];
 
   // Measure anchor element
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function OnboardingTooltip({ active, onDone }) {
   }, [step, active]);
 
   function advanceOrDone() {
-    if (step < STEPS.length - 1) {
+    if (step < steps.length - 1) {
       setStep(s => s + 1);
     } else {
       finish();
@@ -90,7 +90,7 @@ export default function OnboardingTooltip({ active, onDone }) {
   }
 
   function finish() {
-    localStorage.setItem(ONBOARDING_KEY, "1");
+    localStorage.setItem(storageKey, "1");
     onDone();
   }
 
@@ -204,7 +204,7 @@ export default function OnboardingTooltip({ active, onDone }) {
         {/* Step dots */}
         <div className="flex items-center gap-2">
           <div className="flex gap-1 flex-1">
-            {STEPS.map((_, i) => (
+            {steps.map((_, i) => (
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${i === step ? "w-4 bg-orange-500" : "w-1.5 bg-slate-200"}`}
@@ -221,7 +221,7 @@ export default function OnboardingTooltip({ active, onDone }) {
             onClick={advanceOrDone}
             className="bg-orange-500 text-white text-[13px] font-black px-4 py-1.5 rounded-full active:scale-95 transition-all"
           >
-            {step < STEPS.length - 1 ? "Дальше →" : "Готово!"}
+            {step < steps.length - 1 ? "Дальше →" : "Готово!"}
           </button>
         </div>
       </div>
