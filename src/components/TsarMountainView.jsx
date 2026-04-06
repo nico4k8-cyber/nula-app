@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TWENTY_Q_WORDS, pickWord, localAnswer } from "../bot/twenty-q-words";
-import { loadUsedTsarIds, saveUsedTsarIds, loadTsarWords } from "../lib/supabase";
+import { loadUsedTsarIds, saveUsedTsarIds, loadTsarWords, saveTsarSession, loadGhostSession } from "../lib/supabase";
 import { useGameStore } from "../store/gameStore";
 
 const TSAR_USED_KEY = "shariel_used_tsar_ids";
@@ -48,6 +48,8 @@ export default function TsarMountainView({ onBack, onComplete }) {
   const [finalScore, setFinalScore] = useState(0);
   const [won, setWon] = useState(false);
   const [usedIds, setUsedIds] = useState(() => loadLocalTsarIds());
+  const [ghost, setGhost] = useState(null);
+  const [ghostStep, setGhostStep] = useState(0);
   // wordPool — слова из Supabase (если есть) или встроенный список
   const [wordPool, setWordPool] = useState(TWENTY_Q_WORDS);
 
@@ -68,6 +70,25 @@ export default function TsarMountainView({ onBack, onComplete }) {
     });
   }, [user?.id]);
 
+  // Friend mode: ?word_id=N starts game with that specific word
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const friendWordId = params.get('word_id');
+    if (friendWordId && wordPool.length > 0) {
+      const friendWord = wordPool.find(w => String(w.id) === friendWordId);
+      if (friendWord) {
+        setWord(friendWord);
+        setQuestionsLeft(MAX_Q);
+        setHistory([]);
+        setInput("");
+        setGhost(null);
+        setGhostStep(0);
+        setStep("play");
+        loadGhostSession(friendWord.id, user?.id).then(setGhost);
+      }
+    }
+  }, [wordPool]);
+
   function handleStart() {
     let currentUsed = usedIds;
     // Все слова пройдены → сбрасываем список (новый круг)
@@ -84,7 +105,15 @@ export default function TsarMountainView({ onBack, onComplete }) {
     setQuestionsLeft(MAX_Q);
     setHistory([]);
     setInput("");
+    setGhost(null);
+    setGhostStep(0);
     setStep("play");
+    loadGhostSession(w.id, user?.id).then(ghostSession => {
+      if (ghostSession && ghostSession.questions_used > 0) {
+        setGhost(ghostSession);
+        setGhostStep(0);
+      }
+    });
   }
 
   async function handleAsk() {
@@ -112,12 +141,25 @@ export default function TsarMountainView({ onBack, onComplete }) {
     }
 
     const newLeft = questionsLeft - 1;
+    const newHistory = [...history, { q, a: answer }];
     setQuestionsLeft(newLeft);
-    setHistory(h => [...h, { q, a: answer }]);
+    setHistory(newHistory);
     setIsThinking(false);
+
+    const currentQuestionsUsed = MAX_Q - newLeft;
+    if (ghost && currentQuestionsUsed <= ghost.questions_used) {
+      setGhostStep(currentQuestionsUsed);
+    }
 
     if (newLeft <= 0) {
       // ran out without guessing
+      saveTsarSession({
+        userId: user?.id,
+        wordId: word?.id,
+        questions: newHistory,
+        score: 0,
+        questionsUsed: MAX_Q,
+      });
       setFinalScore(0);
       setWon(false);
       setStep("result");
@@ -138,6 +180,13 @@ export default function TsarMountainView({ onBack, onComplete }) {
       const score = calcScore(questionsUsed);
       setFinalScore(score);
       setWon(true);
+      saveTsarSession({
+        userId: user?.id,
+        wordId: word?.id,
+        questions: history,
+        score: score,
+        questionsUsed: questionsUsed,
+      });
       setUsedIds(ids => {
         const next = [...ids, word.id];
         saveLocalTsarIds(next);
@@ -205,6 +254,11 @@ export default function TsarMountainView({ onBack, onComplete }) {
           <div className="mt-3 mx-auto max-w-[240px] h-1.5 bg-white/10 rounded-full overflow-hidden">
             <div className="bg-violet-400 h-full transition-all duration-500" style={{ width: `${((MAX_Q - questionsLeft) / MAX_Q) * 100}%` }} />
           </div>
+          {ghost && (
+            <div className="text-xs text-gray-400 mt-1">
+              👻 Соперник: {ghost.questions_used} вопросов, {ghost.score} очков
+            </div>
+          )}
         </div>
 
         {/* History */}
@@ -217,6 +271,11 @@ export default function TsarMountainView({ onBack, onComplete }) {
               <span className="text-white/40 font-black w-5 shrink-0">{i + 1}.</span>
               <span className="text-white/80 flex-1">{item.q}</span>
               <span className={`font-black shrink-0 ${item.a === 'Да' ? 'text-emerald-400' : item.a.includes('❌') ? 'text-red-400' : 'text-rose-400'}`}>{item.a}</span>
+            </div>
+          ))}
+          {ghost && ghost.questions && ghost.questions.slice(0, ghostStep).map((item, i) => (
+            <div key={`ghost-${i}`} className="text-xs text-gray-400 italic">
+              👻 {item.q} — {item.answer || item.a}
             </div>
           ))}
         </div>

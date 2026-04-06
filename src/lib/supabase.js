@@ -235,6 +235,45 @@ export const saveAppConfig = async (key, value) => {
   return !error;
 };
 
+// ── TSAR SESSIONS (social layer, D-15/D-16) ──────────────────────────────────
+
+export const saveTsarSession = async ({ userId, wordId, questions, score, questionsUsed }) => {
+  if (isPlaceholder()) return null;
+  const { data, error } = await supabase
+    .from('tsar_sessions')
+    .insert({
+      user_id: userId || null,
+      word_id: wordId,
+      questions: questions,
+      score: score,
+      questions_used: questionsUsed,
+      completed_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+  if (error) {
+    console.error('saveTsarSession error:', error);
+    return null;
+  }
+  return data?.id;
+};
+
+export const loadGhostSession = async (wordId, excludeUserId) => {
+  if (isPlaceholder()) return null;
+  let query = supabase
+    .from('tsar_sessions')
+    .select('id, questions, score, questions_used')
+    .eq('word_id', wordId)
+    .order('completed_at', { ascending: false })
+    .limit(1);
+  if (excludeUserId) {
+    query = query.neq('user_id', excludeUserId);
+  }
+  const { data, error } = await query;
+  if (error || !data || data.length === 0) return null;
+  return data[0];
+};
+
 export const getPlayerAlerts = async (totalWords) => {
   if (isPlaceholder()) return null;
   const { data, error } = await supabase
