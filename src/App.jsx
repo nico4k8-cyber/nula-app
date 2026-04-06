@@ -81,7 +81,7 @@ export default function App() {
     difficulty, user, setUser, dailyTasksCount, isPremium, resetDailyCountIfNeeded,
     islands, unlockRequirements, checkUnlocks, unlockedBuildings,
     streak, updateStreak, upsellShownAt, markUpsellShown,
-    useHint, getHintsLeft, canPlayTask,
+    useHint, getHintsLeft, canPlayTask, updateAdaptive,
   } = useGameStore();
 
   // Navigation & UI State
@@ -107,7 +107,9 @@ export default function App() {
   const [isHinting, setIsHinting] = useState(false);
   const [bingoFlash, setBingoFlash] = useState(false);
   const [upsellMessage, setUpsellMessage] = useState(null);
-  
+  const [sessionHints, setSessionHints] = useState(0);
+  const [sessionAttempts, setSessionAttempts] = useState(0);
+
   // Onboarding
   const onboarding = useOnboarding();
 
@@ -337,7 +339,12 @@ export default function App() {
       // difficulty 1 → ПРИЗ-базовый (3 фазы, age<8 в движке)
       // difficulty 2 → ПРИЗ-стандарт (5 фаз, age 8-12)
       // difficulty 3 → ПРИЗ-про (7 фаз, age 13+)
-      const ageForEngine = task.difficulty === 1 ? 10 : task.difficulty === 2 ? 12 : 14;
+      // Use adaptive level, but cap by task.difficulty ceiling (D-04)
+      const maxAge = task.difficulty === 1 ? 10 : task.difficulty === 2 ? 12 : 14;
+      const { adaptiveData } = useGameStore.getState();
+      const ageForEngine = Math.min(adaptiveData.adaptiveAge, maxAge);
+      setSessionHints(0);
+      setSessionAttempts(0);
       const newState = createNewState(task.id, ageForEngine);
       setTrizState(newState);
       const hook = (task.difficulty >= 2 ? task.puzzle?.hookSenior : task.puzzle?.hookJunior)
@@ -363,6 +370,7 @@ export default function App() {
     if (isTutorial) setIsTutorial(false);
 
     setInput("");
+    setSessionAttempts(prev => prev + 1);
     const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
     const newMessages = [...messages, { type: "child", text, timestamp }];
     setMessages(newMessages);
@@ -406,6 +414,7 @@ export default function App() {
   async function handleHint() {
     if (getHintsLeft() === 0) return;
     useHint();
+    setSessionHints(prev => prev + 1);
     setIsHinting(true);
     try {
       const history = messages.map(m => ({ role: m.type === "bot" ? "bot" : "user", text: m.text }));
@@ -429,6 +438,7 @@ export default function App() {
     const isNew = !completedTasks.includes(task.id);
     completeTask(task.id, sessionStars);
     updateStreak();
+    updateAdaptive({ hints: sessionHints, attempts: sessionAttempts });
     if (isNew) {
       const nextCount = completedTasks.length + 1;
 
@@ -733,6 +743,7 @@ export default function App() {
               const isFirstEver = !completedTasks.includes(task.id) && completedTasks.length === 0;
               completeTask(task.id, sessionStars);
               updateStreak();
+              updateAdaptive({ hints: sessionHints, attempts: sessionAttempts });
               if (isFirstEver) {
                 setShowIslandUnlock(true);
                 setTimeout(() => { setShowIslandUnlock(false); setPhase("picker"); }, 4000);
