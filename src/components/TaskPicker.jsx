@@ -146,12 +146,28 @@ export default function TaskPicker({
            })()}
 
            {filtered.length === 0 ? (
-             <div className="col-span-2 py-20 text-center opacity-40">
-               <div className="text-5xl mb-4">📜</div>
-               <p className="font-bold uppercase tracking-widest text-xs">Задач пока нет</p>
+             <div className="col-span-2 py-16 text-center">
+               <img src="/img/webp/ugolok.webp" alt="" className="w-14 h-14 mx-auto rounded-full mb-3 opacity-70" />
+               <p className="font-black text-slate-500 text-sm">Здесь пока нет задач</p>
+               <p className="text-xs text-slate-400 mt-1">Заходи позже -- Орин готовит новые!</p>
              </div>
            ) : (
-             filtered.map((taskItem) => {
+             <>
+               {doneCount === filtered.length && filtered.length > 0 && (
+                 <div className="col-span-2 py-6 text-center bg-emerald-50 rounded-3xl border border-emerald-200 mb-2">
+                   <img src="/img/webp/ugolok.webp" alt="" className="w-12 h-12 mx-auto rounded-full mb-2" />
+                   <p className="font-black text-emerald-700 text-sm">Все задачи решены!</p>
+                   <p className="text-xs text-emerald-600 mt-1">Попробуй другое здание</p>
+                 </div>
+               )}
+               {!allEasyDone && filtered.some(t => isDifficultyLocked(t)) && (
+                 <div className="col-span-2 py-3 px-4 text-center bg-slate-50 rounded-2xl border border-slate-200 mb-1">
+                   <p className="text-xs text-slate-500 font-bold">
+                     Реши ещё {easyTasks.filter(t => !completedTasks.includes(t.id)).length} задач{easyTasks.filter(t => !completedTasks.includes(t.id)).length === 1 ? 'у' : ''} чтобы открыть сложные
+                   </p>
+                 </div>
+               )}
+               {filtered.map((taskItem) => {
                const isDone = completedTasks.includes(taskItem.id);
                const isDaily = isDailyInThisCategory && taskItem.id === dailyTask.id;
                const isLocked = isDifficultyLocked(taskItem);
@@ -189,7 +205,8 @@ export default function TaskPicker({
                    )}
                  </button>
                );
-             })
+             })}
+             </>
            )}
          </div>
       </div>
