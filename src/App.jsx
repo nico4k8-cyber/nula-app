@@ -15,7 +15,7 @@ import { trackEvent, EVENTS } from "./analytics";
 import sfx from "./sfx";
 import { useGameStore } from "./store/gameStore";
 import { translations } from "./i18n";
-import { supabase, loadProgress, syncProgress } from "./lib/supabase";
+import { supabase, loadProgress, syncProgress, loadTasks } from "./lib/supabase";
 
 // Components
 import TopProgress from "./components/TopProgress";
@@ -115,6 +115,7 @@ export default function App() {
   const [showIslandUnlock, setShowIslandUnlock] = useState(false);
   const [showNewDayBubble, setShowNewDayBubble] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [remoteTasks, setRemoteTasks] = useState(null);
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -133,6 +134,14 @@ export default function App() {
   const audio = useAudio(AUDIO_TRACKS);
 
   /* ═══ Effects ═══ */
+
+  // Load tasks from Supabase; silently fall back to local TASKS if unavailable
+  useEffect(() => {
+    loadTasks().then(data => {
+      if (data && data.length > 0) setRemoteTasks(data);
+    }).catch(() => {/* offline — use local fallback */});
+  }, []);
+
   useEffect(() => {
     resetDailyCountIfNeeded();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -637,7 +646,7 @@ export default function App() {
         {phase === "picker" && (
           <TaskPicker activeCategory={activeCategory} onBack={() => setPhase("city")}
             onOpenMenu={() => setMenuOpen(true)}
-            TASKS={TASKS} completedTasks={completedTasks} onStartTask={startTaskPreview} t={t} lang={lang}
+            TASKS={remoteTasks || TASKS} completedTasks={completedTasks} onStartTask={startTaskPreview} t={t} lang={lang}
           />
         )}
 

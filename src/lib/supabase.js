@@ -201,6 +201,26 @@ export const getPlayerStats = async () => {
   return { totalPlayers, totalTasksSolved, totalStars };
 };
 
+// ── TASKS (ТРИЗ задачи из Supabase) ──────────────────────────────────────────
+
+export const loadTasks = async (category) => {
+  if (isPlaceholder()) return null;
+  let query = supabase
+    .from('tasks')
+    .select('*')
+    .eq('active', true)
+    .order('difficulty', { ascending: true });
+  if (category) {
+    query = query.eq('category', category);
+  }
+  const { data, error } = await query;
+  if (error) {
+    console.error('loadTasks error:', error);
+    return null;
+  }
+  return data;
+};
+
 // App config (island mapping etc.)
 export const loadAppConfig = async (key) => {
   if (isPlaceholder()) return null;
