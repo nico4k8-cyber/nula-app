@@ -29,6 +29,7 @@ import FinalView from "./components/FinalView";
 import AdminView from "./components/AdminView";
 import Paywall from "./components/Paywall";
 import BredomakerView from "./components/BredomakerView";
+import LaboratoryView from "./components/LaboratoryView";
 import TsarMountainView from "./components/TsarMountainView";
 import OnboardingTooltip, { useOnboarding } from "./components/OnboardingTooltip";
 import UpsellView, { getUpsellMessage } from "./components/UpsellView";
@@ -74,7 +75,7 @@ export default function App() {
     difficulty, user, setUser, dailyTasksCount, isPremium, resetDailyCountIfNeeded,
     islands, unlockRequirements, checkUnlocks, unlockedBuildings,
     streak, updateStreak, upsellShownAt, markUpsellShown,
-    useHint, getHintsLeft,
+    useHint, getHintsLeft, canPlayTask,
   } = useGameStore();
 
   // Navigation & UI State
@@ -633,8 +634,21 @@ export default function App() {
             checkUnlocks={checkUnlocks}
             onLogoClick={() => setMenuOpen(true)}
             onSelectBuilding={(bId) => {
-              if (bId === "bredo") { setPhase("bredo-play"); return; }
-              if (bId === "tsar")  { setPhase("mountain-play"); return; }
+              if (bId === "bredo") {
+                resetDailyCountIfNeeded();
+                if (!canPlayTask()) { setUpsellMessage(getUpsellMessage("daily_limit", isPremium)); return; }
+                setPhase("bredo-play"); return;
+              }
+              if (bId === "tsar") {
+                resetDailyCountIfNeeded();
+                if (!canPlayTask()) { setUpsellMessage(getUpsellMessage("daily_limit", isPremium)); return; }
+                setPhase("mountain-play"); return;
+              }
+              if (bId === "laboratory") {
+                resetDailyCountIfNeeded();
+                if (!canPlayTask()) { setUpsellMessage(getUpsellMessage("daily_limit", isPremium)); return; }
+                setPhase("laboratory-play"); return;
+              }
               setActiveCategory(bId); setPhase("picker");
             }}
             activeIslandId={activeIslandId}
@@ -756,6 +770,15 @@ export default function App() {
           <TsarMountainView
             onBack={() => setPhase("city")}
             onComplete={(score) => completeTask(`tsar-${Date.now()}`, score)}
+          />
+        )}
+
+        {phase === "laboratory-play" && (
+          <LaboratoryView
+            onBack={() => setPhase("city")}
+            completedTasks={completedTasks}
+            allTasks={remoteTasks || TASKS}
+            t={t}
           />
         )}
 
