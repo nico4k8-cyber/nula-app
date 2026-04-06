@@ -32,65 +32,79 @@ export const useGameStore = create(
       },
 
       unlockRequirements: {
-        'craft': { type: 'tasks', count: 3 },
-        'science': { type: 'tasks', count: 9 },
-        'summit': { type: 'tasks', count: 18 },
+        'craft':       { type: 'tasks', count: 3 },
+        'tsar':        { type: 'tasks', count: 3 },
+        'bredo':       { type: 'tasks', count: 6 },
+        'laboratory':  { type: 'tasks', count: 9 },
       },
 
       checkUnlocks: () => set((state) => {
-        let newIslands = { ...state.islands };
         const totalSolved = state.completedTasks.length;
-        const totalStars = state.totalStars;
+        let newUnlockedBuildings = [...state.unlockedBuildings];
+        let newIslands = { ...state.islands,
+          'main':    { ...state.islands['main'] },
+          'craft':   { ...state.islands['craft'] },
+          'science': { ...state.islands['science'] },
+          'summit':  { ...state.islands['summit'] },
+        };
         let changed = false;
 
+        // Unlock individual buildings when thresholds reached
         Object.keys(state.unlockRequirements).forEach((id) => {
           const req = state.unlockRequirements[id];
-          const island = newIslands[id];
-          if (!island) return;
-          
-          let canUnlock = false;
-          if (req.type === 'tasks' && totalSolved >= req.count) canUnlock = true;
-          if (req.type === 'stars' && totalStars >= req.count) canUnlock = true;
+          if (req.type === 'tasks' && totalSolved >= req.count) {
+            // 'craft' is an island, handle separately below
+            if (id !== 'craft' && !newUnlockedBuildings.includes(id)) {
+              newUnlockedBuildings.push(id);
+              changed = true;
+            }
+          }
+        });
 
-          if (canUnlock && (island.status === 'locked' || island.status === 'fog')) {
-            newIslands[id] = { ...island, status: 'active' };
+        // Unlock craft island when craft threshold reached
+        const craftReq = state.unlockRequirements['craft'];
+        if (craftReq && totalSolved >= craftReq.count) {
+          if (newIslands['craft'].status === 'locked' || newIslands['craft'].status === 'fog') {
+            newIslands['craft'] = { ...newIslands['craft'], status: 'active' };
+            // Unlock farm building
+            if (!newUnlockedBuildings.includes('farm')) {
+              newUnlockedBuildings.push('farm');
+            }
             changed = true;
           }
-        });
+        }
 
-        // Unlock buildings belonging to newly active islands
-        const islandBuildings = {
-          'craft': ['farm'],
-          'science': ['laboratory', 'bredo'],
-          'summit': ['tsar'],
-        };
-        let newUnlockedBuildings = [...state.unlockedBuildings];
-        Object.keys(islandBuildings).forEach((islandId) => {
-          if (newIslands[islandId]?.status === 'active') {
-            islandBuildings[islandId].forEach((bId) => {
-              if (!newUnlockedBuildings.includes(bId)) {
-                newUnlockedBuildings.push(bId);
-                changed = true;
-              }
-            });
+        // Activate science island when bredo or laboratory is unlocked
+        const scienceBuildings = ['bredo', 'laboratory'];
+        if (scienceBuildings.some(b => newUnlockedBuildings.includes(b))) {
+          if (newIslands['science'].status !== 'active') {
+            newIslands['science'] = { ...newIslands['science'], status: 'active' };
+            changed = true;
           }
-        });
+        }
 
-        // Locked vs Fog transition
+        // Activate summit island when tsar is unlocked
+        if (newUnlockedBuildings.includes('tsar')) {
+          if (newIslands['summit'].status !== 'active') {
+            newIslands['summit'] = { ...newIslands['summit'], status: 'active' };
+            changed = true;
+          }
+        }
+
+        // Locked vs Fog transition for non-active islands
         let foundFirstLocked = false;
         const keys = ['main', 'craft', 'science', 'summit'];
-        
         keys.forEach(k => {
           const island = newIslands[k];
           if (island.status === 'active') {
             // ok
           } else if (island.status === 'locked' || island.status === 'fog') {
-             if (!foundFirstLocked) {
-               newIslands[k].status = 'locked';
-               foundFirstLocked = true;
-             } else {
-               newIslands[k].status = 'fog';
-             }
+            if (!foundFirstLocked) {
+              newIslands[k] = { ...island, status: 'locked' };
+              foundFirstLocked = true;
+            } else {
+              newIslands[k] = { ...island, status: 'fog' };
+            }
           }
         });
 
@@ -175,15 +189,27 @@ export const useGameStore = create(
       })),
 
       resetDailyCountIfNeeded: () => set((state) => {
-        if (!state.lastTaskReset) return {};
-        const last = new Date(state.lastTaskReset);
-        const now = new Date();
-        // Check if 24 hours passed
-        if (now - last > 24 * 60 * 60 * 1000) {
-          return { dailyTasksCount: 0, lastTaskReset: now.toISOString() };
+        const today = new Date().toISOString().slice(0, 10);
+        const lastDay = state.lastTaskReset ? state.lastTaskReset.slice(0, 10) : null;
+        // Reset by calendar day (midnight), not 24h window
+        if (lastDay !== today && state.dailyTasksCount > 0) {
+          return { dailyTasksCount: 0, lastTaskReset: new Date().toISOString() };
         }
         return {};
       }),
+
+      // D-06: completedTasks содержит только задачи со статусом "solved".
+      // Задачи пропущенные (skip) или прочитанные без решения НЕ попадают в completedTasks.
+      canPlayTask: () => {
+        const state = get();
+        if (state.isPremium) return true;
+        const FREE_TASKS_PER_DAY = 3;
+        const today = new Date().toISOString().slice(0, 10);
+        const countToday = state.lastTaskReset && state.lastTaskReset.slice(0, 10) === today
+          ? state.dailyTasksCount
+          : 0;
+        return countToday < FREE_TASKS_PER_DAY;
+      },
       
       resetGame: () => set({
         totalStars: 0,
@@ -194,18 +220,20 @@ export const useGameStore = create(
         streak: 0,
         lastPlayDate: null,
         upsellShownAt: [],
-        // Reset world map
+        dailyTasksCount: 0,
+        lastTaskReset: null,
+        // Reset world map: craft starts locked, science/summit in fog
         islands: {
-          'main': { solved: 0, total: 17, stars: 0, status: 'active' },
-          'craft': { solved: 0, total: 13, stars: 0, status: 'locked' },
-          'science': { solved: 0, total: 0, stars: 0, status: 'fog' },
-          'summit': { solved: 0, total: 0, stars: 0, status: 'fog' },
+          'main':    { solved: 0, total: 17, stars: 0, status: 'active' },
+          'craft':   { solved: 0, total: 13, stars: 0, status: 'locked' },
+          'science': { solved: 0, total: 0,  stars: 0, status: 'fog' },
+          'summit':  { solved: 0, total: 0,  stars: 0, status: 'fog' },
         }
       }),
     }),
     {
       name: 'nula-game-storage',
-      version: 2,
+      version: 3,
     }
   )
 );
