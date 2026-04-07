@@ -682,19 +682,23 @@ export default function App() {
 
         {phase === "city" && (
           <div className="flex flex-col flex-1 min-h-screen relative overflow-hidden">
-            <DailyChallenge
-              TASKS={remoteTasks || TASKS}
-              completedTasks={completedTasks}
-              onStart={(dailyTask) => {
-                trackEvent("DAILY_CHALLENGE_STARTED", { taskId: dailyTask.id });
-                setTask(dailyTask);
-                setMessages([]);
-                setSessionStars(0);
-                setSessionHints(0);
-                setSessionAttempts(0);
-                setPhase("dialog");
-              }}
-            />
+            <div className="absolute top-0 inset-x-0 z-30 px-3 pt-3 pointer-events-none">
+              <div className="pointer-events-auto">
+                <DailyChallenge
+                  TASKS={remoteTasks || TASKS}
+                  completedTasks={completedTasks}
+                  onStart={(dailyTask) => {
+                    trackEvent("DAILY_CHALLENGE_STARTED", { taskId: dailyTask.id });
+                    setTask(dailyTask);
+                    setMessages([]);
+                    setSessionStars(0);
+                    setSessionHints(0);
+                    setSessionAttempts(0);
+                    setPhase("task-preview");
+                  }}
+                />
+              </div>
+            </div>
             <City
             theme={theme} 
             totalStars={totalStars} 
