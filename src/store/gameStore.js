@@ -32,7 +32,7 @@ export const useGameStore = create(
 
       // ---- СТРУКТУРА ДЛЯ РЕЖИМА WORLD MAP (АРХИПЕЛАГИ) ----
       islands: {
-        'main': { solved: 0, total: 17, stars: 0, status: 'active' }, // library(6) + city-hall(6) + nature-reserve(5)
+        'main': { solved: 0, total: 17, stars: 0, status: 'locked' }, // unlocked after first task
         'craft': { solved: 0, total: 13, stars: 0, status: 'locked' }, // workshop(7) + farm(6)
         'science': { solved: 0, total: 0, stars: 0, status: 'fog' },
         'summit': { solved: 0, total: 0, stars: 0, status: 'fog' },
@@ -97,6 +97,12 @@ export const useGameStore = create(
             }
           }
         });
+
+        // Unlock main island after first task
+        if (totalSolved >= 1 && (newIslands['main'].status === 'locked' || newIslands['main'].status === 'fog')) {
+          newIslands['main'] = { ...newIslands['main'], status: 'active' };
+          changed = true;
+        }
 
         // Unlock craft island when craft threshold reached
         const craftReq = state.unlockRequirements['craft'];

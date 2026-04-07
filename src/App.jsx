@@ -502,6 +502,7 @@ export default function App() {
   function goOutcome() {
     const isNew = !completedTasks.includes(task.id);
     completeTask(task.id, sessionStars);
+    checkUnlocks();
     updateStreak();
     updateAdaptive({ hints: sessionHints, attempts: sessionAttempts });
     if (isNew) {

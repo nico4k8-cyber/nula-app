@@ -191,6 +191,7 @@ describe('DDT: canPlayTask — дневной лимит (логика без st
 // ─── DDT: unlockRequirements — острова ──────────────────────────────────────
 describe('DDT: Island unlock requirements (фаза 01)', () => {
   const unlockRequirements = {
+    'main':        { type: 'tasks', count: 1 },  // разблокируется после 1-й задачи
     'craft':       { type: 'tasks', count: 3 },
     'tsar':        { type: 'tasks', count: 3 },
     'bredo':       { type: 'tasks', count: 6 },
@@ -203,7 +204,12 @@ describe('DDT: Island unlock requirements (фаза 01)', () => {
     });
   });
 
-  it('пороги разблокировки возрастают (craft < bredo < laboratory)', () => {
+  it('main открывается после 1-й задачи — до этого locked', () => {
+    expect(unlockRequirements.main.count).toBe(1);
+  });
+
+  it('пороги разблокировки возрастают (main < craft < bredo < laboratory)', () => {
+    expect(unlockRequirements.main.count).toBeLessThan(unlockRequirements.craft.count);
     expect(unlockRequirements.craft.count).toBeLessThan(unlockRequirements.bredo.count);
     expect(unlockRequirements.bredo.count).toBeLessThan(unlockRequirements.laboratory.count);
   });
@@ -213,7 +219,13 @@ describe('DDT: Island unlock requirements (фаза 01)', () => {
     expect(unlockRequirements.tsar.count).toBe(3);
   });
 
+  it('при 0 задач — main заблокирован (ребёнок на онбординге)', () => {
+    expect(0 >= unlockRequirements.main.count).toBe(false);
+  });
+
   const cases = [
+    { completed: 0, island: 'main',  expected: false },
+    { completed: 1, island: 'main',  expected: true  },
     { completed: 0, island: 'craft', expected: false },
     { completed: 2, island: 'craft', expected: false },
     { completed: 3, island: 'craft', expected: true },
