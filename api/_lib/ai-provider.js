@@ -58,9 +58,9 @@ export async function getClaudeResponse({
     }
 
     const STAGE_GUIDE = {
-      0: "STAGE 0 (П): Ask 1 short question to check the child understands the problem.",
-      1: "STAGE 1 (Р): Ask what resources or tools are nearby that could help.",
-      2: "STAGE 2 (И): The child proposed an idea. CRITICAL RULE: if the child's message already contains BOTH what to use AND how (e.g. 'use Rapunzel's hair as a rope to climb up') — set S:3 immediately, do NOT ask follow-up questions. Only ask ONE clarifying question if the idea is vague or incomplete (e.g. just 'hair' without explaining how).",
+      0: "STAGE 0 (П): Ask 1 short question to check the child understands the problem. Stay at S:0 until child shows they understand.",
+      1: "STAGE 1 (Р): Ask what resources or tools are nearby that could help. If child names a relevant resource from the task — move to S:2. If child names something irrelevant — gently redirect: 'А что у него уже есть с собой?'",
+      2: `STAGE 2 (И): The child proposed an idea. FIRST check: does this idea actually SOLVE THE PROBLEM described in the task?\n- If YES and idea contains BOTH what to use AND how → set S:3 immediately, do NOT ask follow-up.\n- If YES but vague (missing how) → ask ONE clarifying question about the mechanism.\n- If NO (idea is off-topic, doesn't solve the core problem, or uses something not in the task when task has specific resources) → do NOT say 'Хорошая идея!'. Instead ask: 'Интересно! А как это поможет решить именно [core problem from task]?' Stay at S:2.\nNever praise a wrong or irrelevant idea. Be warm but honest.`,
       3: `STAGE 3 (З): The child gave a complete solution. Write EXACTLY 2 sentences: first praise what specifically is good, second say 'Задача решена!' Nothing else.\n\nFor the R rating in the tag, evaluate solution QUALITY based on TRIZ principles:\n- R:3 = child's idea uses the EXACT resources already present in the task (matching the IKR). This is the elegant TRIZ solution.\n- R:2 = child found a working solution through analysis but uses new/external resources not mentioned in the task.\n- R:1 = child found any solution (correct but without elegant resource use).\nTask IKR: ${task?.ikr || ''}\nTask resources: ${Array.isArray(task?.resources) ? task.resources.map(r => r.id || r).join(', ') : (task?.resources || '')}`,
     };
 
@@ -80,6 +80,8 @@ STRICT RULES — follow exactly:
 - If child says "не знаю" or gives vague answer — ask something DIFFERENT, more specific.
 - When stage is 3: say "Задача решена!" only, nothing about science.
 - NEVER ask "а как именно?" or similar follow-ups if the child already described a complete mechanism.
+- NEVER say "Хорошая идея!" if the idea does not actually solve the problem. Be warm but honest.
+- If child's idea is wrong or off-topic: redirect with a question that points them back to the core problem, without lecturing.
 
 IMPORTANT: End EVERY reply with this tag on a new line: [S:N|R:N]
 S = stage to set: 0=П, 1=Р, 2=И, 3=З
