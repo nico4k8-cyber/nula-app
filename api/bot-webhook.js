@@ -1,8 +1,23 @@
 // Telegram Bot Webhook — принимает updates от Telegram
-// Добавляет chatId в Redis Set triz_subscribers при команде /start
+// Добавляет chatId в Supabase telegram_subscribers при команде /start
 // Защищён X-Telegram-Bot-Api-Secret-Token header
 
-const SUBSCRIBERS_KEY = "triz_subscribers";
+async function supabaseUpsert(url, key, chatId) {
+  const resp = await fetch(`${url}/rest/v1/telegram_subscribers`, {
+    method: "POST",
+    headers: {
+      "apikey": key,
+      "Authorization": `Bearer ${key}`,
+      "Content-Type": "application/json",
+      "Prefer": "resolution=ignore-duplicates",
+    },
+    body: JSON.stringify({ chat_id: String(chatId) }),
+  });
+  if (!resp.ok) {
+    const txt = await resp.text();
+    console.error("Supabase upsert error:", resp.status, txt);
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -31,19 +46,15 @@ export default async function handler(req, res) {
 
   // Обработка /start
   if (text.startsWith("/start")) {
-    // Добавить в Redis Set
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-    if (redisUrl && redisToken) {
-      await fetch(`${redisUrl}/sadd/${SUBSCRIBERS_KEY}/${chatId}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${redisToken}` },
-      });
+    if (supabaseUrl && supabaseKey) {
+      await supabaseUpsert(supabaseUrl, supabaseKey, chatId);
     }
 
     // Ответить пользователю
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const botToken = process.env.TELEGRAM_SUBSCRIBER_BOT_TOKEN;
     if (botToken) {
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",

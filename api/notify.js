@@ -5,20 +5,32 @@
  * Body: { secret: "...", message: "Текст уведомления", taskUrl: "https://..." }
  *
  * Env vars required:
- *   TELEGRAM_BOT_TOKEN
- *   UPSTASH_REDIS_REST_URL
- *   UPSTASH_REDIS_REST_TOKEN
- *   NOTIFY_SECRET             — произвольный секрет для защиты эндпоинта
+ *   TELEGRAM_SUBSCRIBER_BOT_TOKEN — токен бота для подписчиков
+ *   SUPABASE_URL                  — URL Supabase проекта
+ *   SUPABASE_ANON_KEY             — anon key Supabase
+ *   NOTIFY_SECRET                 — произвольный секрет для защиты эндпоинта
  */
 
-const SUBSCRIBERS_KEY = "triz_subscribers";
-
-async function redisCmd(url, token, command, ...args) {
-    const resp = await fetch(`${url}/${command}/${args.map(a => encodeURIComponent(a)).join("/")}`, {
-        headers: { Authorization: `Bearer ${token}` },
+async function getSubscribers(supabaseUrl, supabaseKey) {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/telegram_subscribers?select=chat_id`, {
+        headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+        },
     });
-    if (!resp.ok) throw new Error(`Upstash error: ${resp.status} ${await resp.text()}`);
-    return resp.json();
+    if (!resp.ok) throw new Error(`Supabase select error: ${resp.status} ${await resp.text()}`);
+    const rows = await resp.json();
+    return rows.map(r => r.chat_id);
+}
+
+async function deleteSubscriber(supabaseUrl, supabaseKey, chatId) {
+    await fetch(`${supabaseUrl}/rest/v1/telegram_subscribers?chat_id=eq.${encodeURIComponent(chatId)}`, {
+        method: "DELETE",
+        headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+        },
+    });
 }
 
 export default async function handler(req, res) {
@@ -35,18 +47,16 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const botToken = process.env.TELEGRAM_SUBSCRIBER_BOT_TOKEN;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-    if (!botToken || !redisUrl || !redisToken) {
+    if (!botToken || !supabaseUrl || !supabaseKey) {
         return res.status(500).json({ error: "Missing env vars" });
     }
 
     try {
-        // Получаем всех подписчиков
-        const result = await redisCmd(redisUrl, redisToken, "smembers", SUBSCRIBERS_KEY);
-        const subscribers = result.result || [];
+        const subscribers = await getSubscribers(supabaseUrl, supabaseKey);
 
         if (subscribers.length === 0) {
             return res.status(200).json({ sent: 0, message: "No subscribers" });
@@ -70,7 +80,7 @@ export default async function handler(req, res) {
                     const err = await resp.json();
                     // Если бот заблокирован пользователем — удаляем из базы
                     if (err.error_code === 403) {
-                        await redisCmd(redisUrl, redisToken, "srem", SUBSCRIBERS_KEY, chatId);
+                        await deleteSubscriber(supabaseUrl, supabaseKey, chatId);
                         console.log(`Removed blocked subscriber: ${chatId}`);
                     }
                     failed++;
