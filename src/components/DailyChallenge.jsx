@@ -2,7 +2,7 @@ import { useState } from "react";
 
 // Детерминированный выбор задачи по дате (одна задача на весь день для всех игроков)
 function getDailyTask(tasks) {
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const today = new Date().toLocaleDateString('sv'); // YYYY-MM-DD in local timezone
   let hash = 0;
   for (let i = 0; i < today.length; i++) {
     hash = (hash * 31 + today.charCodeAt(i)) >>> 0;
@@ -10,25 +10,41 @@ function getDailyTask(tasks) {
   return tasks[hash % tasks.length];
 }
 
-export default function DailyChallenge({ TASKS, completedTasks, onStartTask, t }) {
-  const [dismissed, setDismissed] = useState(() => {
+export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onStart, t }) {
+  const [minimized, setMinimized] = useState(() => {
     const stored = localStorage.getItem("shariel_daily_dismissed");
-    return stored === new Date().toISOString().slice(0, 10);
+    return stored === new Date().toLocaleDateString('sv');
   });
 
-  if (dismissed || !TASKS?.length) return null;
+  if (!TASKS?.length) return null;
 
   const task = getDailyTask(TASKS);
-  const isDone = completedTasks.includes(task.id);
+  const isDone = completedTasks?.includes(task.id);
 
   function handleStart() {
-    const idx = TASKS.findIndex(t => t.id === task.id);
-    if (idx >= 0) onStartTask(idx);
+    if (onStart) {
+      onStart(task);
+    } else if (onStartTask) {
+      const idx = TASKS.findIndex(t => t.id === task.id);
+      if (idx >= 0) onStartTask(idx);
+    }
   }
 
-  function handleDismiss() {
-    localStorage.setItem("shariel_daily_dismissed", new Date().toISOString().slice(0, 10));
-    setDismissed(true);
+  function handleMinimize() {
+    localStorage.setItem("shariel_daily_dismissed", new Date().toLocaleDateString('sv'));
+    setMinimized(true);
+  }
+
+  if (minimized) {
+    return (
+      <div
+        onClick={() => setMinimized(false)}
+        className="w-full flex items-center justify-between px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer active:scale-95 transition-all"
+      >
+        <span className="text-sm font-semibold text-amber-700">🌅 Задача дня — нажми, чтобы открыть</span>
+        <span className="text-amber-400 text-xs">▼</span>
+      </div>
+    );
   }
 
   return (
@@ -38,7 +54,9 @@ export default function DailyChallenge({ TASKS, completedTasks, onStartTask, t }
           <span className="text-lg">🌅</span>
           <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Задача дня</span>
         </div>
-        <button onClick={handleDismiss} className="text-amber-300 text-xs hover:text-amber-500 transition-colors font-black">✕</button>
+        {!isDone && (
+          <button onClick={handleMinimize} className="text-amber-300 text-xs hover:text-amber-500 transition-colors font-black">✕</button>
+        )}
       </div>
 
       <div className="px-5 pb-4">
