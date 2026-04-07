@@ -117,17 +117,35 @@ export default async function handler(req) {
     // ── Hint request: separate prompt, no stage advancement ──────────────────
     const isHintRequest = userMessage.startsWith('[ПОДСКАЗКА]');
     if (isHintRequest) {
-      const lastChildMsg = [...history].reverse().find(m => m.role === 'user' || m.role === 'child' || m.type === 'child');
       const taskDesc = task.condition || task.teaser || task.title || '';
-      const hintPrompt = `Ты — добрый помощник Орин, помогаешь детям решать задачи.
-Задача: ${task.title}. ${taskDesc}
-Ребёнок запросил подсказку. Последнее что он написал: "${lastChildMsg?.text || '...'}"
+      const taskIkr = task.ikr || task.trick || '';
 
-Дай ОДИН наводящий вопрос — не давай ответ, только помоги думать дальше.
-Вопрос должен соответствовать тому, что ребёнок написал последним.
-Не говори "Ты правильно понял", "Отлично" или другие похвалы не по контексту.
+      // Build readable conversation summary for AI to analyze
+      const childMessages = history.filter(m => m.role === 'user' || m.role === 'child' || m.type === 'child');
+      const conversationSummary = history.map(m => {
+        const isChild = m.role === 'user' || m.role === 'child' || m.type === 'child';
+        return `${isChild ? 'Ребёнок' : 'Орин'}: ${m.text}`;
+      }).join('\n');
+
+      const hintPrompt = `Ты — добрый помощник Орин. Ребёнок решает задачу и просит подсказку.
+
+ЗАДАЧА: ${task.title}
+УСЛОВИЕ: ${taskDesc}
+ПРАВИЛЬНЫЙ ОТВЕТ (не говори его): ${taskIkr}
+
+ВЕСЬ ДИАЛОГ ДО ЭТОГО МОМЕНТА:
+${conversationSummary || '(только начали)'}
+
+Ребёнок запросил подсказку. Проанализируй весь диалог:
+- Что ребёнок уже понял? Что пробовал?
+- Где именно он застрял?
+- Что ему нужно, чтобы сдвинуться дальше?
+
+Дай ОДИН наводящий вопрос — строго по тому месту где ребёнок застрял.
+НЕ давай ответ напрямую.
+НЕ говори "Ты правильно понял" или другие похвалы если это не соответствует диалогу.
 Если ребёнок написал "не знаю" — задай простой конкретный вопрос про задачу.
-Максимум 1-2 коротких предложения. Только вопрос, никаких объяснений.`;
+Максимум 1-2 коротких предложения. Только вопрос.`;
 
       const result = await getClaudeResponse({
         userMessage: 'Подсказка',
