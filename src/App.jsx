@@ -34,6 +34,7 @@ import TsarMountainView from "./components/TsarMountainView";
 import OnboardingTooltip, { useOnboarding } from "./components/OnboardingTooltip";
 import UpsellView, { getUpsellMessage } from "./components/UpsellView";
 import DailyChallenge from "./components/DailyChallenge";
+import StreakScreen from "./components/StreakScreen";
 
 // Utils
 import { 
@@ -116,6 +117,7 @@ export default function App() {
   // Modals & Overlays
   const [menuOpen, setMenuOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showStreakScreen, setShowStreakScreen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [activeCategory, setActiveCategory] = useState(saved?.activeCategory || "library");
   const [unlockedBuildingId, setUnlockedBuildingId] = useState(null);
@@ -243,6 +245,28 @@ export default function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Показать streak-экран при первом открытии если уже на city и streak >= 2
+  useEffect(() => {
+    if (phase === "city" && streak >= 2) {
+      const shownKey = "streak_screen_shown_" + new Date().toLocaleDateString('sv');
+      if (!sessionStorage.getItem(shownKey)) {
+        sessionStorage.setItem(shownKey, "1");
+        setShowStreakScreen(true);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Показать при смене phase на city (навигация внутри сессии)
+  useEffect(() => {
+    if (phase === "city" && streak >= 2) {
+      const shownKey = "streak_screen_shown_" + new Date().toLocaleDateString('sv');
+      if (!sessionStorage.getItem(shownKey)) {
+        sessionStorage.setItem(shownKey, "1");
+        setShowStreakScreen(true);
+      }
+    }
+  }, [phase, streak]);
 
   // Cloud Sync Effect — always merges Zustand state with localStorage to avoid hydration race
   useEffect(() => {
@@ -592,9 +616,12 @@ export default function App() {
             )}
             {/* Стрик */}
             {streak >= 2 && (
-              <div className="flex items-center gap-1 bg-orange-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg shadow-orange-900/30">
+              <button
+                onClick={() => setShowStreakScreen(true)}
+                className="flex items-center gap-1 bg-orange-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg shadow-orange-900/30 cursor-pointer active:scale-95 transition-transform"
+              >
                 🔥 {streak}
-              </div>
+              </button>
             )}
             <div
               className="cursor-pointer active:scale-95 transition-transform"
@@ -884,6 +911,10 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {showStreakScreen && (
+        <StreakScreen streak={streak} onClose={() => setShowStreakScreen(false)} />
       )}
     </div>
   );
