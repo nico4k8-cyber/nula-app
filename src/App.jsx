@@ -182,15 +182,16 @@ export default function App() {
       if (session?.user) {
         setUser({ id: session.user.id, email: session.user.email, name: session.user.user_metadata?.full_name || "Инженер" });
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          setHasSeenOnboarding(true);
-          audio.playTrack(0);
-
-          // Return to the screen that triggered login
-          const returnPhase = popReturnPhase();
-          if (returnPhase && returnPhase !== 'auth') {
-            setPhase(returnPhase);
-          } else {
-            setPhase('city');
+          // Only navigate on explicit SIGNED_IN (fresh login from auth screen)
+          // INITIAL_SESSION = returning user on app load; don't interrupt onboarding flow
+          if (event === 'SIGNED_IN') {
+            setHasSeenOnboarding(true);
+            const returnPhase = popReturnPhase();
+            if (returnPhase && returnPhase !== 'auth') {
+              setPhase(returnPhase);
+            } else {
+              setPhase('city');
+            }
           }
 
           // Block Cloud Sync Effect from running during merge (prevents race condition)
@@ -681,7 +682,6 @@ export default function App() {
 
         {phase === "dragon-splash" && (
           <DragonSplashScreen t={t} onAnimationEnd={() => {
-            audio.playTrack(0);
             setPhase(hasSeenOnboarding ? "city" : "dragon-bubble");
           }} />
         )}

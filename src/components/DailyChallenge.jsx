@@ -12,6 +12,8 @@ function getDailyTask(tasks) {
 
 export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onStart, t }) {
   const [minimized, setMinimized] = useState(() => {
+    // If user explicitly opened it this session, keep it open
+    if (sessionStorage.getItem("shariel_daily_expanded") === "1") return false;
     const stored = localStorage.getItem("shariel_daily_dismissed");
     return stored === new Date().toLocaleDateString('sv');
   });
@@ -22,6 +24,8 @@ export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onS
   const isDone = completedTasks?.includes(task.id);
 
   function handleStart() {
+    // Mark as expanded so it stays open when user returns from task
+    sessionStorage.setItem("shariel_daily_expanded", "1");
     if (onStart) {
       onStart(task);
     } else if (onStartTask) {
@@ -31,6 +35,7 @@ export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onS
   }
 
   function handleMinimize() {
+    sessionStorage.removeItem("shariel_daily_expanded");
     localStorage.setItem("shariel_daily_dismissed", new Date().toLocaleDateString('sv'));
     setMinimized(true);
   }
@@ -38,7 +43,10 @@ export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onS
   if (minimized) {
     return (
       <div
-        onClick={() => setMinimized(false)}
+        onClick={() => {
+          sessionStorage.setItem("shariel_daily_expanded", "1");
+          setMinimized(false);
+        }}
         className="w-full flex items-center justify-between px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer active:scale-95 transition-all"
       >
         <span className="text-sm font-semibold text-amber-700">🌅 Задача дня — нажми, чтобы открыть</span>
