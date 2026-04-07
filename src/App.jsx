@@ -133,6 +133,7 @@ export default function App() {
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const isMergingRef = useRef(false); // prevents Cloud Sync Effect from overwriting during login merge
 
   // Audio Hook - Plays main theme throughout the app
   const t = (key) => {
@@ -148,6 +149,22 @@ export default function App() {
   const audio = useAudio(AUDIO_TRACKS);
 
   /* ═══ Effects ═══ */
+
+  // Start music on first user interaction (browsers block autoplay until gesture)
+  useEffect(() => {
+    const audioRef = { current: audio };
+    const startMusic = () => {
+      audioRef.current.playTrack(0);
+      document.removeEventListener('click', startMusic, true);
+      document.removeEventListener('touchstart', startMusic, true);
+    };
+    document.addEventListener('click', startMusic, true);
+    document.addEventListener('touchstart', startMusic, true);
+    return () => {
+      document.removeEventListener('click', startMusic, true);
+      document.removeEventListener('touchstart', startMusic, true);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load tasks from Supabase; silently fall back to local TASKS if unavailable
   useEffect(() => {
@@ -176,6 +193,9 @@ export default function App() {
             setPhase('city');
           }
 
+          // Block Cloud Sync Effect from running during merge (prevents race condition)
+          isMergingRef.current = true;
+
           // Read local progress directly from localStorage (bypasses Zustand hydration race)
           let localCompleted = [], localStars = 0, localBuildings = [];
           try {
@@ -186,6 +206,12 @@ export default function App() {
             localStars = s.totalStars || 0;
             localBuildings = s.unlockedBuildings || [];
           } catch {}
+
+          // Also read from current Zustand state (in case rehydration has newer data than localStorage snapshot)
+          const currentZustand = useGameStore.getState();
+          localCompleted = Array.from(new Set([...localCompleted, ...currentZustand.completedTasks.map(String)]));
+          localStars = Math.max(localStars, currentZustand.totalStars);
+          localBuildings = Array.from(new Set([...localBuildings, ...currentZustand.unlockedBuildings]));
 
           // 1. Load cloud FIRST (before any write — don't overwrite with stale local data)
           const cloudData = await loadProgress(session.user.id);
@@ -212,6 +238,9 @@ export default function App() {
             completedTasks: Array.from(new Set([...state.completedTasks.map(String), ...mergedCompleted])),
             unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings]))
           }));
+
+          // Allow Cloud Sync Effect to run again now that merge is complete
+          isMergingRef.current = false;
 
           // For toast: what was new vs already in cloud
           const newlyAdded = localCompleted.filter(id => !cloudCompleted.includes(id));
@@ -277,6 +306,7 @@ export default function App() {
   // Cloud Sync Effect — always merges Zustand state with localStorage to avoid hydration race
   useEffect(() => {
     if (!user?.id) return;
+    if (isMergingRef.current) return; // skip during login merge to avoid race condition
     // Always union with localStorage in case Zustand hasn't hydrated yet
     let mergedCompleted = completedTasks;
     let mergedStars = totalStars;
