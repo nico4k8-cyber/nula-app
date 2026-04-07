@@ -150,12 +150,37 @@ export const useGameStore = create(
       // ----------------------------------------------------
 
       updateStreak: () => set((state) => {
-        const today = new Date().toISOString().slice(0, 10);
-        if (state.lastPlayDate === today) return {}; // уже сегодня играли
-        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-        const newStreak = state.lastPlayDate === yesterday ? state.streak + 1 : 1;
-        return { streak: newStreak, lastPlayDate: today };
+        const today = new Date().toLocaleDateString('sv');
+        if (state.lastPlayDate === today) return {};
+        const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('sv');
+
+        // Сегодня = следующий день после вчера → нормальный инкремент
+        if (state.lastPlayDate === yesterday) {
+          return { streak: state.streak + 1, lastPlayDate: today };
+        }
+
+        // Пропущен 1 день — проверяем freeze
+        const twoDaysAgo = new Date(Date.now() - 172800000).toLocaleDateString('sv');
+        if (
+          state.lastPlayDate === twoDaysAgo &&
+          state.streakFreezeCount > 0 &&
+          state.streakFreezeUsedAt !== yesterday  // не использовали заморозку вчера
+        ) {
+          return {
+            streak: state.streak + 1,
+            lastPlayDate: today,
+            streakFreezeCount: state.streakFreezeCount - 1,
+            streakFreezeUsedAt: yesterday,
+          };
+        }
+
+        // Сброс
+        return { streak: 1, lastPlayDate: today };
       }),
+
+      addStreakFreeze: (count = 1) => set((state) => ({
+        streakFreezeCount: state.streakFreezeCount + count,
+      })),
 
       markUpsellShown: (count) => set((state) => ({
         upsellShownAt: [...state.upsellShownAt, count],
