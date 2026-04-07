@@ -16,6 +16,10 @@ import sfx from "./sfx";
 import { useGameStore } from "./store/gameStore";
 import { translations } from "./i18n";
 import { supabase, loadProgress, syncProgress, loadTasks, loadAppConfig } from "./lib/supabase";
+import { runMigrations } from "./utils/migrations";
+
+// Запускаем миграции сразу при загрузке модуля — до рендера
+runMigrations();
 
 // Components
 import TopProgress from "./components/TopProgress";
