@@ -101,8 +101,10 @@ export default function AuthScreen({ onGuest, returnPhase }) {
 
       <div className="relative z-10 w-full max-w-md flex flex-col items-center">
         <div className="w-32 h-32 mb-4 relative flex items-center justify-center">
-          <video src="/assets/webm/avatar.webm" autoPlay muted loop playsInline
-            className="w-full h-full object-contain relative z-10" />
+          <img src="/assets/webp/avatar.webp"
+            className="w-full h-full object-contain relative z-10"
+            style={{ mixBlendMode: 'screen' }}
+            alt="Орин" />
           <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full animate-pulse" />
         </div>
 

@@ -73,7 +73,7 @@ export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onS
           <div className="min-w-0">
             <p className="font-black text-slate-800 text-[15px] leading-tight">{task.title}</p>
             <div className="flex gap-0.5 mt-0.5 mb-1">
-              {[...Array(task.difficulty || 1)].map((_, i) => <span key={i} className="text-[10px]">⭐</span>)}
+              {[...Array(task.difficulty || 1)].map((_, i) => <span key={i} className="text-[10px]">💎</span>)}
             </div>
             {(task.teaser || task.puzzle?.question) && (
               <p className="text-[13px] text-slate-600 leading-snug italic">
