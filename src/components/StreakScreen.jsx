@@ -10,7 +10,7 @@ const getMessage = (streak) => {
   return "Продолжай решать задачи каждый день!";
 };
 
-export default function StreakScreen({ streak, onClose }) {
+export default function StreakScreen({ streak, onClose, streakFreezeCount = 0, freezeUsedYesterday = false, onBuyFreeze }) {
   const isMilestone = streak === 7 || streak === 14 || streak === 30;
   // getDay() returns 0=Sun, 1=Mon... convert to 0=Mon...6=Sun
   const todayDow = (new Date().getDay() + 6) % 7;
@@ -60,10 +60,48 @@ export default function StreakScreen({ streak, onClose }) {
           })}
         </div>
 
+        {/* Streak Freeze секция */}
+        <div className="mt-4 p-3 bg-blue-50 rounded-2xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🧊</span>
+            <div>
+              <div className="text-sm font-bold text-blue-800">
+                Заморозка серии
+              </div>
+              <div className="text-xs text-blue-500">
+                {streakFreezeCount > 0
+                  ? `${streakFreezeCount} шт. доступно`
+                  : "Защитит серию если пропустишь день"}
+              </div>
+            </div>
+          </div>
+          {streakFreezeCount > 0 ? (
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(streakFreezeCount, 3) }).map((_, i) => (
+                <span key={i} className="text-lg">🧊</span>
+              ))}
+            </div>
+          ) : (
+            <button
+              onClick={onBuyFreeze}
+              className="px-3 py-1.5 bg-blue-500 text-white text-xs font-black rounded-xl active:scale-95 transition-all"
+            >
+              Купить
+            </button>
+          )}
+        </div>
+
+        {/* Показать если заморозка использована вчера */}
+        {freezeUsedYesterday && (
+          <div className="mt-2 text-center text-xs text-blue-500">
+            🧊 Заморозка защитила серию вчера
+          </div>
+        )}
+
         {/* Close button */}
         <button
           onClick={onClose}
-          className="w-full py-4 rounded-2xl bg-orange-500 text-white font-black uppercase tracking-widest text-[11px] active:scale-95 transition-all shadow-lg shadow-orange-200"
+          className="w-full py-4 rounded-2xl bg-orange-500 text-white font-black uppercase tracking-widest text-[11px] active:scale-95 transition-all shadow-lg shadow-orange-200 mt-4"
         >
           Продолжить
         </button>

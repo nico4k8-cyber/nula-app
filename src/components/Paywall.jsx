@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { trackEvent, EVENTS } from '../analytics';
+import { useGameStore } from '../store/gameStore';
 
 const PERKS = [
   { icon: '♾️', text: 'Безлимитные задачи каждый день' },
@@ -7,6 +8,7 @@ const PERKS = [
   { icon: '🔬', text: 'Лаборатория, Бредогенератор, Царь-гора' },
   { icon: '🏆', text: 'Патентная копилка изобретений' },
   { icon: '📊', text: 'Прогресс-отчёт для родителей' },
+  { icon: '🧊', text: 'Заморозка серии — пропусти день без потери серии' },
 ];
 
 const PLANS = [
@@ -98,6 +100,7 @@ export default function Paywall({ onSelectPlan, onBack, onDonate, userId, userEm
 
       if (data.mock) {
         // Dev mode — simulate success
+        useGameStore.getState().addStreakFreeze(3);
         onSelectPlan(pendingPlan);
         return;
       }

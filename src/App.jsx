@@ -82,6 +82,7 @@ export default function App() {
     difficulty, user, setUser, dailyTasksCount, isPremium, resetDailyCountIfNeeded,
     islands, unlockRequirements, checkUnlocks, unlockedBuildings,
     streak, updateStreak, upsellShownAt, markUpsellShown,
+    streakFreezeCount, streakFreezeUsedAt,
     useHint, getHintsLeft, canPlayTask, updateAdaptive,
   } = useGameStore();
 
@@ -914,7 +915,18 @@ export default function App() {
       )}
 
       {showStreakScreen && (
-        <StreakScreen streak={streak} onClose={() => setShowStreakScreen(false)} />
+        <StreakScreen
+          streak={streak}
+          streakFreezeCount={streakFreezeCount}
+          freezeUsedYesterday={
+            streakFreezeUsedAt === new Date(Date.now() - 86400000).toLocaleDateString('sv')
+          }
+          onClose={() => setShowStreakScreen(false)}
+          onBuyFreeze={() => {
+            setShowStreakScreen(false);
+            setPhase("paywall");
+          }}
+        />
       )}
     </div>
   );
