@@ -101,9 +101,9 @@ export default function AuthScreen({ onGuest, returnPhase }) {
 
       <div className="relative z-10 w-full max-w-md flex flex-col items-center">
         <div className="w-32 h-32 mb-4 relative flex items-center justify-center">
-          <img src="/assets/webp/avatar.webp"
+          <img src="/img/webp/ugolok.webp"
             className="w-full h-full object-contain relative z-10"
-            style={{ mixBlendMode: 'screen' }}
+            style={{ mixBlendMode: 'multiply' }}
             alt="Орин" />
           <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full animate-pulse" />
         </div>
