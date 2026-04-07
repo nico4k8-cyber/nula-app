@@ -112,6 +112,17 @@ export default function SettingsMenu({
             <span className="text-white/50 text-xl group-hover:translate-x-1 transition-transform">→</span>
           </button>
 
+          <a
+            href="https://t.me/triz_train_bot?start=reminders"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl bg-blue-50 text-blue-700 font-semibold text-sm active:scale-95 transition-all"
+          >
+            <span className="text-xl">📬</span>
+            <span>Напоминания в Telegram</span>
+            <span className="ml-auto text-blue-400">→</span>
+          </a>
+
           {onStartOnboarding && (
             <button onClick={() => { onStartOnboarding(); onClose(); }}
               className="w-full text-center py-4 text-slate-500 font-black text-[12px] uppercase tracking-widest hover:text-slate-400 transition-all mt-2 border-2 border-slate-200 rounded-2xl"
