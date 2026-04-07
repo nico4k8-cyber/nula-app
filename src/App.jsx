@@ -15,7 +15,7 @@ import { trackEvent, EVENTS } from "./analytics";
 import sfx from "./sfx";
 import { useGameStore } from "./store/gameStore";
 import { translations } from "./i18n";
-import { supabase, loadProgress, syncProgress, loadTasks } from "./lib/supabase";
+import { supabase, loadProgress, syncProgress, loadTasks, loadAppConfig } from "./lib/supabase";
 
 // Components
 import TopProgress from "./components/TopProgress";
@@ -44,7 +44,8 @@ import {
 
 /* ═══ Task Tutorial Steps ═══ */
 const TASK_TUTORIAL_STEPS = [
-  { anchor: "task-title", title: "Твоя задача!", text: "Прочитай — здесь описана проблема, которую нужно решить.", position: "bottom" },
+  { anchor: "task-title", title: "Твоя задача!", text: "Это название задачи — прочитай и запомни тему.", position: "bottom" },
+  { anchor: "task-desc", title: "Условие задачи 📖", text: "Вот в чём проблема. Именно её нужно решить — прочитай внимательно!", position: "bottom" },
   { anchor: "start-btn", title: "Начинаем!", text: "Нажми кнопку и расскажи Орину свою идею.", position: "top" },
 ];
 
@@ -128,6 +129,7 @@ export default function App() {
   const [showNewDayBubble, setShowNewDayBubble] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [remoteTasks, setRemoteTasks] = useState(null);
+  const [tutorialTaskId, setTutorialTaskId] = useState(2); // default: лабиринт Тесея
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -152,6 +154,9 @@ export default function App() {
     loadTasks().then(data => {
       if (data && data.length > 0) setRemoteTasks(data);
     }).catch(() => {/* offline — use local fallback */});
+    loadAppConfig('tutorial_task_id').then(val => {
+      if (val) setTutorialTaskId(Number(val));
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -655,7 +660,8 @@ export default function App() {
           <DragonBubbleScreen t={t} theme={theme} lang={lang} onStart={(opts) => {
             setHasSeenOnboarding(true);
             if (opts?.tutorial) {
-              setTask(TASKS.find(t => t.id === 2) || TASKS[0]); // лабиринт Тесея
+              const allTasks = remoteTasks || TASKS;
+              setTask(allTasks.find(t => t.id === tutorialTaskId) || allTasks[0]);
               setIsTutorial(true);
               setPhase("task-preview");
               setTimeout(() => onboarding.startOnboarding(), 400);

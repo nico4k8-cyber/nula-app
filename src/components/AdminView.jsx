@@ -14,6 +14,23 @@ function TabTasks({ TASKS, onBack }) {
   const [localTasks, setLocalTasks] = useState(TASKS);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [tutorialTaskId, setTutorialTaskId] = useState(null);
+  const [isSavingTutorial, setIsSavingTutorial] = useState(false);
+
+  useEffect(() => {
+    loadAppConfig('tutorial_task_id').then(val => {
+      setTutorialTaskId(val ? Number(val) : 2);
+    }).catch(() => setTutorialTaskId(2));
+  }, []);
+
+  const saveTutorialTask = async (id) => {
+    setIsSavingTutorial(true);
+    try {
+      await saveAppConfig('tutorial_task_id', String(id));
+      setTutorialTaskId(id);
+    } catch(e) { alert('Ошибка: ' + e.message); }
+    finally { setIsSavingTutorial(false); }
+  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -95,6 +112,23 @@ function TabTasks({ TASKS, onBack }) {
     <div className="flex flex-1 overflow-hidden">
       {/* Список — по островам и локациям */}
       <div className="w-1/3 border-r border-slate-800 overflow-y-auto p-3 flex flex-col gap-1">
+        {/* Первая задача после онбординга */}
+        <div className="bg-amber-900/30 border border-amber-600/40 rounded-xl p-3 mb-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-2">🎯 Первая задача (после онбординга)</div>
+          <select
+            value={tutorialTaskId || 2}
+            onChange={e => saveTutorialTask(Number(e.target.value))}
+            disabled={isSavingTutorial}
+            className="w-full bg-slate-800 text-white text-[11px] rounded-lg px-2 py-1.5 border border-slate-600"
+          >
+            {localTasks.map(task => (
+              <option key={task.id} value={task.id}>
+                #{task.id} {task.icon} {task.title}
+              </option>
+            ))}
+          </select>
+          {isSavingTutorial && <div className="text-[10px] text-amber-400 mt-1">Сохраняю...</div>}
+        </div>
         <button onClick={addNewTask} className="w-full py-2.5 rounded-xl bg-indigo-700 text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all mb-2">+ Добавить задачу</button>
 
         {ISLANDS.map(island => {

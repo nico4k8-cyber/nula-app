@@ -53,7 +53,7 @@ export default function TaskPreview({ task, onStart, onBack, t, lang, isTutorial
         </h1>
 
         <div className="prose prose-slate max-w-none">
-          <p className="text-[17px] text-slate-600 leading-relaxed font-medium italic mb-6">
+          <p data-onboard="task-desc" className="text-[17px] text-slate-600 leading-relaxed font-medium italic mb-6">
             {question}
           </p>
         </div>
