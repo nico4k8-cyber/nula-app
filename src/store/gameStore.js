@@ -19,6 +19,8 @@ export const useGameStore = create(
       // ---- STREAK ----
       streak: 0,
       lastPlayDate: null, // YYYY-MM-DD
+      streakFreezeCount: 0,
+      streakFreezeUsedAt: null, // ISO date string YYYY-MM-DD
 
       // ---- UPSELL ----
       upsellShownAt: [], // массив completedTasks.length при которых показывали
