@@ -114,6 +114,38 @@ export default async function handler(req) {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── Hint request: separate prompt, no stage advancement ──────────────────
+    const isHintRequest = userMessage.startsWith('[ПОДСКАЗКА]');
+    if (isHintRequest) {
+      const lastChildMsg = [...history].reverse().find(m => m.role === 'user' || m.role === 'child' || m.type === 'child');
+      const taskDesc = task.condition || task.teaser || task.title || '';
+      const hintPrompt = `Ты — добрый помощник Орин, помогаешь детям решать задачи.
+Задача: ${task.title}. ${taskDesc}
+Ребёнок запросил подсказку. Последнее что он написал: "${lastChildMsg?.text || '...'}"
+
+Дай ОДИН наводящий вопрос — не давай ответ, только помоги думать дальше.
+Вопрос должен соответствовать тому, что ребёнок написал последним.
+Не говори "Ты правильно понял", "Отлично" или другие похвалы не по контексту.
+Если ребёнок написал "не знаю" — задай простой конкретный вопрос про задачу.
+Максимум 1-2 коротких предложения. Только вопрос, никаких объяснений.`;
+
+      const result = await getClaudeResponse({
+        userMessage: 'Подсказка',
+        history,
+        task,
+        prizStep,
+        systemPromptOverride: hintPrompt,
+      });
+      await logUsage({ action: 'hint', model: result.model, usage: result.usage, userId });
+      return new Response(JSON.stringify({
+        reply: result.text,
+        text: result.text,
+        stars: 0,
+        prizStep, // never advance stage on hint
+        _v: Date.now(),
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const result = await getClaudeResponse({
       userMessage, history, task, prizStep, _forceHaiku: true,
     });
