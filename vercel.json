@@ -12,11 +12,11 @@
     "api/engine.js": {
       "maxDuration": 25
     },
-    "api/re-engagement.js": {
+    "api/bot-webhook.js": {
       "maxDuration": 10
     },
-    "api/report.js": {
-      "maxDuration": 30
+    "api/notify.js": {
+      "maxDuration": 10
     }
   },
   "headers": [
