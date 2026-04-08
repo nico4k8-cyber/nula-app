@@ -32,6 +32,7 @@ import TwistView from "./components/TwistView";
 import FinalView from "./components/FinalView";
 import AdminView from "./components/AdminView";
 import Paywall from "./components/Paywall";
+import ParentView from "./components/ParentView";
 import BredomakerView from "./components/BredomakerView";
 import LaboratoryView from "./components/LaboratoryView";
 import TsarMountainView from "./components/TsarMountainView";
@@ -88,7 +89,7 @@ export default function App() {
     islands, unlockRequirements, checkUnlocks, unlockedBuildings,
     streak, updateStreak, upsellShownAt, markUpsellShown,
     streakFreezeCount, streakFreezeUsedAt,
-    useHint, getHintsLeft, canPlayTask, updateAdaptive,
+    useHint, getHintsLeft, canPlayTask, updateAdaptive, getCompletedIds,
   } = useGameStore();
 
   // Navigation & UI State
@@ -116,6 +117,7 @@ export default function App() {
   const [upsellMessage, setUpsellMessage] = useState(null);
   const [sessionHints, setSessionHints] = useState(0);
   const [sessionAttempts, setSessionAttempts] = useState(0);
+  const [childSolution, setChildSolution] = useState('');
 
   // Onboarding
   const onboarding = useOnboarding();
@@ -207,14 +209,14 @@ export default function App() {
             const raw = localStorage.getItem('nula-game-storage');
             const saved = raw ? JSON.parse(raw) : {};
             const s = saved.state || {};
-            localCompleted = (s.completedTasks || []).map(String); // normalize IDs to strings
+            localCompleted = (s.completedTasks || []).map(t => String(typeof t === 'object' ? t.taskId : t)); // normalize IDs to strings
             localStars = s.totalStars || 0;
             localBuildings = s.unlockedBuildings || [];
           } catch {}
 
           // Also read from current Zustand state (in case rehydration has newer data than localStorage snapshot)
           const currentZustand = useGameStore.getState();
-          localCompleted = Array.from(new Set([...localCompleted, ...currentZustand.completedTasks.map(String)]));
+          localCompleted = Array.from(new Set([...localCompleted, ...currentZustand.completedTasks.map(t => String(typeof t === 'object' ? t.taskId : t))]));
           localStars = Math.max(localStars, currentZustand.totalStars);
           localBuildings = Array.from(new Set([...localBuildings, ...currentZustand.unlockedBuildings]));
 
@@ -240,7 +242,7 @@ export default function App() {
           // 4. Apply to Zustand — normalize all IDs to strings for consistent includes() checks
           useGameStore.setState((state) => ({
             totalStars: Math.max(state.totalStars, mergedStars),
-            completedTasks: Array.from(new Set([...state.completedTasks.map(String), ...mergedCompleted])),
+            completedTasks: Array.from(new Set([...state.completedTasks.map(t => String(typeof t === 'object' ? t.taskId : t)), ...mergedCompleted])),
             unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings]))
           }));
 
@@ -461,6 +463,7 @@ export default function App() {
         const rating = Math.min(3, Math.max(1, result.stars || 1));
         setTaskRating(rating);
         setSessionStars(rating); // sessionStars = task reward (1-3)
+        setChildSolution(result.newState?.currentIdea?.text || result.newState?.ideas?.at(-1)?.idea || '');
         setTimeout(() => {
           setPrizStep(4); // light up ✨ briefly
           setTimeout(() => {
@@ -500,8 +503,9 @@ export default function App() {
   }
 
   function goOutcome() {
-    const isNew = !completedTasks.includes(task.id);
-    completeTask(task.id, sessionStars);
+    const isNew = !getCompletedIds().includes(task.id);
+    completeTask(task.id, sessionStars, childSolution);
+    setChildSolution('');
     checkUnlocks();
     updateStreak();
     updateAdaptive({ hints: sessionHints, attempts: sessionAttempts });
@@ -826,8 +830,8 @@ export default function App() {
             onNext={goOutcome}
             onWantsMore={() => {
               trackEvent(EVENTS.TASK_COMPLETED, { taskId: task?.id, wantsMore: true });
-              const isFirstEver = !completedTasks.includes(task.id) && completedTasks.length === 0;
-              completeTask(task.id, sessionStars);
+              const isFirstEver = !getCompletedIds().includes(task.id) && completedTasks.length === 0;
+              completeTask(task.id, sessionStars, childSolution);
               updateStreak();
               updateAdaptive({ hints: sessionHints, attempts: sessionAttempts });
               if (isFirstEver) {
@@ -894,6 +898,16 @@ export default function App() {
           />
         )}
 
+        {phase === "parent-view" && (
+          <ParentView
+            completedTasks={completedTasks}
+            totalStars={totalStars}
+            streak={streak}
+            onUnlock={() => { setPhase("paywall"); }}
+            onBack={() => setPhase("city")}
+          />
+        )}
+
         {phase === "paywall" && (
           <Paywall
             onBack={() => setPhase(task ? "task-preview" : "city")}
@@ -918,6 +932,7 @@ export default function App() {
           setPhase("city");
           setTimeout(() => onboarding.startOnboarding(), 400);
         }}
+        onShowParentView={() => { setMenuOpen(false); setPhase("parent-view"); }}
         completedTasks={completedTasks} audio={audio} audioTracks={AUDIO_TRACKS} lang={lang} setLang={setLang} t={t} user={user} setUser={setUser}
       />
 
