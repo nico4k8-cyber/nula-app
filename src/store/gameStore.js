@@ -6,7 +6,7 @@ export const useGameStore = create(
     (set, get) => ({
       totalStars: 0,
       unlockedBuildings: ['city-hall', 'library', 'nature-reserve', 'workshop'], // Default unlocked
-      completedTasks: [], // Array of task IDs
+      completedTasks: [], // Array of { taskId, stars, foundPrinciple, solvedAt }
       currentTask: null,
       difficulty: 1, // 1: 6-9, 2: 10-11, 3: 12+
       adaptiveData: {
@@ -203,14 +203,15 @@ export const useGameStore = create(
         return { unlockedBuildings: [...state.unlockedBuildings, buildingId] };
       }),
 
-      completeTask: (taskId, starsEarned) => set((state) => {
-        if (state.completedTasks.includes(taskId)) {
+      completeTask: (taskId, starsEarned, foundPrinciple = '') => set((state) => {
+        if (state.completedTasks.some(t => (typeof t === 'object' ? t.taskId : t) === taskId)) {
           return state;
         }
-        
-        const nextTasks = [...state.completedTasks, taskId];
+
+        const taskEntry = { taskId, stars: starsEarned, foundPrinciple, solvedAt: new Date().toISOString() };
+        const nextTasks = [...state.completedTasks, taskEntry];
         const nextStars = state.totalStars + starsEarned;
-        
+
         // Also increment daily count
         const nextDailyCount = state.dailyTasksCount + 1;
         const lastReset = state.lastTaskReset || new Date().toISOString();
@@ -222,6 +223,9 @@ export const useGameStore = create(
           lastTaskReset: lastReset
         };
       }),
+
+      // Helper: get flat array of taskIds for backwards compatibility (.includes(id))
+      getCompletedIds: () => get().completedTasks.map(t => typeof t === 'object' ? t.taskId : t),
 
       setCurrentTask: (task) => set({ currentTask: task }),
       setDifficulty: (level) => set({ difficulty: level }),
@@ -302,12 +306,18 @@ export const useGameStore = create(
     }),
     {
       name: 'nula-game-storage',
-      version: 4,
+      version: 5,
       migrate: (state, version) => {
         if (version < 4) {
-          return {
+          state = { ...state, adaptiveData: { adaptiveAge: 10, consecutiveClean: 0, recentStruggle: 0 } };
+        }
+        if (version < 5) {
+          const oldTasks = state.completedTasks || [];
+          state = {
             ...state,
-            adaptiveData: { adaptiveAge: 10, consecutiveClean: 0, recentStruggle: 0 },
+            completedTasks: oldTasks.map(t =>
+              typeof t === 'object' ? t : { taskId: t, stars: 0, foundPrinciple: '', solvedAt: '' }
+            ),
           };
         }
         return state;
