@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { loadAppConfig } from "../lib/supabase";
 
 // Детерминированный выбор задачи по дате (fallback)
@@ -11,7 +11,7 @@ function getDailyTaskByHash(tasks, dateStr) {
 }
 
 export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onStart, t }) {
-  const today = new Date().toLocaleDateString('sv');
+  const today = useMemo(() => new Date().toLocaleDateString('sv'), []);
   const [task, setTask] = useState(() => getDailyTaskByHash(TASKS || [], today));
 
   useEffect(() => {

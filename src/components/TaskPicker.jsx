@@ -103,7 +103,7 @@ export default function TaskPicker({
             <img src="/img/webp/ugolok.webp" alt="Орин" className="w-16 h-16 rounded-full object-cover border-2 border-orange-200 flex-shrink-0" />
             <div className="flex-1">
                <p className="text-[14px] text-slate-800 font-bold leading-tight italic">
-                  {t(`picker.mentor.${activeCategory === 'library' || activeCategory === 'farm' || activeCategory === 'city-hall' ? activeCategory : 'default'}`)}
+                  {t(`picker.mentor.${activeCategory === 'library' ? 'library' : activeCategory === 'farm' ? 'farm' : activeCategory === 'city-hall' ? 'city' : 'default'}`)}
                </p>
             </div>
          </div>

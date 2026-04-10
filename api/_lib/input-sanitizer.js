@@ -146,7 +146,7 @@ export function sanitizeUserMessage(message) {
 export function sanitizeHistory(history) {
   if (!Array.isArray(history)) return [];
   return history
-    .slice(-10) // максимум 10 последних
+    .slice(-20) // максимум 20 последних
     .filter(m => {
       const text = m.text || m.content || '';
       const isBot = m.role === 'assistant' || m.from === 'bot' || m.type === 'bot';

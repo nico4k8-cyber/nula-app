@@ -436,8 +436,8 @@ export default function App() {
 
     // Always show opening messages so dialog is never empty
     setMessages([
-      { type: "bot", text: "🐉 Давай решим эту задачу вместе!" },
-      { type: "bot", text: hook },
+      { type: "bot", text: "🐉 Давай решим эту задачу вместе!", ts: Date.now() },
+      { type: "bot", text: hook, ts: Date.now() + 1 },
     ]);
     
     setPhase("dialog");
@@ -454,7 +454,7 @@ export default function App() {
     setInput("");
     setSessionAttempts(prev => prev + 1);
     const timestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-    const newMessages = [...messages, { type: "child", text, timestamp }];
+    const newMessages = [...messages, { type: "child", text, timestamp, ts: Date.now() }];
     setMessages(newMessages);
     setIsTyping(true);
 
@@ -475,7 +475,7 @@ export default function App() {
 
       const replyText = result.reply || result.text || "Хм, дай мне секунду подумать...";
       const replyTimestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-      setMessages(prev => [...prev, { type: "bot", text: replyText, timestamp: replyTimestamp }]);
+      setMessages(prev => [...prev, { type: "bot", text: replyText, timestamp: replyTimestamp, ts: Date.now() }]);
 
       // Stage 3 (З) = task solved → record rating, show ✨ then go to debrief
       if (newPrizStep === 3 && currentPrizStep < 3) {
@@ -498,7 +498,7 @@ export default function App() {
         }, 2000);
       }
     } catch (err) {
-      setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз." }]);
+      setMessages(prev => [...prev, { type: "bot", text: "Что-то пошло не так. Попробуй ещё раз.", ts: Date.now() }]);
     } finally {
       setIsTyping(false);
     }
@@ -519,9 +519,9 @@ export default function App() {
         difficulty
       );
       const hintText = result.reply || result.text || "Подумай: какие ресурсы уже есть рядом с местом проблемы?";
-      setMessages(prev => [...prev, { type: "bot", text: hintText, isHint: true }]);
+      setMessages(prev => [...prev, { type: "bot", text: hintText, isHint: true, ts: Date.now() }]);
     } catch {
-      setMessages(prev => [...prev, { type: "bot", text: "Подумай: что уже есть рядом, что можно использовать?", isHint: true }]);
+      setMessages(prev => [...prev, { type: "bot", text: "Подумай: что уже есть рядом, что можно использовать?", isHint: true, ts: Date.now() }]);
     } finally {
       setIsHinting(false);
     }

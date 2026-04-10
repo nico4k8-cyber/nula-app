@@ -309,7 +309,18 @@ export const useGameStore = create(
       version: 5,
       migrate: (state, version) => {
         if (version < 4) {
-          state = { ...state, adaptiveData: { adaptiveAge: 10, consecutiveClean: 0, recentStruggle: 0 } };
+          state = {
+            ...state,
+            adaptiveData: { adaptiveAge: 10, consecutiveClean: 0, recentStruggle: 0 },
+            streak: state.streak ?? 0,
+            lastPlayDate: state.lastPlayDate ?? null,
+            islands: state.islands ?? {
+              'main':    { solved: 0, total: 17, stars: 0, status: 'active' },
+              'craft':   { solved: 0, total: 13, stars: 0, status: 'locked' },
+              'science': { solved: 0, total: 0,  stars: 0, status: 'fog' },
+              'summit':  { solved: 0, total: 0,  stars: 0, status: 'fog' },
+            },
+          };
         }
         if (version < 5) {
           const oldTasks = state.completedTasks || [];

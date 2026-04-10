@@ -18,7 +18,7 @@ export default function DragonSplashScreen({ onAnimationEnd, t }) {
     let loadedCount = 0;
     const total = ASSETS_TO_PRELOAD.length;
 
-    const minTimePromise = new Promise(resolve => setTimeout(resolve, 2000));
+    const minTimePromise = new Promise(resolve => setTimeout(resolve, 3500));
     
     const assetPromises = ASSETS_TO_PRELOAD.map(url => {
       const isVideo = url.endsWith('.webm');
