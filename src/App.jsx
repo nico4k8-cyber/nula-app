@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { TASKS } from "./tasks";
 import { askTriz, generateDebrief } from "./ai";
 import { createNewState } from "./bot/engine.js";
