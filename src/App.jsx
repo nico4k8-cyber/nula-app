@@ -96,6 +96,7 @@ export default function App() {
   const [phase, setPhase] = useState("dragon-splash");
   const [lang, setLang] = useState(saved?.lang || "ru");
   const [theme, setTheme] = useState(saved?.theme || "hayday");
+  const [isDark, setIsDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(saved?.hasSeenOnboarding || false);
   const [hasSeenDragonSplash, setHasSeenDragonSplash] = useState(saved?.hasSeenDragonSplash || false);
   
@@ -338,6 +339,13 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e) => setIsDark(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     saveGlobalState({ theme, hasSeenOnboarding, hasSeenDragonSplash, trizState, lang, phase, activeCategory, activeIslandId });
@@ -816,6 +824,7 @@ export default function App() {
 
         {phase === "dialog" && (
           <DialogView
+            isDark={isDark}
             task={task}
             messages={messages}
             isTyping={isTyping}
