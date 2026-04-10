@@ -25,24 +25,31 @@ export default function DialogView({
   bottomRef,
   childMsgCount,
   bingoFlash,
+  onGoToDebrief,
   t,
   lang
 }) {
   const [isListening, setIsListening] = useState(false);
   const [showExitSheet, setShowExitSheet] = useState(false);
+  const [showCondition, setShowCondition] = useState(false);
   const recognitionRef = useRef(null);
+  const cancelledRef = useRef(false); // guard: prevent stale recognition firing after task switch
+  const isSubmittingRef = useRef(false); // guard: prevent double-send
 
   useEffect(() => {
     bottomRef?.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
+    cancelledRef.current = false;
+    isSubmittingRef.current = false;
     return () => {
+      cancelledRef.current = true;
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch(e) {}
+        try { recognitionRef.current.abort(); } catch(e) {}
       }
     };
-  }, []);
+  }, [task?.id]);
 
   const toggleMic = () => {
     if (isListening) {
@@ -62,13 +69,14 @@ export default function DialogView({
     const recognition = new SpeechRecognition();
     recognition.lang = lang === 'en' ? 'en-US' : 'ru-RU';
     recognition.interimResults = true;
-    recognition.continuous = true;
+    recognition.continuous = false;
 
     recognition.onstart = () => setIsListening(true);
 
     let baseInput = input.trim() ? input.trim() + " " : "";
 
     recognition.onresult = (event) => {
+      if (cancelledRef.current) return;
       let finalTranscript = "";
       let interimTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -86,8 +94,16 @@ export default function DialogView({
       }
     };
 
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (event) => {
+      if (cancelledRef.current) return;
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        alert(t?.('dialog.mic_denied') || "Нет доступа к микрофону. Разреши в настройках браузера.");
+      }
+    };
+    recognition.onend = () => {
+      if (!cancelledRef.current) setIsListening(false);
+    };
 
     recognitionRef.current = recognition;
     try { recognition.start(); } catch(e) { console.error("Mic start failed", e); }
@@ -120,6 +136,41 @@ export default function DialogView({
           )}
         </div>
       </div>
+
+      {/* Collapsible task condition */}
+      {task && (
+        <div className="border-b border-slate-100 bg-white">
+          <button
+            onClick={() => setShowCondition(v => !v)}
+            className="w-full flex items-center justify-between px-5 py-2.5 text-left"
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="text-base">{task.icon || '📋'}</span>
+              <span className="text-[13px] font-bold text-slate-600 truncate">{task.title}</span>
+            </div>
+            <span className={`text-slate-400 text-[11px] font-bold uppercase tracking-wider ml-3 shrink-0 transition-transform duration-200 ${showCondition ? 'rotate-180' : ''}`}>
+              {showCondition ? '▲' : '▼'}
+            </span>
+          </button>
+          {showCondition && (
+            <div className="px-5 pb-4 pt-1 animate-fade-in">
+              {task.image_url && (
+                <img src={task.image_url} alt={task.title} className="w-full rounded-xl object-cover max-h-[180px] mb-3 border border-slate-100" />
+              )}
+              <p className="text-[14px] text-slate-700 leading-relaxed font-medium">
+                {task.teaser || task.puzzle?.question || ''}
+              </p>
+              {task.resources && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {task.resources.map((r, i) => (
+                    <span key={i} className="text-[12px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">{r.emoji} {r.label}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Progress Steps */}
       <PhaseIndicator
@@ -246,37 +297,53 @@ export default function DialogView({
           </button>
         )}
 
-        {/* Chat Input */}
-        <div className="flex gap-2 items-center">
+        {/* Задача решена — показываем кнопку перехода к результату */}
+        {prizStep >= 4 ? (
           <button
-            onClick={toggleMic}
-            className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center transition-all ${
-              isListening ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-200" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-            }`}
+            onClick={onGoToDebrief}
+            className="w-full py-4 bg-gradient-to-br from-orange-400 to-orange-600 text-white text-[17px] font-black rounded-[22px] shadow-lg shadow-orange-200 active:scale-[0.97] transition-all animate-fade-in-up"
           >
-            🎤
+            Посмотреть результат →
           </button>
+        ) : (
+          /* Chat Input */
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={toggleMic}
+              className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center transition-all ${
+                isListening ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-200" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+              }`}
+            >
+              🎤
+            </button>
 
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && !e.shiftKey && !isListening && onSendMessage()}
-            placeholder={isListening ? "Говорите..." : (t?.('dialog.placeholder') || 'Напиши свою идею...')}
-            className={`flex-1 border-2 bg-slate-100 rounded-[24px] px-5 py-4 text-[16px] outline-none transition-all font-medium ${
-              isListening ? "border-red-400 placeholder:text-red-300 shadow-inner" : "border-transparent focus:border-orange-200 focus:bg-white placeholder:text-slate-400 shadow-inner"
-            }`}
-            disabled={isTyping || isHinting}
-          />
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter" && !e.shiftKey && !isListening && !isSubmittingRef.current) {
+                  isSubmittingRef.current = true;
+                  onSendMessage();
+                  setTimeout(() => { isSubmittingRef.current = false; }, 500);
+                }
+              }}
+              placeholder={isListening ? "Говорите..." : (t?.('dialog.placeholder') || 'Напиши свою идею...')}
+              className={`flex-1 border-2 bg-slate-100 rounded-[24px] px-5 py-4 text-[16px] outline-none transition-all font-medium ${
+                isListening ? "border-red-400 placeholder:text-red-300 shadow-inner" : "border-transparent focus:border-orange-200 focus:bg-white placeholder:text-slate-400 shadow-inner"
+              }`}
+              disabled={isTyping || isHinting || isListening}
+            />
 
-          <button
-            onClick={onSendMessage}
-            disabled={!input.trim() || isTyping || isHinting}
-            className="bg-gradient-to-br from-orange-400 to-orange-600 text-white rounded-full w-14 h-14 flex items-center justify-center disabled:opacity-30 active:scale-90 transition-all shadow-lg shadow-orange-200 flex-shrink-0"
-          >
-            <span className="text-2xl">↑</span>
-          </button>
-        </div>
+            <button
+              onClick={onSendMessage}
+              disabled={!input.trim() || isTyping || isHinting}
+              className="bg-gradient-to-br from-orange-400 to-orange-600 text-white rounded-full w-14 h-14 flex items-center justify-center disabled:opacity-30 active:scale-90 transition-all shadow-lg shadow-orange-200 flex-shrink-0"
+            >
+              <span className="text-2xl">↑</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Exit Bottom Sheet */}

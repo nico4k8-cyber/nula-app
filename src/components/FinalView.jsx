@@ -36,8 +36,9 @@ export default function FinalView({
   t,
   lang
 }) {
+  const safeCompleted = completedTasks ?? [];
   const type = thinkingType(totalStars, lang);
-  const remaining = TASKS.length - completedTasks.length;
+  const remaining = TASKS.length - safeCompleted.length;
 
   return (
     <div className="flex flex-col flex-1 bg-white relative animate-fade-in">
@@ -64,7 +65,7 @@ export default function FinalView({
            </div>
            <div className="bg-white rounded-[32px] p-6 shadow-2xl border-4 border-emerald-400 flex flex-col items-center">
               <span className="text-5xl mb-2">🏝️</span>
-              <span className="text-4xl font-black text-slate-800">{completedTasks.length}</span>
+              <span className="text-4xl font-black text-slate-800">{safeCompleted.length}</span>
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{t('final.islands_passed')}</span>
            </div>
         </div>
@@ -76,7 +77,7 @@ export default function FinalView({
            </p>
            
            <div className="flex flex-col w-full gap-4">
-              <ShareButton totalStars={totalStars} completedCount={completedTasks.length} />
+              <ShareButton totalStars={totalStars} completedCount={safeCompleted.length} />
 
               <button onClick={onBackToCity}
                 className="w-full bg-slate-900 text-white text-[16px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-xl hover:bg-black"
@@ -94,7 +95,7 @@ export default function FinalView({
 
         {/* Mentor coal footer */}
         <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '0.8s' }}>
-           <img src="./img/ugolok_3d.png" alt="Орин" className="w-10 h-10 rounded-full" />
+           <img src="/img/webp/ugolok.webp" alt="Орин" className="w-10 h-10 rounded-full" />
            <p className="text-slate-400 font-bold text-[12px] uppercase tracking-widest italic">{t('final.mentor_footer')}</p>
         </div>
       </div>

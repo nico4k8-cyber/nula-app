@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { TASKS } from "./tasks";
-import { askTriz } from "./ai";
+import { askTriz, generateDebrief } from "./ai";
 import { createNewState } from "./bot/engine.js";
 import { getSourceFromUrl } from "./api-client.js";
 import City from "./City";
@@ -110,8 +110,10 @@ export default function App() {
   const [taskRating, setTaskRating] = useState(1); // 1-3 stars, set when task is solved
   const [syncToast, setSyncToast] = useState(null); // { added: [...], alreadyHad: [...] }
   const [debriefBingo, setDebriefBingo] = useState(false);
+  const [debriefAI, setDebriefAI] = useState(null); // { feedback, insight } | null = loading
   const [twistChoice, setTwistChoice] = useState(null);
   const [prizStep, setPrizStep] = useState(0);
+  const prizStepRef = React.useRef(0); // ref to avoid stale closure in async handlers
   const [isHinting, setIsHinting] = useState(false);
   const [bingoFlash, setBingoFlash] = useState(false);
   const [upsellMessage, setUpsellMessage] = useState(null);
@@ -239,12 +241,17 @@ export default function App() {
             unlockedBuildings: mergedBuildings,
           });
 
-          // 4. Apply to Zustand — normalize all IDs to strings for consistent includes() checks
-          useGameStore.setState((state) => ({
-            totalStars: Math.max(state.totalStars, mergedStars),
-            completedTasks: Array.from(new Set([...state.completedTasks.map(t => String(typeof t === 'object' ? t.taskId : t)), ...mergedCompleted])),
-            unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings]))
-          }));
+          // 4. Apply to Zustand — preserve object format, merge in new IDs from cloud as minimal objects
+          useGameStore.setState((state) => {
+            const existingIds = new Set(state.completedTasks.map(t => String(typeof t === 'object' ? t.taskId : t)));
+            const cloudOnlyIds = mergedCompleted.filter(id => !existingIds.has(String(id)));
+            const cloudAsObjects = cloudOnlyIds.map(id => ({ taskId: String(id), stars: 1, foundPrinciple: '', solvedAt: '' }));
+            return {
+              totalStars: Math.max(state.totalStars, mergedStars),
+              completedTasks: [...state.completedTasks, ...cloudAsObjects],
+              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings]))
+            };
+          });
 
           // Allow Cloud Sync Effect to run again now that merge is complete
           isMergingRef.current = false;
@@ -401,12 +408,15 @@ export default function App() {
     setPrizStep(0);
     setIsHinting(false);
     
-    // Auto-create TRIZ state if it's a TRIZ task
-    if (task.core_problem && task.ikr) {
-      // difficulty 1 → ПРИЗ-базовый (3 фазы, age<8 в движке)
-      // difficulty 2 → ПРИЗ-стандарт (5 фаз, age 8-12)
-      // difficulty 3 → ПРИЗ-про (7 фаз, age 13+)
-      // Use adaptive level, but cap by task.difficulty ceiling (D-04)
+    // Build opening hook for any task
+    const hook = (task.difficulty >= 2 ? task.puzzle?.hookSenior : task.puzzle?.hookJunior)
+      || task.teaser
+      || task.puzzle?.question_ru
+      || task.puzzle?.question
+      || "Что здесь является главным противоречием?";
+
+    // Auto-create TRIZ state if it's a TRIZ task (has core_problem or ikr)
+    if (task.core_problem || task.ikr) {
       const maxAge = task.difficulty === 1 ? 10 : task.difficulty === 2 ? 12 : 14;
       const { adaptiveData } = useGameStore.getState();
       const ageForEngine = Math.min(adaptiveData.adaptiveAge, maxAge);
@@ -414,16 +424,13 @@ export default function App() {
       setSessionAttempts(0);
       const newState = createNewState(task.id, ageForEngine);
       setTrizState(newState);
-      const hook = (task.difficulty >= 2 ? task.puzzle?.hookSenior : task.puzzle?.hookJunior)
-        || task.teaser
-        || task.puzzle?.question_ru
-        || task.puzzle?.question
-        || "Что здесь является главным противоречием?";
-      setMessages([
-        { type: "bot", text: "🐉 Давай решим эту задачу вместе!" },
-        { type: "bot", text: hook },
-      ]);
     }
+
+    // Always show opening messages so dialog is never empty
+    setMessages([
+      { type: "bot", text: "🐉 Давай решим эту задачу вместе!" },
+      { type: "bot", text: hook },
+    ]);
     
     setPhase("dialog");
     setTimeout(() => inputRef.current?.focus(), 200);
@@ -450,26 +457,36 @@ export default function App() {
       if (result.newState) setTrizState(result.newState);
 
       // Update stage from AI response (AI decides when to advance)
-      const newPrizStep = (result.prizStep != null && result.prizStep >= prizStep)
+      // Use ref to get current prizStep — avoids stale closure in async handler
+      const currentPrizStep = prizStepRef.current;
+      const newPrizStep = (result.prizStep != null && result.prizStep >= currentPrizStep)
         ? result.prizStep
-        : prizStep;
+        : currentPrizStep;
+      prizStepRef.current = newPrizStep;
       setPrizStep(newPrizStep);
 
-      const replyText = result.reply || result.text || "";
-      setMessages(prev => [...prev, { type: "bot", text: replyText, timestamp }]);
+      const replyText = result.reply || result.text || "Хм, дай мне секунду подумать...";
+      const replyTimestamp = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+      setMessages(prev => [...prev, { type: "bot", text: replyText, timestamp: replyTimestamp }]);
 
       // Stage 3 (З) = task solved → record rating, show ✨ then go to debrief
-      if (newPrizStep === 3 && prizStep < 3) {
+      if (newPrizStep === 3 && currentPrizStep < 3) {
         const rating = Math.min(3, Math.max(1, result.stars || 1));
         setTaskRating(rating);
         setSessionStars(rating); // sessionStars = task reward (1-3)
-        setChildSolution(result.newState?.currentIdea?.text || result.newState?.ideas?.at(-1)?.idea || '');
+        const sol = result.newState?.currentIdea?.text || result.newState?.ideas?.at(-1)?.idea
+          || newMessages.filter(m => m.type === 'child').at(-1)?.text || '';
+        setChildSolution(sol);
         setTimeout(() => {
-          setPrizStep(4); // light up ✨ briefly
-          setTimeout(() => {
-            trackEvent(EVENTS.DEBRIEF_VIEWED, { taskId: task?.id, stars: rating });
-            setPhase("debrief");
-          }, 2500);
+          prizStepRef.current = 4;
+          setPrizStep(4); // light up ✨ — show "continue" button, wait for user tap
+          trackEvent(EVENTS.DEBRIEF_VIEWED, { taskId: task?.id, stars: rating });
+          // Start generating personalized debrief in background
+          setDebriefAI(null);
+          const history = messages.map(m => ({ role: m.type === 'bot' ? 'assistant' : 'user', text: m.text }));
+          generateDebrief({ task, history, stars: rating, childSolution: sol, lang }).then(ai => {
+            setDebriefAI(ai || { feedback: null, insight: null });
+          });
         }, 2000);
       }
     } catch (err) {
@@ -480,7 +497,7 @@ export default function App() {
   }
 
   async function handleHint() {
-    if (getHintsLeft() === 0) return;
+    if (isHinting || isTyping || getHintsLeft() === 0) return;
     useHint();
     setSessionHints(prev => prev + 1);
     setIsHinting(true);
@@ -674,16 +691,23 @@ export default function App() {
               onClick={() => setMenuOpen(true)}
               title={user ? user.name : t('hud.guest')}
             >
-            <div className="relative">
-              {/* Круглая кнопка аватара */}
-              <div data-onboard="profile-btn" className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl shadow-xl border-2 border-white/20">
-                {user ? '👤' : '☁️'}
-              </div>
-
-              {/* Точка статуса онлайн/офлайн */}
-              <div
-                className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${user ? 'bg-emerald-400' : 'bg-rose-400'} shadow-sm`} 
-              />
+            <div className="relative" data-onboard="profile-btn">
+              {user ? (
+                /* Залогинен — аватар с инициалами или иконкой */
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl shadow-xl border-2 border-white/20">
+                  👤
+                </div>
+              ) : (
+                /* Не залогинен — кнопка "Войти" */
+                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur text-slate-700 text-xs font-black px-3 py-2 rounded-full shadow-lg border border-slate-200">
+                  <span>☁️</span>
+                  <span>Войти</span>
+                </div>
+              )}
+              {/* Точка статуса */}
+              {user && (
+                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white bg-emerald-400 shadow-sm" />
+              )}
             </div>
             </div>
           </div>
@@ -812,6 +836,9 @@ export default function App() {
             }}
             onSkip={() => { setIsTutorial(false); setPhase("picker"); }}
             onSendMessage={handleUserMessage}
+            onGoToDebrief={() => {
+              setPhase("debrief");
+            }}
             input={input}
             setInput={setInput}
             inputRef={inputRef}
@@ -825,6 +852,7 @@ export default function App() {
             sessionStars={sessionStars}
             totalStars={totalStars}
             completedCount={completedTasks.length}
+            debriefAI={debriefAI}
             t={t}
             lang={lang}
             onNext={goOutcome}
@@ -930,7 +958,7 @@ export default function App() {
           localStorage.removeItem("nula-onboarding-done");
           setMenuOpen(false);
           setPhase("city");
-          setTimeout(() => onboarding.startOnboarding(), 400);
+          setTimeout(() => onboarding.startOnboarding(), 700);
         }}
         onShowParentView={() => { setMenuOpen(false); setPhase("parent-view"); }}
         completedTasks={completedTasks} audio={audio} audioTracks={AUDIO_TRACKS} lang={lang} setLang={setLang} t={t} user={user} setUser={setUser}

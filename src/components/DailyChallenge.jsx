@@ -1,16 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { loadAppConfig } from "../lib/supabase";
 
-// Детерминированный выбор задачи по дате (одна задача на весь день для всех игроков)
-function getDailyTask(tasks) {
-  const today = new Date().toLocaleDateString('sv'); // YYYY-MM-DD in local timezone
+// Детерминированный выбор задачи по дате (fallback)
+function getDailyTaskByHash(tasks, dateStr) {
   let hash = 0;
-  for (let i = 0; i < today.length; i++) {
-    hash = (hash * 31 + today.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < dateStr.length; i++) {
+    hash = (hash * 31 + dateStr.charCodeAt(i)) >>> 0;
   }
   return tasks[hash % tasks.length];
 }
 
 export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onStart, t }) {
+  const today = new Date().toLocaleDateString('sv');
+  const [task, setTask] = useState(() => getDailyTaskByHash(TASKS || [], today));
+
+  useEffect(() => {
+    if (!TASKS?.length) return;
+    loadAppConfig('daily_schedule').then(val => {
+      try {
+        const schedule = val ? JSON.parse(val) : {};
+        const scheduled = schedule[today];
+        if (scheduled) {
+          const found = TASKS.find(t => t.id === scheduled || t.id === Number(scheduled));
+          if (found) { setTask(found); return; }
+        }
+      } catch {}
+      setTask(getDailyTaskByHash(TASKS, today));
+    }).catch(() => {
+      setTask(getDailyTaskByHash(TASKS, today));
+    });
+  }, [TASKS, today]);
+
   const [minimized, setMinimized] = useState(() => {
     // If user explicitly opened it this session, keep it open
     if (sessionStorage.getItem("shariel_daily_expanded") === "1") return false;
@@ -18,10 +38,9 @@ export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onS
     return stored === new Date().toLocaleDateString('sv');
   });
 
-  if (!TASKS?.length) return null;
+  if (!TASKS?.length || !task) return null;
 
-  const task = getDailyTask(TASKS);
-  const isDone = completedTasks?.includes(task.id);
+  const isDone = completedTasks?.some(t => (typeof t === 'object' ? t.taskId : t) == task.id);
 
   function handleStart() {
     // Mark as expanded so it stays open when user returns from task

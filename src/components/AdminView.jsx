@@ -959,47 +959,291 @@ function TabIslands({ TASKS }) {
   );
 }
 
+// ── Вкладка: Расписание задач дня ─────────────────────────────────────────────
+function TabDailySchedule({ TASKS }) {
+  const [schedule, setSchedule] = useState({}); // { "YYYY-MM-DD": taskId }
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [viewDate, setViewDate] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    loadAppConfig('daily_schedule').then(val => {
+      try { setSchedule(val ? JSON.parse(val) : {}); } catch { setSchedule({}); }
+      setLoading(false);
+    });
+  }, []);
+
+  const saveSchedule = async (newSchedule) => {
+    setSaving(true);
+    setSaved(false);
+    await saveAppConfig('daily_schedule', JSON.stringify(newSchedule));
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const assignTask = (date, taskId) => {
+    const next = { ...schedule };
+    if (taskId === null) { delete next[date]; } else { next[date] = taskId; }
+    setSchedule(next);
+    saveSchedule(next);
+  };
+
+  // Календарь
+  const { year, month } = viewDate;
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthName = new Date(year, month, 1).toLocaleString('ru', { month: 'long', year: 'numeric' });
+
+  const todayStr = new Date().toLocaleDateString('sv');
+
+  const dateKey = (d) => {
+    const dt = new Date(year, month, d);
+    return dt.toLocaleDateString('sv');
+  };
+
+  const taskById = (id) => TASKS?.find(t => t.id === id || t.id === Number(id));
+
+  // fallback hash (как в DailyChallenge)
+  const hashTask = (dateStr) => {
+    let hash = 0;
+    for (let i = 0; i < dateStr.length; i++) hash = (hash * 31 + dateStr.charCodeAt(i)) >>> 0;
+    return TASKS?.[hash % TASKS.length];
+  };
+
+  const filteredTasks = TASKS?.filter(t =>
+    !search || t.title?.toLowerCase().includes(search.toLowerCase()) || String(t.id).includes(search)
+  ) || [];
+
+  if (loading) return <div className="flex-1 flex items-center justify-center text-slate-400">Загрузка...</div>;
+
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      {/* Левая панель: календарь */}
+      <div className="w-72 flex-shrink-0 border-r border-slate-800 overflow-y-auto p-4">
+        {/* Навигация месяца */}
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setViewDate(v => { const d = new Date(v.year, v.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center text-sm"
+          >←</button>
+          <span className="text-xs font-black uppercase tracking-widest text-slate-300 capitalize">{monthName}</span>
+          <button
+            onClick={() => setViewDate(v => { const d = new Date(v.year, v.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center text-sm"
+          >→</button>
+        </div>
+
+        {/* Дни недели */}
+        <div className="grid grid-cols-7 mb-1">
+          {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d => (
+            <div key={d} className="text-center text-[9px] text-slate-500 font-bold py-1">{d}</div>
+          ))}
+        </div>
+
+        {/* Ячейки */}
+        <div className="grid grid-cols-7 gap-0.5">
+          {/* Пустые ячейки (Mon=1, но firstDay=0=Sun) */}
+          {Array.from({ length: (firstDay + 6) % 7 }).map((_, i) => <div key={'e'+i} />)}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const d = i + 1;
+            const key = dateKey(d);
+            const isToday = key === todayStr;
+            const isSelected = key === selectedDate;
+            const scheduled = schedule[key];
+            const task = scheduled ? taskById(scheduled) : null;
+            const auto = hashTask(key);
+
+            return (
+              <button
+                key={d}
+                onClick={() => setSelectedDate(isSelected ? null : key)}
+                className={`relative aspect-square rounded-lg text-xs font-bold flex flex-col items-center justify-center transition-all
+                  ${isSelected ? 'bg-indigo-600 text-white ring-2 ring-indigo-400' : isToday ? 'bg-slate-700 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}
+                `}
+              >
+                <span>{d}</span>
+                {task ? (
+                  <span className="text-[10px] leading-none">{task.icon || '📌'}</span>
+                ) : (
+                  <span className="text-[8px] opacity-30">{auto?.icon || '·'}</span>
+                )}
+                {scheduled && (
+                  <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Легенда */}
+        <div className="mt-3 space-y-1 text-[10px] text-slate-500">
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-400 rounded-full inline-block" /> задача назначена</div>
+          <div className="flex items-center gap-1.5"><span className="opacity-30">·</span> авто (по хэшу даты)</div>
+        </div>
+
+        {saving && <p className="mt-3 text-xs text-amber-400">Сохранение...</p>}
+        {saved  && <p className="mt-3 text-xs text-emerald-400">✓ Сохранено</p>}
+      </div>
+
+      {/* Правая панель: выбор задачи для даты */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {!selectedDate ? (
+          <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2">
+            <span className="text-3xl">📅</span>
+            <p className="text-sm">Выбери день в календаре</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-400">Задача дня на</p>
+                <p className="text-base font-black text-white">
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              {schedule[selectedDate] && (
+                <button
+                  onClick={() => assignTask(selectedDate, null)}
+                  className="px-3 py-1.5 text-xs bg-red-900/40 hover:bg-red-900/70 text-red-300 rounded-lg font-bold transition-all"
+                >
+                  Сбросить на авто
+                </button>
+              )}
+            </div>
+
+            {/* Текущая задача */}
+            {schedule[selectedDate] ? (
+              <div className="mb-4 p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/40">
+                <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-1">Назначена</p>
+                {(() => { const t = taskById(schedule[selectedDate]); return t ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{t.icon}</span>
+                    <div>
+                      <p className="text-sm font-bold text-white">{t.title}</p>
+                      <p className="text-[10px] text-slate-400">ID: {t.id} · {t.category}</p>
+                    </div>
+                  </div>
+                ) : <p className="text-xs text-slate-400">Задача #{schedule[selectedDate]} не найдена</p>; })()}
+              </div>
+            ) : (
+              <div className="mb-4 p-3 rounded-xl bg-slate-800/50 border border-slate-700/40">
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Авто (хэш даты)</p>
+                {(() => { const t = hashTask(selectedDate); return t ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{t.icon}</span>
+                    <div>
+                      <p className="text-sm font-bold text-slate-300">{t.title}</p>
+                      <p className="text-[10px] text-slate-500">ID: {t.id} · {t.category}</p>
+                    </div>
+                  </div>
+                ) : null; })()}
+              </div>
+            )}
+
+            {/* Поиск */}
+            <input
+              type="text"
+              placeholder="Поиск задачи..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full mb-3 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500"
+            />
+
+            {/* Список задач */}
+            <div className="space-y-1.5">
+              {filteredTasks.map(t => {
+                const isChosen = schedule[selectedDate] === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => assignTask(selectedDate, t.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all
+                      ${isChosen ? 'bg-indigo-600 border border-indigo-400' : 'bg-slate-800 hover:bg-slate-700 border border-transparent'}
+                    `}
+                  >
+                    <span className="text-xl flex-shrink-0">{t.icon || '❓'}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-white truncate">{t.title}</p>
+                      <p className="text-[10px] text-slate-400">{t.category} · ID {t.id}</p>
+                    </div>
+                    {isChosen && <span className="text-xs text-indigo-200 font-black">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Главный AdminView ─────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'islands',   label: '🏝 Острова' },
-  { id: 'tasks',     label: '📋 Задачи' },
-  { id: 'tsar',      label: '🏔️ Царь-гора' },
-  { id: 'bredo',     label: '⚙️ Бредо' },
-  { id: 'analytics', label: '📊 Аналитика' },
+  { id: 'tasks',     icon: '📋', label: 'Задачи' },
+  { id: 'islands',   icon: '🏝', label: 'Острова' },
+  { id: 'schedule',  icon: '📅', label: 'Расписание' },
+  { id: 'tsar',      icon: '🏔️', label: 'Царь-гора' },
+  { id: 'bredo',     icon: '⚙️', label: 'Бредо' },
+  { id: 'analytics', icon: '📊', label: 'Аналитика' },
 ];
 
 export default function AdminView({ TASKS, onBack, t }) {
   const [tab, setTab] = useState('tasks');
+  const current = TABS.find(t => t.id === tab);
 
   return (
     <div className="flex flex-col h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* Шапка */}
-      <div className="px-6 pt-16 pb-0 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 z-20">
-        <div className="flex items-center gap-4 mb-4">
-          <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xl hover:bg-slate-700 transition-colors">←</button>
-          <div>
-            <h1 className="text-xl font-black uppercase tracking-tight text-white">Админка TRIZ</h1>
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Управление контентом и аналитика</p>
-          </div>
+      {/* Шапка — компактная */}
+      <div className="flex items-center gap-3 px-4 pt-12 pb-3 bg-slate-900 border-b border-slate-800 z-20 flex-shrink-0">
+        <button
+          onClick={onBack}
+          className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-base transition-colors flex-shrink-0"
+        >←</button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold leading-none mb-0.5">Управление</p>
+          <h1 className="text-[15px] font-black text-white truncate">{current?.icon} {current?.label}</h1>
         </div>
-        {/* Вкладки */}
-        <div className="flex gap-1">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-5 py-3 text-xs font-black uppercase tracking-wider rounded-t-xl transition-all ${tab === t.id ? 'bg-slate-950 text-white border-t border-x border-slate-700' : 'text-slate-500 hover:text-slate-300'}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <div className="text-[10px] text-slate-600 font-mono">{TASKS?.length} задач</div>
       </div>
 
       {/* Контент */}
       <div className="flex flex-1 overflow-hidden relative">
         {tab === 'islands'   && <TabIslands TASKS={TASKS} />}
         {tab === 'tasks'     && <TabTasks TASKS={TASKS} onBack={onBack} />}
+        {tab === 'schedule'  && <TabDailySchedule TASKS={TASKS} />}
         {tab === 'tsar'      && <TabTsarWords />}
         {tab === 'bredo'     && <TabBredomaker />}
         {tab === 'analytics' && <TabAnalytics />}
+      </div>
+
+      {/* Нижняя навигация */}
+      <div className="flex-shrink-0 bg-slate-900 border-t border-slate-800 pb-safe">
+        <div className="flex">
+          {TABS.map(item => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-all active:scale-95 ${active ? 'text-indigo-400' : 'text-slate-600 hover:text-slate-400'}`}
+              >
+                <span className="text-lg leading-none">{item.icon}</span>
+                <span className={`text-[9px] font-black uppercase tracking-wide leading-none ${active ? 'text-indigo-400' : 'text-slate-600'}`}>
+                  {item.label}
+                </span>
+                {active && <span className="w-4 h-0.5 bg-indigo-400 rounded-full mt-0.5" />}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -613,9 +613,17 @@ export const TASKS = [
     teaser: "Как снизить скорость машин без светофора?",
     teaser_en: "How to reduce the speed of cars without a traffic light?",
     difficulty: 2,
+    condition: "Возле школы машины едут слишком быстро. Поставить светофор нельзя — нет бюджета. Полицейского нет. Как заставить водителей самих притормозить?",
+    core_problem: { need: "замедлить машины у школы", obstacle: "нельзя принудить водителей — нет светофора и полиции" },
+    resources: [
+      { id: "дорога", properties: "асфальт перед школой, можно изменить" },
+      { id: "разметка", properties: "краска на асфальте, видна водителю" },
+      { id: "бордюры и столбики", properties: "можно расставить на дороге" }
+    ],
+    trick: "Изменить саму дорогу так, чтобы водитель инстинктивно притормозил — лежачий полицейский или 3D-рисунок ямы",
     ikr: "Водитель САМ решает притормозить, видя опасность",
-    puzzle: { 
-      emoji: "🚧", 
+    puzzle: {
+      emoji: "🚧",
       question: "Машины ездят быстро. Как заставить их притормозить без штрафов?",
       answer: "Сделать «лежачего полицейского» или 3D-рисунок ямы."
     }
@@ -711,6 +719,7 @@ export const TASKS = [
     teaser: "Клетка должна быть закрытой и открытой одновременно",
     teaser_en: "The cage must be closed and open at the same time",
     difficulty: 3,
+    ikr: "Барьер САМИ защищает и не мешает снимать",
     core_problem: { need: "фото без решеток", obstacle: "решетка нужна для безопасности" },
     puzzle: { 
       emoji: "📸", 
@@ -727,6 +736,7 @@ export const TASKS = [
     teaser: "Зебра должна быть яркой и не скользкой",
     teaser_en: "Zebra should be bright and not slippery",
     difficulty: 3,
+    ikr: "Краска САМА становится шершавой без потери цвета",
     puzzle: { 
       emoji: "🎨", 
       question: "Краска на дороге скользит в дождь. Как оставить её яркой, но сделать шершавой?",
@@ -742,6 +752,7 @@ export const TASKS = [
     teaser: "Стены должны пускать свет и не выпускать тепло",
     teaser_en: "Walls should let in light and not let out heat",
     difficulty: 3,
+    ikr: "Стена САМА пропускает нужное и удерживает ненужное",
     puzzle: { 
       emoji: "☀️", 
       question: "Как сделать теплицу жаркой зимой без огромных затрат на дрова?",
@@ -757,6 +768,7 @@ export const TASKS = [
     teaser: "Свая должна быть острой для входа и широкой для опоры",
     teaser_en: "The pile must be sharp for entry and wide for support",
     difficulty: 3,
+    ikr: "Свая САМА меняет форму в нужный момент",
     puzzle: { 
       emoji: "🔨", 
       question: "Как забить столб легко, но чтобы он не провалился в болото потом?",
@@ -772,6 +784,7 @@ export const TASKS = [
     teaser: "Должен быть большим под дождем и маленьким в сумке",
     teaser_en: "Should be big in the rain and small in the bag",
     difficulty: 3,
+    ikr: "Зонт САМИ меняет размер под ситуацию",
     puzzle: {
       emoji: "👜",
       question: "Как сделать огромный зонт, который не мешает в кармане?",

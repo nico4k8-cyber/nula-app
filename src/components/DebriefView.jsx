@@ -1,36 +1,40 @@
 import React from "react";
 
+function Skeleton({ className = "" }) {
+  return <div className={`bg-slate-200 rounded-xl animate-pulse ${className}`} />;
+}
+
 export default function DebriefView({
   task,
   sessionStars,
   totalStars,
   completedCount,
+  debriefAI,      // null = loading, { feedback, insight } = ready
   onNext,
   onWantsMore,
   t,
   lang
 }) {
   const stars = Math.min(Math.max(1, sessionStars), 3);
-
-  // Criterion explanation based on stars (from Gin's book: elegance = using resources already in task)
-  const criterionText = stars === 3
-    ? "Ты использовал то, что уже было в задаче — это главный секрет изобретателей! 🔥"
-    : stars === 2
-    ? "Твоё решение работает! Но изобретатели идут дальше: они ищут ресурсы прямо в условии — то, что уже есть рядом."
-    : "Ты справился! Секрет ТРИЗ: не приноси новое, а используй то, что уже есть в задаче.";
+  const isLoading = debriefAI === null;
 
   const qualityLabel = stars === 3
-    ? "Изобретательское решение!"
+    ? (lang === 'en' ? "Inventor's solution!" : "Изобретательское решение!")
     : stars === 2
-    ? "Хорошее решение!"
-    : "Задача решена!";
+    ? (lang === 'en' ? "Great thinking!" : "Хорошее решение!")
+    : (lang === 'en' ? "Task solved!" : "Задача решена!");
 
-  // Extract key resource from task
-  const keyResource = Array.isArray(task?.resources) && task.resources.length > 0
-    ? (task.resources[0].id || task.resources[0])
-    : null;
+  // Fallback text if AI fails or takes too long
+  const fallbackFeedback = stars === 3
+    ? (lang === 'en' ? "You found an unexpected way that actually works — that's exactly how inventors think! 🔥" : "Ты нашёл неожиданный способ, который работает — именно так думают изобретатели! 🔥")
+    : stars === 2
+    ? (lang === 'en' ? "Your solution works! Inventors always look for more — maybe there's an even simpler way?" : "Твоё решение работает! Изобретатели всегда ищут ещё — вдруг есть способ ещё проще?")
+    : (lang === 'en' ? "You solved it! Every solution is a step toward thinking like an inventor." : "Ты справился! Каждое решение — шаг к тому, чтобы думать как изобретатель.");
 
-  // Show TRIZ principle name only after task 5 (per GDD: tasks 1-5 = emotions only)
+  const feedback = debriefAI?.feedback || (!isLoading ? fallbackFeedback : null);
+  const insight = debriefAI?.insight;
+
+  // Show TRIZ principle name only after task 5
   const showPrinciple = task?.trick?.name && (completedCount ?? 0) >= 5;
 
   return (
@@ -52,22 +56,54 @@ export default function DebriefView({
         </div>
         {totalStars > 0 && (
           <div className="mt-2 px-4 py-1.5 bg-amber-50 rounded-full border border-amber-200">
-            <span className="text-amber-700 text-sm font-black">Итого: ⭐ {totalStars + stars}</span>
+            <span className="text-amber-700 text-sm font-black">
+              {lang === 'en' ? `Total: ⭐ ${totalStars}` : `Итого: ⭐ ${totalStars}`}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Criterion card — WHY this rating */}
-      <div className="mx-5 mb-3 bg-blue-50 border-2 border-blue-100 rounded-[20px] p-4">
-        <div className="text-[13px] text-blue-500 font-bold uppercase tracking-wide mb-1">Почему такая оценка</div>
-        <p className="text-[14px] text-blue-900 leading-relaxed font-medium">{criterionText}</p>
+      {/* Орин says — personalized feedback */}
+      <div className="mx-5 mb-3 bg-amber-50 border-2 border-amber-100 rounded-[24px] p-4 flex gap-3 items-start">
+        <img
+          src="/img/webp/ugolok.webp"
+          alt="Орин"
+          className="w-10 h-10 flex-shrink-0 rounded-full object-cover shadow-md border-2 border-white"
+        />
+        <div className="flex-1 min-w-0">
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-4/5" />
+            </div>
+          ) : (
+            <p className="text-[14px] text-amber-900 leading-relaxed font-medium">{feedback}</p>
+          )}
+        </div>
       </div>
+
+      {/* AI insight — what thinking pattern worked */}
+      {(isLoading || (insight && insight.trim())) && (
+        <div className="mx-5 mb-3 bg-blue-50 border-2 border-blue-100 rounded-[20px] p-4">
+          <div className="text-[13px] text-blue-500 font-bold uppercase tracking-wide mb-1">
+            {lang === 'en' ? "How inventors think" : "Как думают изобретатели"}
+          </div>
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/5" />
+            </div>
+          ) : (
+            <p className="text-[14px] text-blue-900 leading-relaxed font-medium">{insight}</p>
+          )}
+        </div>
+      )}
 
       {/* IKR reveal — Ideal Final Result */}
       {task?.ikr && (
         <div className="mx-5 mb-3 bg-emerald-50 border-2 border-emerald-100 rounded-[20px] p-4">
           <div className="text-[13px] text-emerald-500 font-bold uppercase tracking-wide mb-1">
-            {keyResource ? `Ключ к задаче: ${keyResource}` : "Как думает изобретатель"}
+            {lang === 'en' ? "The inventor's answer" : "Ответ изобретателя"}
           </div>
           <p className="text-[14px] text-emerald-900 leading-relaxed font-medium">{task.ikr}</p>
         </div>
@@ -76,25 +112,12 @@ export default function DebriefView({
       {/* TRIZ principle — shown only after task 5 */}
       {showPrinciple && (
         <div className="mx-5 mb-3 bg-violet-50 border-2 border-violet-100 rounded-[20px] p-4">
-          <div className="text-[13px] text-violet-500 font-bold uppercase tracking-wide mb-1">Приём изобретателя</div>
+          <div className="text-[13px] text-violet-500 font-bold uppercase tracking-wide mb-1">
+            {lang === 'en' ? "TRIZ principle" : "Приём изобретателя"}
+          </div>
           <p className="text-[15px] text-violet-900 font-black">{task.trick.name}</p>
         </div>
       )}
-
-      {/* Орин says */}
-      <div className="mx-5 bg-amber-50 border-2 border-amber-100 rounded-[24px] p-4 flex gap-3 items-start">
-        <img
-          src="/img/webp/ugolok.webp"
-          alt="Орин"
-          className="w-10 h-10 flex-shrink-0 rounded-full object-cover shadow-md border-2 border-white"
-        />
-        <p className="text-[14px] text-amber-900 leading-relaxed font-medium">
-          {lang === 'en'
-            ? `Great job! You found a creative solution — that's exactly what inventors do.`
-            : `Молодец! Именно так думают настоящие изобретатели. Пробуй ещё!`
-          }
-        </p>
-      </div>
 
       <div className="flex-1" />
 
@@ -105,14 +128,17 @@ export default function DebriefView({
             onClick={onWantsMore}
             className="w-full bg-orange-500 text-white text-[17px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-orange-200"
           >
-            Ещё задачу! →
+            {lang === 'en' ? 'Another task! →' : 'Ещё задачу! →'}
           </button>
         )}
         <button
           onClick={onNext}
           className={`w-full text-[16px] font-bold py-4 rounded-[22px] active:scale-[0.97] transition-all ${onWantsMore ? 'bg-slate-100 text-slate-600' : 'bg-orange-500 text-white shadow-lg shadow-orange-200 text-[17px] font-black'}`}
         >
-          {onWantsMore ? 'На остров' : 'Продолжить →'}
+          {onWantsMore
+            ? (lang === 'en' ? 'Back to island' : 'На остров')
+            : (lang === 'en' ? 'Continue →' : 'Продолжить →')
+          }
         </button>
       </div>
     </div>

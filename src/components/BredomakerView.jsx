@@ -212,7 +212,7 @@ export default function BredomakerView({ onBack, t }) {
         <div className="flex flex-col items-center justify-center flex-1 px-8 text-center gap-6 pt-16">
           <div className="text-6xl">📜</div>
           <div className="bg-white rounded-[32px] p-8 shadow-xl border border-rose-100 w-full max-w-sm">
-            <p className="text-[11px] uppercase tracking-widest text-slate-400 font-black mb-3">Патент #{loadPatents().length}</p>
+            <p className="text-[11px] uppercase tracking-widest text-slate-400 font-black mb-3">Патент #{loadLocalPatents().length}</p>
             <div className="text-4xl mb-2">{result.patent.itemEmoji}</div>
             <p className="text-[13px] text-slate-500 mb-3">Предмет: <strong>{result.patent.item}</strong></p>
             <p className="text-[16px] text-slate-800 font-bold leading-snug italic">«{result.patent.invention}»</p>

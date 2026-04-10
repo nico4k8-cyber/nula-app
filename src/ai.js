@@ -83,3 +83,19 @@ export async function askTriz(userMessage, task, state, history = []) {
     };
   }
 }
+
+
+// Generate personalized debrief text based on child's actual conversation
+export async function generateDebrief({ task, history, stars, childSolution, lang = 'ru' }) {
+  try {
+    const res = await fetch("/api/ai-master", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "generate_debrief", task, history, stars, childSolution, lang }),
+    });
+    if (!res.ok) return null;
+    return await res.json(); // { feedback, insight }
+  } catch {
+    return null;
+  }
+}

@@ -76,7 +76,7 @@ export default async function handler(req) {
       if (!item || !invention) throw new Error("item and invention required");
 
       const result = await getClaudeResponse({
-        userMessage: `Ребёнок придумал изобретение на основе предмета "${item}" (${itemHint || ''}): "${invention}". Оцени оригинальность от 5 до 30 (только число). Затем напиши краткую реакцию (1–2 предложения, с восхищением, для ребёнка 7–12 лет).`,
+        userMessage: `Ребёнок придумал изобретение на основе предмета "${item}" (${itemHint || ''}): "${invention}". Оцени оригинальность от 5 до 30 (только число). Затем напиши краткую реакцию (1–2 предложения, с восхищением, для ребёнка 10–14 лет).`,
         history: [],
         systemPromptOverride: `Ты — весёлый изобретатель Орин, помощник детей. Оценивай детские идеи тепло и подбадривающе. Формат ответа: первая строка — число (оценка 5–30), вторая строка — реакция.`,
       });
@@ -89,6 +89,68 @@ export default async function handler(req) {
       const reaction = lines.slice(1).join(' ').trim() || "Отличная идея! Орин записывает в копилочку 📜";
 
       return new Response(JSON.stringify({ score, reaction }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Персонализированный дебриф ────────────────────────────────────────────
+    if (action === "generate_debrief") {
+      const { task, history = [], stars, childSolution, lang = 'ru' } = body;
+      if (!task) throw new Error("task required");
+
+      const taskTitle = task.title || 'задача';
+      const taskCondition = task.condition || task.teaser || '';
+      const ikr = task.ikr || '';
+      const childMessages = history.filter(m => m.role === 'user').map(m => m.text).join('\n');
+      const lastIdea = childSolution || history.filter(m => m.role === 'user').at(-1)?.text || '';
+
+      const prompt = lang === 'en'
+        ? `A child (10-14 years old) just solved a TRIZ puzzle. Write a SHORT personalized feedback (2-3 sentences max) about what they actually did.
+
+Task: "${taskTitle}"
+${taskCondition ? `Problem: "${taskCondition}"` : ''}
+Child's key idea: "${lastIdea}"
+Child's messages: ${childMessages}
+Stars: ${stars}/3
+
+Write:
+1. "feedback" — 1-2 sentences: mention what specifically the child came up with (use their words/ideas), praise the inventive thinking. Be specific, not generic.
+2. "insight" — 1 sentence: what TRIZ principle was at work here (explain simply, without the term itself).
+
+Respond ONLY with JSON: {"feedback": "...", "insight": "..."}`
+        : `Ребёнок (10-14 лет) только что решил задачу. Напиши КОРОТКИЙ персонализированный отзыв (2-3 предложения) о том, что он конкретно сделал.
+
+Задача: "${taskTitle}"
+${taskCondition ? `Условие: "${taskCondition}"` : ''}
+Ключевая идея ребёнка: "${lastIdea}"
+Что писал ребёнок: ${childMessages}
+Звёзды: ${stars}/3
+
+Напиши:
+1. "feedback" — 1-2 предложения: упомяни что конкретно придумал ребёнок (используй его слова/идеи), похвали изобретательское мышление. Конкретно, не шаблонно.
+2. "insight" — 1 предложение: какой приём мышления сработал (объясни просто, без ТРИЗ-терминов).
+
+Отвечай ТОЛЬКО JSON: {"feedback": "...", "insight": "..."}`;
+
+      const result = await getClaudeResponse({
+        userMessage: prompt,
+        history: [],
+        systemPromptOverride: lang === 'en'
+          ? "You are Orin, a friendly dragon who coaches children in creative thinking. Write warmly, specifically, in 2-3 short sentences. Never use generic phrases like 'great job' without specifics."
+          : "Ты Орин — дружелюбный дракон, который помогает детям думать изобретательно. Пиши тепло, конкретно, 2-3 коротких предложения. Никаких шаблонных фраз типа 'молодец' без конкретики.",
+      });
+
+      await logUsage({ action: 'generate_debrief', model: result.model, usage: result.usage, userId });
+
+      let parsed = { feedback: null, insight: null };
+      try {
+        const jsonMatch = (result.text || '').match(/\{[\s\S]*\}/);
+        if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        console.warn('[debrief] JSON parse failed:', result.text, e?.message);
+      }
+
+      return new Response(JSON.stringify(parsed), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -136,16 +198,23 @@ export default async function handler(req) {
 ВЕСЬ ДИАЛОГ ДО ЭТОГО МОМЕНТА:
 ${conversationSummary || '(только начали)'}
 
-Ребёнок запросил подсказку. Проанализируй весь диалог:
-- Что ребёнок уже понял? Что пробовал?
-- Где именно он застрял?
-- Что ему нужно, чтобы сдвинуться дальше?
+Ребёнок застрял и просит подсказку. Действуй по шагам:
 
-Дай ОДИН наводящий вопрос — строго по тому месту где ребёнок застрял.
-НЕ давай ответ напрямую.
-НЕ говори "Ты правильно понял" или другие похвалы если это не соответствует диалогу.
-Если ребёнок написал "не знаю" — задай простой конкретный вопрос про задачу.
-Максимум 1-2 коротких предложения. Только вопрос.`;
+ШАГ 1. Оцени направление, в котором идёт ребёнок:
+- Он движется в ПРАВИЛЬНОМ направлении (его идея или рассуждение ведёт к решению, но он не может сделать следующий шаг)?
+- Или он зашёл в ТУПИК (направление явно не ведёт к решению задачи)?
+
+ШАГ 2а. Если направление ПРАВИЛЬНОЕ — задай один конкретный вопрос, который помогает пройти ДАЛЬШЕ в том же направлении. Сделай следующий шаг более очевидным, спросив про конкретную деталь или свойство объекта, который ребёнок уже упоминал.
+
+ШАГ 2б. Если направление ТУПИКОВОЕ — посмотри, какие типы явлений ребёнок ещё не рассматривал:
+механические (форма, движение, сила) | тепловые | световые/зрительные | звуковые | химические | социальные (поведение людей)
+Выбери тип, который ведёт к решению, и задай вопрос про конкретный объект из условия через этот тип.
+
+ПРАВИЛА:
+- НЕ давай ответ напрямую.
+- НЕ повторяй вопросы из диалога выше.
+- Вопрос должен быть конкретным — про объект, который ребёнок может представить.
+- Максимум 1-2 коротких предложения.`;
 
       const result = await getClaudeResponse({
         userMessage: 'Подсказка',
@@ -185,7 +254,7 @@ ${conversationSummary || '(только начали)'}
     console.error("[AI Master Error]:", err);
     const isLimitError = err.message?.includes('🛑');
     const customReply = isLimitError
-      ? err.message.replace('Gemini API Error: Error: ', '')
+      ? err.message.replace('Polza API Error: Error: ', '')
       : "Сетевая заминка. Обдумай свою мысль и отправь ещё раз через минуту!";
     return new Response(JSON.stringify({
       error: "AI service error",
