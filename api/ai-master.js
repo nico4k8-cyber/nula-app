@@ -104,11 +104,18 @@ export default async function handler(req) {
       const childMessages = history.filter(m => m.role === 'user').map(m => m.text).join('\n');
       const lastIdea = childSolution || history.filter(m => m.role === 'user').at(-1)?.text || '';
 
+      const retryHintInstruction = stars < 3
+        ? (lang === 'en'
+          ? `3. "retryHint" — 1 short sentence inviting them to find a better solution. Mention specifically what resource/method the child used AND what drawback it has (can it be repeated? does it have side effects? does it need extra resources?). Format: "Want to find a solution where you don't need [what they used]?" Be specific, warm, not pushy.`
+          : `3. "retryHint" — 1 короткое предложение-приглашение найти решение лучше. Упомяни конкретно что именно использовал ребёнок И какой у этого недостаток по Гину (можно ли повторить? есть ли побочный эффект? нужны ли дополнительные ресурсы?). Формат: "Хочешь найти такое решение, где не нужно [то что использовал]?" Конкретно, тепло, без давления.`)
+        : '';
+
       const prompt = lang === 'en'
         ? `A child (10-14 years old) just solved a TRIZ puzzle. Write a SHORT personalized feedback (2-3 sentences max) about what they actually did.
 
 Task: "${taskTitle}"
 ${taskCondition ? `Problem: "${taskCondition}"` : ''}
+Ideal final result (don't reveal): "${ikr}"
 Child's key idea: "${lastIdea}"
 Child's messages: ${childMessages}
 Stars: ${stars}/3
@@ -116,12 +123,14 @@ Stars: ${stars}/3
 Write:
 1. "feedback" — 1-2 sentences: mention what specifically the child came up with (use their words/ideas), praise the inventive thinking. Be specific, not generic.
 2. "insight" — 1 sentence: what TRIZ principle was at work here (explain simply, without the term itself).
+${retryHintInstruction}
 
-Respond ONLY with JSON: {"feedback": "...", "insight": "..."}`
+Respond ONLY with JSON: {"feedback": "...", "insight": "..."${stars < 3 ? ', "retryHint": "..."' : ''}}`
         : `Ребёнок (10-14 лет) только что решил задачу. Напиши КОРОТКИЙ персонализированный отзыв (2-3 предложения) о том, что он конкретно сделал.
 
 Задача: "${taskTitle}"
 ${taskCondition ? `Условие: "${taskCondition}"` : ''}
+ИКР (не раскрывай): "${ikr}"
 Ключевая идея ребёнка: "${lastIdea}"
 Что писал ребёнок: ${childMessages}
 Звёзды: ${stars}/3
@@ -129,8 +138,9 @@ ${taskCondition ? `Условие: "${taskCondition}"` : ''}
 Напиши:
 1. "feedback" — 1-2 предложения: упомяни что конкретно придумал ребёнок (используй его слова/идеи), похвали изобретательское мышление. Конкретно, не шаблонно.
 2. "insight" — 1 предложение: какой приём мышления сработал (объясни просто, без ТРИЗ-терминов).
+${retryHintInstruction}
 
-Отвечай ТОЛЬКО JSON: {"feedback": "...", "insight": "..."}`;
+Отвечай ТОЛЬКО JSON: {"feedback": "...", "insight": "..."${stars < 3 ? ', "retryHint": "..."' : ''}}`;
 
       const result = await getClaudeResponse({
         userMessage: prompt,
@@ -142,7 +152,7 @@ ${taskCondition ? `Условие: "${taskCondition}"` : ''}
 
       await logUsage({ action: 'generate_debrief', model: result.model, usage: result.usage, userId });
 
-      let parsed = { feedback: null, insight: null };
+      let parsed = { feedback: null, insight: null, retryHint: null };
       try {
         const jsonMatch = (result.text || '').match(/\{[\s\S]*\}/);
         if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);

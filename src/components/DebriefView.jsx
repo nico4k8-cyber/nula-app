@@ -34,6 +34,7 @@ export default function DebriefView({
 
   const feedback = debriefAI?.feedback || (!isLoading ? fallbackFeedback : null);
   const insight = debriefAI?.insight;
+  const retryHint = debriefAI?.retryHint;
 
   // Show TRIZ principle name only after task 5
   const showPrinciple = task?.trick?.name && (completedCount ?? 0) >= 5;
@@ -128,9 +129,9 @@ export default function DebriefView({
         {stars < 3 && onRetry && (
           <button
             onClick={onRetry}
-            className="w-full bg-violet-500 text-white text-[17px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-violet-200"
+            className="w-full bg-violet-500 text-white text-[16px] font-black py-4 px-5 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-violet-200 leading-snug"
           >
-            {lang === 'en' ? 'Try for 3 stars! ⭐⭐⭐' : 'Найти решение на 3 звезды! ⭐⭐⭐'}
+            {retryHint || (lang === 'en' ? 'Want to find an even better solution? →' : 'Хочешь найти решение ещё круче? →')}
           </button>
         )}
         {onWantsMore && (
