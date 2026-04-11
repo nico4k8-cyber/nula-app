@@ -37,8 +37,10 @@ export default function LaboratoryView({ onBack, completedTasks, allTasks, t }) 
     return questions[idx];
   }
 
+  const minLen = [10, 3, 10, 3][dialogStep] ?? 3; // step 0,2 = description; step 1,3 = name
+
   function handleDialogNext() {
-    if (currentInput.trim().length < 20) return;
+    if (currentInput.trim().length < minLen) return;
     const newAnswers = [...answers];
     newAnswers[dialogStep] = currentInput.trim();
     setAnswers(newAnswers);
@@ -151,7 +153,7 @@ export default function LaboratoryView({ onBack, completedTasks, allTasks, t }) 
 
   /* ─── DIALOG ─── */
   if (step === "dialog") {
-    const isValid = currentInput.trim().length >= 20;
+    const isValid = currentInput.trim().length >= minLen;
     const isLast = dialogStep === 3;
 
     return (
@@ -199,12 +201,12 @@ export default function LaboratoryView({ onBack, completedTasks, allTasks, t }) 
           <div className="flex-1 flex flex-col gap-3">
             <textarea
               className="w-full flex-1 min-h-[140px] rounded-[20px] border border-slate-200 px-5 py-4 text-[15px] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-400 resize-none shadow-sm"
-              placeholder="Напиши свой ответ (минимум 20 символов)..."
+              placeholder={`Напиши свой ответ (минимум ${minLen} символов)...`}
               value={currentInput}
               onChange={e => setCurrentInput(e.target.value)}
             />
             <div className="text-right text-xs text-slate-400">
-              {currentInput.trim().length}/20 минимум
+              {currentInput.trim().length}/{minLen} минимум
             </div>
           </div>
 
