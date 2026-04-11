@@ -302,7 +302,7 @@ export default function DialogView({
           if (m.type === "bot") {
 
             if (m.isStageMsg) return (
-              <div key={m.ts ?? i} style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
+              <div key={m.id ?? m.ts ?? i} style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
                 <div style={{ background:C.sysBg, border:`1.5px solid ${C.sysBdr}`, borderRadius:14, padding:'7px 14px', fontSize:13, fontWeight:800, color:C.sysClr, fontFamily:"'Baloo 2',sans-serif" }}>
                   {m.text}
                 </div>
@@ -310,7 +310,7 @@ export default function DialogView({
             );
 
             if (m.isDiscovery) return (
-              <div key={m.ts ?? i} style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
+              <div key={m.id ?? m.ts ?? i} style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
                 <div style={{ background:`linear-gradient(135deg,#059669,#10b981)`, color:'#fff', borderRadius:16, padding:'10px 18px', fontSize:14, fontWeight:900, boxShadow:'0 4px 16px rgba(16,185,129,0.3)' }}>
                   ✨ {m.text}
                 </div>
@@ -318,7 +318,7 @@ export default function DialogView({
             );
 
             if (m.isHint) return (
-              <div key={m.ts ?? i} style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
+              <div key={m.id ?? m.ts ?? i} style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
                 <div style={{ background:C.sysBg, border:`1.5px solid ${C.sysBdr}`, borderRadius:16, padding:'10px 16px', fontSize:13, fontWeight:700, color:C.text, maxWidth:'88%' }}>
                   💡 {m.text}
                 </div>
@@ -327,7 +327,7 @@ export default function DialogView({
 
             const isLastBot = i === messages.length - 1 || messages[i+1]?.type !== 'bot';
             return (
-              <div key={m.ts ?? i} style={{ display:'flex', alignItems:'flex-end', gap:10 }}>
+              <div key={m.id ?? m.ts ?? i} style={{ display:'flex', alignItems:'flex-end', gap:10 }}>
                 {isLastBot
                   ? <img src="/img/webp/ugolok.webp" alt="Орин" style={{ width:44, height:44, borderRadius:'50%', objectFit:'cover', flexShrink:0, border:`2px solid ${C.sysBdr}`, boxShadow:`0 0 14px ${C.sysBg}` }} />
                   : <div style={{ width:44, flexShrink:0 }} />
@@ -344,7 +344,7 @@ export default function DialogView({
           }
 
           if (m.type === "child") return (
-            <div key={m.ts ?? i} style={{ display:'flex', justifyContent:'flex-end' }}>
+            <div key={m.id ?? m.ts ?? i} style={{ display:'flex', justifyContent:'flex-end' }}>
               <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:3 }}>
                 <div style={{
                   background:`linear-gradient(135deg,${C.glow2},${C.glow})`,
