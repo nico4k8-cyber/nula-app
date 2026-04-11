@@ -101,15 +101,6 @@ export default function DebriefView({
         </div>
       )}
 
-      {/* IKR reveal — Ideal Final Result */}
-      {task?.ikr && (
-        <div className="mx-5 mb-3 bg-emerald-50 border-2 border-emerald-100 rounded-[20px] p-4">
-          <div className="text-[13px] text-emerald-500 font-bold uppercase tracking-wide mb-1">
-            {lang === 'en' ? "The inventor's answer" : "Ответ изобретателя"}
-          </div>
-          <p className="text-[14px] text-emerald-900 leading-relaxed font-medium">{task.ikr}</p>
-        </div>
-      )}
 
       {/* TRIZ principle — shown only after task 5 */}
       {showPrinciple && (
