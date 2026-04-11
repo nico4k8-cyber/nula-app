@@ -37,29 +37,20 @@ export function useAudio(tracks = []) {
   const isEnabledRef = useRef(isEnabled);
   useEffect(() => { isEnabledRef.current = isEnabled; }, [isEnabled]);
 
-  // Initialize music and handle track changes (don't change on isEnabled)
+  // Initialize music on first mount (src not yet set)
   useEffect(() => {
-    // Stop music completely if no tracks (e.g., during splash screen)
-    if (tracks.length === 0) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
-      return;
-    }
-
-    // Auto-play music for current track
-    if (tracks.length > 0 && audioRef.current) {
-      // Safety: if index out of bounds (e.g. from old session with more tracks), reset to 0
+    if (tracks.length > 0 && audioRef.current && !audioRef.current.src) {
       const safeIndex = currentTrackIndex >= tracks.length ? 0 : currentTrackIndex;
       const track = tracks[safeIndex];
-      
-      if (track && !audioRef.current.src) {
+      if (track) {
         audioRef.current.src = track.path;
-        audioRef.current.play().catch(() => {});
+        if (isEnabledRef.current) {
+          audioRef.current.play().catch(() => {});
+        }
       }
     }
-  }, [currentTrackIndex, tracks]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount only
 
   // Handle enable/disable toggle
   useEffect(() => {
@@ -98,26 +89,21 @@ export function useAudio(tracks = []) {
   useEffect(() => {
     if (tracks.length > 0 && audioRef.current) {
       const track = tracks[currentTrackIndex];
-      // Browser expands relative paths to absolute URLs in .src
       const absolutePath = new URL(track.path, window.location.origin).href;
-      
-      // Only change track if it's actually different from the currently playing one
+
       if (audioRef.current.src !== absolutePath) {
-        const wasPlaying = !audioRef.current.paused;
-        const currentTime = audioRef.current.currentTime;
         audioRef.current.src = track.path;
-        // Restore position if track was playing
-        if (wasPlaying && isEnabled) {
-          audioRef.current.currentTime = Math.min(currentTime, 10); 
+        if (isEnabledRef.current) {
           audioRef.current.play().catch(() => {});
         }
       }
     }
-    // Save track preference
     try {
       localStorage.setItem(TRACK_INDEX_KEY, currentTrackIndex.toString());
     } catch {}
-  }, [currentTrackIndex, tracks, isEnabled]);
+  // isEnabled intentionally excluded — dedicated effect handles it
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTrackIndex, tracks]);
 
   const playTrack = (index) => {
     if (index < 0 || index >= tracks.length) return;
