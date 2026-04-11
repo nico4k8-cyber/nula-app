@@ -1,10 +1,9 @@
-import { TASKS } from "./tasks";
 import "./UnlockAnimation.css";
 
-export default function UnlockAnimation({ buildingId, onComplete }) {
+export default function UnlockAnimation({ buildingId, tasks = [], onComplete }) {
   if (!buildingId) return null;
 
-  const task = TASKS.find(t => t.id === buildingId);
+  const task = tasks.find(t => t.id === buildingId);
   if (!task) return null;
 
   const building = task.trick.building;

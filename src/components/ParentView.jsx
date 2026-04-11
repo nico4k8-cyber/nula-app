@@ -1,7 +1,4 @@
 import React, { useState } from 'react';
-import { TASKS } from '../tasks';
-
-const taskMap = Object.fromEntries(TASKS.map(t => [t.id, t]));
 
 const BUILDING_NAMES = {
   'library': 'Библиотека',
@@ -14,8 +11,10 @@ const BUILDING_NAMES = {
   'tsar': 'Царь-гора'
 };
 
-export default function ParentView({ completedTasks, totalStars, streak, onUnlock, onBack }) {
+export default function ParentView({ completedTasks, totalStars, streak, TASKS = [], onUnlock, onBack }) {
   const [promoInput, setPromoInput] = useState('');
+
+  const taskMap = Object.fromEntries(TASKS.map(t => [t.id, t]));
 
   const solvedTasks = (completedTasks || [])
     .map(ct => {

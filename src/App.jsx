@@ -383,17 +383,18 @@ export default function App() {
   function startTaskPreview(taskKey) {
     if (taskKey === null || taskKey === undefined) return;
     
+    const taskList = remoteTasks || [];
     // 1. Сначала ищем четко по ID (обрабатываем и числа, и строки)
-    let tDef = TASKS.find(t => String(t.id) === String(taskKey));
-    
+    let tDef = taskList.find(t => String(t.id) === String(taskKey));
+
     // 2. Если не нашли по ID (может пришел 0 из-за индекса), ищем по категории
     if (!tDef) {
-       tDef = TASKS.find(t => t.category === taskKey);
+       tDef = taskList.find(t => t.category === taskKey);
     }
-    
+
     // 3. Если всё еще не нашли, берем первую задачу как дефолтную (защита от '0')
     if (!tDef && (taskKey === 0 || taskKey === "0")) {
-       tDef = TASKS[0];
+       tDef = taskList[0];
     }
 
     if (!tDef) {
@@ -582,7 +583,7 @@ export default function App() {
           storageKey="nula-task-tutorial-done"
         />
       )}
-      {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} t={t} />}
+      {unlockedBuildingId && <UnlockAnimation buildingId={unlockedBuildingId} tasks={remoteTasks || TASKS} t={t} />}
       {upsellMessage && (
         <UpsellView
           message={upsellMessage}
@@ -893,8 +894,8 @@ export default function App() {
             task={task} 
             completedTasks={completedTasks} 
             taskIdx={taskIdx} 
-            TASKS={TASKS}
-            twistChoice={twistChoice} 
+            TASKS={remoteTasks || TASKS}
+            twistChoice={twistChoice}
             setTwistChoice={setTwistChoice} 
             t={t}
             lang={lang}
@@ -906,17 +907,17 @@ export default function App() {
           <FinalView 
             totalStars={totalStars} 
             completedTasks={completedTasks} 
-            TASKS={TASKS}
+            TASKS={remoteTasks || TASKS}
             t={t}
             lang={lang}
-            onRestart={() => resetGame()} 
+            onRestart={() => resetGame()}
             onBackToCity={() => setPhase("city")} 
             onUgc={() => {}}
           />
         )}
 
         {phase === "admin" && (
-          <AdminView TASKS={TASKS} t={t} onBack={() => setPhase("city")} />
+          <AdminView TASKS={remoteTasks || TASKS} t={t} onBack={() => setPhase("city")} />
         )}
 
         {phase === "bredo-play" && (
@@ -947,6 +948,7 @@ export default function App() {
             completedTasks={completedTasks}
             totalStars={totalStars}
             streak={streak}
+            TASKS={remoteTasks || TASKS}
             onUnlock={() => { setPhase("paywall"); }}
             onBack={() => setPhase("city")}
           />
