@@ -324,14 +324,15 @@ export default function App() {
   useEffect(() => {
     if (!user?.id) return;
     if (isMergingRef.current) return; // skip during login merge to avoid race condition
-    // Always union with localStorage in case Zustand hasn't hydrated yet
-    let mergedCompleted = completedTasks;
+    // Normalize completedTasks to string IDs before syncing (prevent "[object Object]" corruption)
+    const toIds = (arr) => (arr || []).map(t => String(typeof t === 'object' ? t.taskId : t)).filter(Boolean);
+    let mergedCompleted = toIds(completedTasks);
     let mergedStars = totalStars;
     let mergedBuildings = unlockedBuildings;
     try {
       const raw = localStorage.getItem('nula-game-storage');
       const s = (raw ? JSON.parse(raw) : {}).state || {};
-      mergedCompleted = Array.from(new Set([...completedTasks, ...(s.completedTasks || [])]));
+      mergedCompleted = Array.from(new Set([...mergedCompleted, ...toIds(s.completedTasks)]));
       mergedStars = Math.max(totalStars, s.totalStars || 0);
       mergedBuildings = Array.from(new Set([...unlockedBuildings, ...(s.unlockedBuildings || [])]));
     } catch {}
