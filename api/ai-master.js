@@ -164,8 +164,8 @@ ${taskCondition ? `Условие: "${taskCondition}"` : ''}
     }
 
     // First-line defence: block injection before any processing
-    const { safe, threat } = sanitizeUserMessage(userMessage);
-    if (!safe) {
+    const { safe, sanitized: sanitizedMsg, threat } = sanitizeUserMessage(userMessage);
+    if (!safe && threat !== 'message_too_long') {
       console.warn('[security] ai-master blocked:', threat, '| userId:', userId);
       return new Response(JSON.stringify({
         reply: "Давай решим задачу! Что ты думаешь?",
@@ -175,6 +175,8 @@ ${taskCondition ? `Условие: "${taskCondition}"` : ''}
         _v: Date.now(),
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    // Use truncated message if too long (instead of blocking)
+    const effectiveMessage = safe ? userMessage : sanitizedMsg;
 
     // ── Hint request: separate prompt, no stage advancement ──────────────────
     const isHintRequest = userMessage.startsWith('[ПОДСКАЗКА]');
@@ -236,7 +238,7 @@ ${conversationSummary || '(только начали)'}
     }
 
     const result = await getClaudeResponse({
-      userMessage, history, task, prizStep, _forceHaiku: true,
+      userMessage: effectiveMessage, history, task, prizStep, _forceHaiku: true,
     });
 
     await logUsage({ action: 'chat', model: result.model, usage: result.usage, userId });
