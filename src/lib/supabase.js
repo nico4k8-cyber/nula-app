@@ -14,7 +14,9 @@ export const syncProgress = async (userId, data) => {
   const payload = {
     id: userId,
     stars: data.stars ?? data.totalStars ?? 0,
-    completed_tasks: (data.completedTasks || []).map(String), // normalize to strings
+    completed_tasks: (data.completedTasks || []).map(t =>
+      typeof t === 'object' && t !== null ? String(t.taskId ?? t.id ?? t) : String(t)
+    ), // extract taskId from objects, normalize to strings
     unlocked_buildings: data.unlockedBuildings || [],
     updated_at: new Date().toISOString()
   };
