@@ -31,7 +31,7 @@ export default function LaboratoryView({ onBack, completedTasks, allTasks, t }) 
     const questions = [
       `В задаче «${template.title}» нужно было ${template.teaser || "найти решение"}. Что ты хочешь изменить? Место, персонажа или предмет?`,
       `Кому поможет твоя новая задача? Придумай персонажа.`,
-      `Какой ИКР (идеальный результат) в твоей задаче? Что должно произойти само, без лишних действий?`,
+      `Какой идеальный итог в твоей задаче? Что должно произойти само, без лишних усилий?`,
       `Дай название своей задаче!`,
     ];
     return questions[idx];
@@ -256,7 +256,7 @@ export default function LaboratoryView({ onBack, completedTasks, allTasks, t }) 
               <span className="font-semibold text-slate-800">Персонаж:</span> {answers[1]}
             </div>
             <div className="text-[14px] text-slate-600">
-              <span className="font-semibold text-slate-800">ИКР:</span> {answers[2]}
+              <span className="font-semibold text-slate-800">Идеальный итог:</span> {answers[2]}
             </div>
             {template && (
               <div className="text-[12px] text-slate-400 mt-1">
