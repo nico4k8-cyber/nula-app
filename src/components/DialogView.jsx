@@ -90,7 +90,7 @@ export default function DialogView({
   const [showExitSheet, setShowExitSheet] = useState(false);
   const [imgOpen, setImgOpen]           = useState(true);
   const [imgLocked, setImgLocked]       = useState(false);
-  const [condOpen, setCondOpen]         = useState(false);
+  const [condOpen, setCondOpen]         = useState(true);
   const [condLocked, setCondLocked]     = useState(false);
 
   const recognitionRef    = useRef(null);
