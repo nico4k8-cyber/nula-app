@@ -12,6 +12,7 @@ export default function DebriefView({
   debriefAI,      // null = loading, { feedback, insight } = ready
   onNext,
   onWantsMore,
+  onRetry,        // retry same task for 3 stars (shown when stars < 3)
   t,
   lang
 }) {
@@ -123,6 +124,15 @@ export default function DebriefView({
 
       {/* CTA buttons */}
       <div className="px-5 pb-10 pt-3 flex flex-col gap-3">
+        {/* Retry for 3 stars — shown when solution is not ideal (R:1 or R:2) */}
+        {stars < 3 && onRetry && (
+          <button
+            onClick={onRetry}
+            className="w-full bg-violet-500 text-white text-[17px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-violet-200"
+          >
+            {lang === 'en' ? 'Try for 3 stars! ⭐⭐⭐' : 'Найти решение на 3 звезды! ⭐⭐⭐'}
+          </button>
+        )}
         {onWantsMore && (
           <button
             onClick={onWantsMore}
@@ -133,9 +143,9 @@ export default function DebriefView({
         )}
         <button
           onClick={onNext}
-          className={`w-full text-[16px] font-bold py-4 rounded-[22px] active:scale-[0.97] transition-all ${onWantsMore ? 'bg-slate-100 text-slate-600' : 'bg-orange-500 text-white shadow-lg shadow-orange-200 text-[17px] font-black'}`}
+          className={`w-full text-[16px] font-bold py-4 rounded-[22px] active:scale-[0.97] transition-all ${(onWantsMore || (stars < 3 && onRetry)) ? 'bg-slate-100 text-slate-600' : 'bg-orange-500 text-white shadow-lg shadow-orange-200 text-[17px] font-black'}`}
         >
-          {onWantsMore
+          {(onWantsMore || (stars < 3 && onRetry))
             ? (lang === 'en' ? 'Back to island' : 'На остров')
             : (lang === 'en' ? 'Continue →' : 'Продолжить →')
           }

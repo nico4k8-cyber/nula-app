@@ -865,6 +865,11 @@ export default function App() {
             t={t}
             lang={lang}
             onNext={goOutcome}
+            onRetry={() => {
+              // Retry same task to get 3 stars (only offered when stars < 3)
+              trackEvent(EVENTS.TASK_STARTED, { taskId: task?.id, retry: true });
+              startDialog();
+            }}
             onWantsMore={() => {
               trackEvent(EVENTS.TASK_COMPLETED, { taskId: task?.id, wantsMore: true });
               const isFirstEver = !getCompletedIds().includes(task.id) && completedTasks.length === 0;
