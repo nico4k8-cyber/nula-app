@@ -108,7 +108,7 @@ export default function DialogView({
     // Сбрасываем состояние картинки при смене задачи
     setImgOpen(true);
     setImgLocked(false);
-    setCondOpen(false);
+    setCondOpen(true);   // show task condition when entering a new task
     setCondLocked(false);
     return () => {
       cancelledRef.current = true;
