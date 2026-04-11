@@ -132,9 +132,9 @@ export function sanitizeUserMessage(message) {
     return { safe: false, sanitized: trimmed, threat: `reversed_injection: ${revCheck.reason}` };
   }
 
-  // 4. Длина — слишком длинное сообщение подозрительно для детского чата
+  // 4. Длина — обрезаем длинные сообщения, но не блокируем (дети иногда копипастят)
   if (trimmed.length > 2000) {
-    return { safe: false, sanitized: trimmed.slice(0, 2000), threat: 'message_too_long' };
+    return { safe: true, sanitized: trimmed.slice(0, 2000), threat: null };
   }
 
   return { safe: true, sanitized: trimmed, threat: null };
