@@ -2,16 +2,23 @@ import { useEffect, useState } from "react";
 
 export default function IslandUnlockScreen({ islandName = "Главный остров", onComplete }) {
   const [stage, setStage] = useState("glow"); // glow → text → done
+  const timersRef = useState(() => [])[0];
 
   useEffect(() => {
     const t1 = setTimeout(() => setStage("text"), 600);
     const t2 = setTimeout(() => setStage("done"), 3200);
     const t3 = setTimeout(() => onComplete?.(), 3600);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    timersRef.push(t1, t2, t3);
+    return () => timersRef.forEach(clearTimeout);
   }, []);
 
+  function handleSkip() {
+    timersRef.forEach(clearTimeout);
+    onComplete?.();
+  }
+
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-slate-950 overflow-hidden">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-slate-950 overflow-hidden" onClick={handleSkip}>
       <style>{`
         @keyframes islandFloat {
           0%, 100% { transform: translateY(0px) scale(1); }
@@ -109,12 +116,15 @@ export default function IslandUnlockScreen({ islandName = "Главный ост
         </div>
       )}
 
-      {/* Progress dots */}
-      {stage === "text" && (
-        <div className="absolute bottom-16 flex gap-2">
-          {[0, 1, 2].map(i => (
-            <div key={i} className={`rounded-full transition-all duration-500 ${i === 0 ? "w-6 h-2 bg-amber-400" : "w-2 h-2 bg-white/20"}`} />
-          ))}
+      {/* Tap to continue */}
+      {stage !== "glow" && (
+        <div className="absolute bottom-12 flex flex-col items-center gap-3">
+          <p className="text-white/40 text-[12px] font-medium">нажми чтобы продолжить</p>
+          <div className="flex gap-2">
+            {[0, 1, 2].map(i => (
+              <div key={i} className={`rounded-full transition-all duration-500 ${i === 0 ? "w-6 h-2 bg-amber-400" : "w-2 h-2 bg-white/20"}`} />
+            ))}
+          </div>
         </div>
       )}
     </div>
