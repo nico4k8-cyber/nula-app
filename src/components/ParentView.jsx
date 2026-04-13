@@ -6,7 +6,7 @@ const BUILDING_NAMES = {
   'nature-reserve': 'Заповедник',
   'workshop': 'Мастерская',
   'farm': 'Ферма',
-  'bredo': 'Бредогенератор',
+  'bredo': 'Генератор идей',
   'laboratory': 'Лаборатория',
   'tsar': 'Царь-гора'
 };

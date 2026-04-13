@@ -108,7 +108,7 @@ export default function BredomakerView({ onBack, t }) {
 
         <div className="flex flex-col items-center justify-center flex-1 px-8 text-center gap-6 pt-24">
           <div className="text-8xl">⚙️</div>
-          <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900">Бредогенератор</h1>
+          <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900">Генератор идей</h1>
           <p className="text-slate-600 text-[16px] leading-relaxed max-w-xs">
             Тебе дадут случайный предмет.<br />
             Придумай из него <strong>изобретение</strong>.<br />

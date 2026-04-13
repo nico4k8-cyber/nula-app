@@ -77,7 +77,7 @@ export const ISLAND_MAPPING = {
     imgUrl: "/assets/webp/island_laboratory.webp",
     buildings: [
       { id: 'laboratory', name: 'Лаборатория', icon: '🧪', color: 'bg-indigo-600' },
-      { id: 'bredo', name: 'Бредогенератор', icon: '⚙️', color: 'bg-rose-600' }
+      { id: 'bredo', name: 'Генератор идей', icon: '⚙️', color: 'bg-rose-600' }
     ]
   },
   summit: {

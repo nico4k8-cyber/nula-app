@@ -4,10 +4,10 @@ import { useGameStore } from '../store/gameStore';
 
 const PERKS = [
   { icon: '♾️', text: 'Безлимитные задачи каждый день' },
-  { icon: '🏝️', text: 'Все 4 острова и новые каждый месяц' },
-  { icon: '🔬', text: 'Лаборатория, Бредогенератор, Царь-гора' },
+  { icon: '🏝️', text: 'Все острова и новые задачи каждую неделю' },
+  { icon: '🔬', text: 'Лаборатория, Генератор идей, Царь-гора' },
   { icon: '🏆', text: 'Патентная копилка изобретений' },
-  { icon: '📊', text: 'Прогресс-отчёт для родителей' },
+  { icon: '📊', text: 'Прогресс и статистика' },
   { icon: '🧊', text: 'Заморозка серии — пропусти день без потери серии' },
 ];
 
@@ -144,7 +144,7 @@ export default function Paywall({ onSelectPlan, onBack, onDonate, userId, userEm
             <span className="text-4xl">{isPromo ? '🎁' : '💎'}</span>
           </div>
           <h2 className="text-3xl font-black mb-1 text-center leading-tight">
-            {isPromo ? 'Специальное предложение!' : 'Дневной лимит\nисчерпан'}
+            {isPromo ? 'Специальное предложение!' : 'Полный доступ'}
           </h2>
           <p className="text-slate-400 text-sm text-center mb-6">
             {isPromo

@@ -749,7 +749,7 @@ function TabIslands({ TASKS }) {
       'workshop':       { name: 'Мастерская',    icon: '🔧', color: 'bg-slate-600' },
       'farm':           { name: 'Ферма',         icon: '🚜', color: 'bg-emerald-600' },
       'laboratory':     { name: 'Лаборатория',   icon: '🧪', color: 'bg-indigo-600' },
-      'bredo':          { name: 'Бредогенератор',icon: '⚙️', color: 'bg-rose-600' },
+      'bredo':          { name: 'Генератор идей', icon: '⚙️', color: 'bg-rose-600' },
       'tsar':           { name: 'Царь-гора',     icon: '🏔️', color: 'bg-violet-600' },
     };
     const ISLAND_IMG = { main: '/assets/webp/main_island.webp', craft: '/assets/webp/island_zapovednik.webp', science: '/assets/webp/island_laboratory.webp', summit: '/assets/webp/island_tsar.webp' };
