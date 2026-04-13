@@ -7,6 +7,7 @@ export default function SettingsMenu({
   onResetProgress,
   onStartOnboarding,
   onShowParentView,
+  onShowPaywall,
   completedTasks,
   audio,
   audioTracks,
@@ -123,6 +124,19 @@ export default function SettingsMenu({
             <span>Напоминания в Telegram</span>
             <span className="ml-auto text-blue-400">→</span>
           </a>
+
+          {onShowPaywall && (
+            <button onClick={() => { onShowPaywall(); }}
+              className="w-full group flex items-center gap-4 bg-emerald-500 hover:bg-emerald-600 active:translate-y-0.5 rounded-[28px] px-6 py-5 shadow-lg shadow-emerald-900/30 border-b-4 border-emerald-700 active:border-b-0 transition-all"
+            >
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl shrink-0">💎</div>
+              <div className="flex-1 text-left">
+                <h3 className="text-white font-black text-[16px] uppercase tracking-tight leading-tight">Полный доступ</h3>
+                <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest mt-0.5">Демо · попробуй бесплатно</p>
+              </div>
+              <span className="text-white/50 text-xl group-hover:translate-x-1 transition-transform">→</span>
+            </button>
+          )}
 
           {onShowParentView && (
             <button onClick={() => { onShowParentView(); }}

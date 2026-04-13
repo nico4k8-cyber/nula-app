@@ -980,6 +980,7 @@ export default function App() {
           setTimeout(() => onboarding.startOnboarding(), 700);
         }}
         onShowParentView={() => { setMenuOpen(false); setPhase("parent-view"); }}
+        onShowPaywall={() => { setMenuOpen(false); setPhase("paywall"); }}
         completedTasks={completedTasks} audio={audio} audioTracks={AUDIO_TRACKS} lang={lang} setLang={setLang} t={t} user={user} setUser={setUser}
       />
 

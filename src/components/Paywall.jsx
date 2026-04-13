@@ -35,8 +35,8 @@ function GateScreen({ onSubmit, onCancel, task }) {
   return (
     <div className="relative z-10 w-full max-w-sm flex flex-col items-center text-center">
       <div className="text-5xl mb-6">👨‍👩‍👧‍👦</div>
-      <h2 className="text-2xl font-bold mb-2">Проверка для родителей</h2>
-      <p className="text-slate-400 mb-8">Решите пример, чтобы продолжить:</p>
+      <h2 className="text-2xl font-bold mb-2">Демо-активация</h2>
+      <p className="text-slate-400 mb-8">Реши пример, чтобы получить демо-доступ:</p>
       <div className="w-full bg-slate-800 rounded-3xl p-8 border border-white/5 shadow-2xl">
         <div className="text-4xl font-bold mb-6 text-indigo-400">{task.q} = ?</div>
         <input
@@ -125,6 +125,17 @@ export default function Paywall({ onSelectPlan, onBack, onDonate, userId, userEm
   return (
     <div className="flex flex-col flex-1 px-6 py-10 items-center justify-start bg-slate-900 text-white animate-fade-in relative overflow-hidden h-full overflow-y-auto">
       <div className="absolute top-0 right-0 w-[80%] h-[25%] bg-indigo-600/20 blur-[130px] pointer-events-none" />
+
+      {/* Demo mode banner */}
+      <div className="relative z-10 w-full max-w-sm mb-4">
+        <div className="bg-amber-500/20 border border-amber-400/40 rounded-2xl px-4 py-3 flex items-center gap-3">
+          <span className="text-xl">🧪</span>
+          <div>
+            <p className="text-amber-300 font-black text-[13px] uppercase tracking-wide">Демо-режим</p>
+            <p className="text-amber-200/70 text-[11px] leading-snug">Оплата не нужна — это тестовый доступ. Реальная оплата появится позже.</p>
+          </div>
+        </div>
+      </div>
 
       {!gateOpen ? (
         <div className="relative z-10 w-full max-w-sm flex flex-col items-center pt-4 pb-20">
