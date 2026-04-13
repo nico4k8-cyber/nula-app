@@ -245,9 +245,8 @@ export default function DialogView({
             <div style={{ position:'absolute', bottom:10, left:14, color:'#fff', fontFamily:"'Baloo 2',sans-serif", fontSize:14, fontWeight:700, textShadow:'0 1px 6px rgba(0,0,0,0.6)', pointerEvents:'none' }}>{task.title}</div>
           </div>
 
-          {/* Тизер + кнопки */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px 6px', gap:8 }}>
-            <div style={{ fontSize:13, color:C.dim, fontWeight:700, flex:1 }}>{!condOpen ? (task.teaser || task.puzzle?.question || '') : ''}</div>
+          {/* Кнопки управления */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', padding:'10px 14px 6px', gap:8 }}>
             <div style={{ display:'flex', alignItems:'center', gap:6 }}>
               {!imgOpen && (
                 <button onClick={toggleImg} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'4px 9px', fontSize:11, fontWeight:800, color:C.dim, cursor:'pointer', whiteSpace:'nowrap' }}>
