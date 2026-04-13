@@ -32,10 +32,9 @@ export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onS
   }, [TASKS, today]);
 
   const [minimized, setMinimized] = useState(() => {
-    // If user explicitly opened it this session, keep it open
+    // Start collapsed by default; stay expanded only if user explicitly opened it this session
     if (sessionStorage.getItem("shariel_daily_expanded") === "1") return false;
-    const stored = localStorage.getItem("shariel_daily_dismissed");
-    return stored === new Date().toLocaleDateString('sv');
+    return true;
   });
 
   if (!TASKS?.length || !task) return null;
@@ -55,7 +54,6 @@ export default function DailyChallenge({ TASKS, completedTasks, onStartTask, onS
 
   function handleMinimize() {
     sessionStorage.removeItem("shariel_daily_expanded");
-    localStorage.setItem("shariel_daily_dismissed", new Date().toLocaleDateString('sv'));
     setMinimized(true);
   }
 
