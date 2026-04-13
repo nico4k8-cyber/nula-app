@@ -437,17 +437,7 @@ export default function App() {
       setTrizState(newState);
     }
 
-    // Engaging opener — varies each session
-    const openers = [
-      "Смотри, какая задача попалась!",
-      "О, кажется тут есть хитрость!",
-      "Интересная загадка, давай разберём!",
-      "Мне нравится эта задача, поехали!",
-      "Кажется, я знаю куда копать — попробуем?",
-    ];
-    const opener = openers[Math.floor(Math.random() * openers.length)];
-
-    setMessages([{ id: nextMsgId(), type: "bot", text: opener, ts: Date.now() }]);
+    setMessages([]);
     setPhase("dialog");
     setIsTyping(true);
     setTimeout(() => inputRef.current?.focus(), 200);
