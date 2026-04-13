@@ -595,7 +595,7 @@ export default function App() {
         <UpsellView
           message={upsellMessage}
           onDismiss={() => { trackEvent(EVENTS.UPSELL_DISMISSED, { trigger: upsellMessage.trigger }); setUpsellMessage(null); }}
-          onSignup={() => { trackEvent(EVENTS.UPSELL_CTA_CLICKED, { trigger: upsellMessage.trigger, type: upsellMessage.type }); setUpsellMessage(null); window.open("https://t.me/ugolok_triz", "_blank"); }}
+          onSignup={() => { trackEvent(EVENTS.UPSELL_CTA_CLICKED, { trigger: upsellMessage.trigger, type: upsellMessage.type }); setUpsellMessage(null); window.open("https://trizintellect.tilda.ws/triz_lesson", "_blank"); }}
           onPromo={() => { trackEvent(EVENTS.PROMO_CTA_CLICKED, { trigger: upsellMessage.trigger }); setUpsellMessage(null); setPhase("paywall"); }}
         />
       )}
