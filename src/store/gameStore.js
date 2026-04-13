@@ -26,6 +26,7 @@ export const useGameStore = create(
       lastPlayDate: null, // YYYY-MM-DD
       streakFreezeCount: 0,
       streakFreezeUsedAt: null, // ISO date string YYYY-MM-DD
+      streakFreezeRefillMonth: null, // YYYY-MM of last refill
 
       // ---- UPSELL ----
       upsellShownAt: [], // массив completedTasks.length при которых показывали
@@ -187,6 +188,18 @@ export const useGameStore = create(
       addStreakFreeze: (count = 1) => set((state) => ({
         streakFreezeCount: state.streakFreezeCount + count,
       })),
+
+      // Call on app load and on premium change — refills freezes once per month
+      checkAndRefillFreezes: (isPremium) => set((state) => {
+        const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+        if (state.streakFreezeRefillMonth === currentMonth) return {}; // already refilled this month
+        const monthlyAllotment = isPremium ? 3 : 1;
+        const newCount = Math.min(state.streakFreezeCount + monthlyAllotment, monthlyAllotment);
+        return {
+          streakFreezeCount: newCount,
+          streakFreezeRefillMonth: currentMonth,
+        };
+      }),
 
       markUpsellShown: (count) => set((state) => ({
         upsellShownAt: [...state.upsellShownAt, count],

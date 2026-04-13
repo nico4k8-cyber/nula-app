@@ -90,6 +90,7 @@ export default function App() {
     streak, updateStreak, upsellShownAt, markUpsellShown,
     streakFreezeCount, streakFreezeUsedAt,
     useHint, getHintsLeft, canPlayTask, updateAdaptive, getCompletedIds,
+    checkAndRefillFreezes,
   } = useGameStore();
 
   // Navigation & UI State
@@ -366,6 +367,11 @@ export default function App() {
       setMenuOpen(false);
     }
   }, [menuOpen]);
+
+  // Monthly freeze refill — 3 per month for premium, 1 per month free
+  useEffect(() => {
+    checkAndRefillFreezes(isPremium);
+  }, [isPremium]);
 
   // "Новый день" bubble — показываем если уже играли раньше и сегодня первый заход
   useEffect(() => {
