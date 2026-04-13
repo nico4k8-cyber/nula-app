@@ -204,15 +204,36 @@ export const useGameStore = create(
       }),
 
       completeTask: (taskId, starsEarned, foundPrinciple = '') => set((state) => {
-        if (state.completedTasks.some(t => (typeof t === 'object' ? t.taskId : t) === taskId)) {
-          return state;
+        const existingIdx = state.completedTasks.findIndex(t => (typeof t === 'object' ? t.taskId : t) === taskId);
+
+        if (existingIdx >= 0) {
+          // Retry: append new solution if different, update stars to max
+          const existing = state.completedTasks[existingIdx];
+          const prevSolutions = existing.solutions || (existing.foundPrinciple ? [existing.foundPrinciple] : []);
+          const newSolutions = foundPrinciple && !prevSolutions.includes(foundPrinciple)
+            ? [...prevSolutions, foundPrinciple]
+            : prevSolutions;
+          const updated = {
+            ...existing,
+            stars: Math.max(existing.stars || 1, starsEarned),
+            solutions: newSolutions,
+            foundPrinciple: newSolutions[newSolutions.length - 1] || existing.foundPrinciple,
+            solvedAt: new Date().toISOString(),
+          };
+          const nextTasks = [...state.completedTasks];
+          nextTasks[existingIdx] = updated;
+          return { completedTasks: nextTasks };
         }
 
-        const taskEntry = { taskId, stars: starsEarned, foundPrinciple, solvedAt: new Date().toISOString() };
+        const taskEntry = {
+          taskId,
+          stars: starsEarned,
+          foundPrinciple,
+          solutions: foundPrinciple ? [foundPrinciple] : [],
+          solvedAt: new Date().toISOString(),
+        };
         const nextTasks = [...state.completedTasks, taskEntry];
         const nextStars = state.totalStars + starsEarned;
-
-        // Also increment daily count
         const nextDailyCount = state.dailyTasksCount + 1;
         const lastReset = state.lastTaskReset || new Date().toISOString();
 

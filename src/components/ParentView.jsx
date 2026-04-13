@@ -30,8 +30,8 @@ export default function ParentView({ completedTasks, totalStars, streak, TASKS =
     <div className="flex flex-col flex-1 bg-white min-h-[100dvh]">
       <div className="px-5 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between">
         <div>
-          <h1 className="text-[20px] font-bold text-gray-900">Для родителей</h1>
-          <p className="text-[13px] text-gray-500">Прогресс вашего ребёнка</p>
+          <h1 className="text-[20px] font-bold text-gray-900">Мой прогресс</h1>
+          <p className="text-[13px] text-gray-500">Что ты уже решил</p>
         </div>
         <button onClick={onBack} className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full text-gray-600">
           ✕
@@ -57,7 +57,7 @@ export default function ParentView({ completedTasks, totalStars, streak, TASKS =
 
         {/* Solved tasks list */}
         <div className="flex flex-col gap-3">
-          <h2 className="text-[16px] font-bold text-gray-800">Что решил ребёнок</h2>
+          <h2 className="text-[16px] font-bold text-gray-800">Решённые задачи</h2>
 
           {solvedTasks.length === 0 && (
             <div className="text-center py-8 text-gray-400">
@@ -67,36 +67,44 @@ export default function ParentView({ completedTasks, totalStars, streak, TASKS =
             </div>
           )}
 
-          {solvedTasks.map(({ taskId, stars, foundPrinciple, task }) => (
-            <div key={taskId} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-              <span className="text-2xl">{task.icon}</span>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-[14px] text-gray-900">{task.title}</div>
-                <div className="text-[12px] text-gray-500">
-                  {BUILDING_NAMES[task.category] || task.category}
-                  {foundPrinciple && ` · Идея: "${foundPrinciple}"`}
+          {solvedTasks.map(({ taskId, stars, foundPrinciple, solutions, task }) => {
+            const allSolutions = solutions?.length ? solutions : (foundPrinciple ? [foundPrinciple] : []);
+            return (
+              <div key={taskId} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
+                <span className="text-2xl">{task.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-[14px] text-gray-900">{task.title}</div>
+                  <div className="text-[12px] text-gray-400 mb-1">
+                    {BUILDING_NAMES[task.category] || task.category}
+                  </div>
+                  {allSolutions.map((sol, i) => (
+                    <div key={i} className="text-[12px] text-indigo-700 bg-indigo-50 rounded-lg px-2 py-1 mb-1">
+                      {allSolutions.length > 1 && <span className="font-bold text-indigo-400 mr-1">#{i + 1}</span>}
+                      💡 {sol}
+                    </div>
+                  ))}
                 </div>
+                <div className="text-[14px] text-orange-500 shrink-0">{'⭐'.repeat(stars || 1)}</div>
               </div>
-              <div className="text-[14px] text-orange-500">{'⭐'.repeat(stars || 1)}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Benefits section */}
         <div className="bg-indigo-50 rounded-[20px] p-5 border border-indigo-100">
-          <h3 className="font-bold text-[16px] mb-3 text-indigo-900">Что это даёт?</h3>
+          <h3 className="font-bold text-[16px] mb-3 text-indigo-900">Зачем это?</h3>
           <ul className="flex flex-col gap-3">
             <li className="flex gap-3 text-[14px] text-indigo-800">
               <span className="text-xl">🚀</span>
-              <span><strong>Системное мышление:</strong> Ребёнок учится видеть связи между явлениями.</span>
+              <span><strong>Видеть связи:</strong> Учишься замечать, как всё в мире устроено и зачем.</span>
             </li>
             <li className="flex gap-3 text-[14px] text-indigo-800">
               <span className="text-xl">🛠️</span>
-              <span><strong>Решение проблем:</strong> Методы ТРИЗ помогают находить выход из тупиковых ситуаций.</span>
+              <span><strong>Решать проблемы:</strong> Методы ТРИЗ помогают найти выход даже из сложных ситуаций.</span>
             </li>
             <li className="flex gap-3 text-[14px] text-indigo-800">
               <span className="text-xl">🧠</span>
-              <span><strong>Гибкость ума:</strong> Развитие способности смотреть на вещи под разным углом.</span>
+              <span><strong>Думать иначе:</strong> Смотришь на вещи под разным углом — как настоящий изобретатель.</span>
             </li>
           </ul>
         </div>
