@@ -52,7 +52,7 @@ export default function ParentView({ completedTasks, totalStars, streak, TASKS =
               style={{ width: `${progressPct}%` }}
             ></div>
           </div>
-          <div className="text-[11px] text-orange-400 mt-1">{solvedTasks.length} из {TASKS.length} задач</div>
+          <div className="text-[11px] text-orange-400 mt-1">{solvedTasks.length} {solvedTasks.length === 1 ? 'задача решена' : solvedTasks.length < 5 ? 'задачи решено' : 'задач решено'}</div>
         </div>
 
         {/* Solved tasks list */}
@@ -114,10 +114,10 @@ export default function ParentView({ completedTasks, totalStars, streak, TASKS =
       <div className="bg-white rounded-t-[24px] p-6 shadow-xl border border-gray-100 flex flex-col items-center text-center gap-4 border-t-4 border-t-orange-500">
         <div className="text-[14px] font-bold text-orange-600">ПРЕДЛОЖЕНИЕ ДЛЯ ВАС</div>
         <h3 className="text-[18px] font-bold leading-tight">
-          Разблокируйте полный доступ <br/> к 40+ урокам мастерства
+          Полный доступ — все острова и задачи
         </h3>
         <p className="text-[13px] text-gray-500">
-          Откройте все 34 скрытых метода и подарите ребёнку возможность стать настоящим изобретателем.
+          Открой все методы ТРИЗ и стань настоящим изобретателем.
         </p>
 
         <button
