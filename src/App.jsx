@@ -413,7 +413,7 @@ export default function App() {
     setPhase("task-preview");
   }
 
-  function startDialog() {
+  async function startDialog() {
     if (!isPremium && dailyTasksCount >= 3) {
       setPhase("paywall");
       return;
@@ -425,13 +425,6 @@ export default function App() {
     setTwistChoice(null);
     setPrizStep(0);
     setIsHinting(false);
-    
-    // Build opening hook for any task
-    const hook = (task.difficulty >= 2 ? task.puzzle?.hookSenior : task.puzzle?.hookJunior)
-      || task.teaser
-      || task.puzzle?.question_ru
-      || task.puzzle?.question
-      || "Что здесь является главным противоречием?";
 
     // Auto-create TRIZ state if it's a TRIZ task (has core_problem or ikr)
     if (task.core_problem || task.ikr) {
@@ -444,14 +437,39 @@ export default function App() {
       setTrizState(newState);
     }
 
-    // Always show opening messages so dialog is never empty
-    setMessages([
-      { id: nextMsgId(), type: "bot", text: "🐉 Давай решим эту задачу вместе!", ts: Date.now() },
-      { id: nextMsgId(), type: "bot", text: hook, ts: Date.now() + 1 },
-    ]);
-    
+    // Engaging opener — varies each session
+    const openers = [
+      "Смотри, какая задача попалась!",
+      "О, кажется тут есть хитрость!",
+      "Интересная загадка, давай разберём!",
+      "Мне нравится эта задача, поехали!",
+      "Кажется, я знаю куда копать — попробуем?",
+    ];
+    const opener = openers[Math.floor(Math.random() * openers.length)];
+
+    setMessages([{ id: nextMsgId(), type: "bot", text: opener, ts: Date.now() }]);
     setPhase("dialog");
+    setIsTyping(true);
     setTimeout(() => inputRef.current?.focus(), 200);
+
+    // AI generates the first guiding question (S:0, no history)
+    try {
+      const result = await askTriz("[СТАРТ]", task, { phase: 0 }, [], difficulty);
+      if (result.newState) setTrizState(result.newState);
+      setMessages(prev => [...prev, {
+        id: nextMsgId(), type: "bot",
+        text: result.text || "С чего начнём?",
+        ts: Date.now(),
+      }]);
+    } catch {
+      setMessages(prev => [...prev, {
+        id: nextMsgId(), type: "bot",
+        text: "С чего начнём?",
+        ts: Date.now(),
+      }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   async function handleUserMessage() {
