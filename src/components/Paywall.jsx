@@ -213,7 +213,7 @@ export default function Paywall({ onSelectPlan, onBack, onDonate, userId, userEm
 
           <button onClick={() => { trackEvent(EVENTS.PAYWALL_DONATE_CLICKED); onDonate(); }}
             className="w-full py-4 text-emerald-400 font-bold border-2 border-emerald-400/20 rounded-2xl hover:bg-emerald-400/10 active:scale-95 transition-all mb-2">
-            ☕ Поддержать проектом (Донат)
+            ☕ Поддержать проект
           </button>
           <button onClick={() => { trackEvent(EVENTS.PAYWALL_DISMISSED, { isPromo }); onBack(); }} className="w-full py-3 text-slate-500 font-bold text-sm">
             {isPromo ? 'Не сейчас' : 'Отдохнуть до завтра'}
