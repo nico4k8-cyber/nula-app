@@ -120,7 +120,7 @@ export default function DebriefView({
             <p className="text-[13px] text-emerald-900 font-medium leading-snug">
               Хочешь разбирать задачи с живым преподавателем?{' '}
               <a
-                href="https://trizintellect.tilda.ws/triz_lesson"
+                href="https://trizintellect.tilda.ws/triz_lesson?utm_source=app&utm_medium=debrief&utm_campaign=teacher_invite#booking"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-black text-emerald-700 underline decoration-emerald-300 underline-offset-2"
