@@ -142,7 +142,7 @@ export default function DebriefView({
             onClick={onRetry}
             className="w-full bg-violet-500 text-white text-[16px] font-black py-4 px-5 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-violet-200 leading-snug"
           >
-            {retryHint || (lang === 'en' ? 'Want to find an even better solution? →' : 'Хочешь найти решение ещё круче? →')}
+            {retryHint || (lang === 'en' ? 'There might be another way — want to look? →' : 'А ещё есть один способ — хочешь найти? →')}
           </button>
         )}
         {onWantsMore && (
