@@ -139,7 +139,7 @@ export default function App() {
   const [showNewDayBubble, setShowNewDayBubble] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [remoteTasks, setRemoteTasks] = useState(null);
-  const [tutorialTaskId, setTutorialTaskId] = useState(33); // default: глухой музыкант
+  const [tutorialTaskId, setTutorialTaskId] = useState(null); // set via app_config in Supabase
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
