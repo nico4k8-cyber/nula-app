@@ -222,7 +222,7 @@ export default function Paywall({ onSelectPlan, onBack, onDonate, userId, userEm
           {/* Soft upsell */}
           <div className="mt-6 text-center px-4">
             <p className="text-slate-500 text-xs">Хочешь заниматься ТРИЗ с живым преподавателем?{' '}
-              <button onClick={() => window.open('https://trizintellect.tilda.ws/triz_lesson', '_blank')}
+              <button onClick={() => window.open('https://trizintellect.tilda.ws/triz_lesson?utm_source=app&utm_medium=paywall&utm_campaign=teacher_invite#booking', '_blank')}
                 className="text-indigo-400 font-bold underline decoration-indigo-400/30 underline-offset-4">
                 Пробные занятия →
               </button>
