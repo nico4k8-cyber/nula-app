@@ -128,10 +128,10 @@ export default function SettingsMenu({
             <button onClick={() => { onShowParentView(); }}
               className="w-full group flex items-center gap-4 bg-indigo-500 hover:bg-indigo-600 active:translate-y-0.5 rounded-[28px] px-6 py-5 shadow-lg shadow-indigo-900/30 border-b-4 border-indigo-700 active:border-b-0 transition-all"
             >
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl shrink-0">👨‍👩‍👧</div>
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl shrink-0">🏆</div>
               <div className="flex-1 text-left">
-                <h3 className="text-white font-black text-[16px] uppercase tracking-tight leading-tight">Для родителей</h3>
-                <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest mt-0.5">Прогресс ребёнка</p>
+                <h3 className="text-white font-black text-[16px] uppercase tracking-tight leading-tight">Мой прогресс</h3>
+                <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest mt-0.5">Звёзды и достижения</p>
               </div>
               <span className="text-white/50 text-xl group-hover:translate-x-1 transition-transform">→</span>
             </button>
