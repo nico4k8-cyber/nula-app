@@ -247,7 +247,7 @@ export default function DialogView({
 
           {/* Тизер + кнопки */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px 6px', gap:8 }}>
-            <div style={{ fontSize:13, color:C.dim, fontWeight:700, flex:1 }}>{task.teaser || task.puzzle?.question || ''}</div>
+            <div style={{ fontSize:13, color:C.dim, fontWeight:700, flex:1 }}>{!condOpen ? (task.teaser || task.puzzle?.question || '') : ''}</div>
             <div style={{ display:'flex', alignItems:'center', gap:6 }}>
               {!imgOpen && (
                 <button onClick={toggleImg} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'4px 9px', fontSize:11, fontWeight:800, color:C.dim, cursor:'pointer', whiteSpace:'nowrap' }}>
@@ -271,12 +271,6 @@ export default function DialogView({
               <p style={{ fontSize:14, color:C.text, fontWeight:600, lineHeight:1.65, marginBottom:8 }}>
                 {task.condition || task.teaser || task.puzzle?.question || ''}
               </p>
-              {task.puzzle?.question && task.condition && (
-                <>
-                  <p style={{ fontSize:11, color:C.dim, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>Вопрос:</p>
-                  <p style={{ fontSize:14, color:C.text, fontWeight:600, lineHeight:1.65 }}>{task.puzzle.question}</p>
-                </>
-              )}
             </div>
           </div>
         </div>
