@@ -9,7 +9,7 @@ function getGlobalAudio() {
   if (!globalAudioRef) {
     globalAudioRef = new Audio();
     globalAudioRef.loop = true;
-    globalAudioRef.volume = 0.05;
+    globalAudioRef.volume = 0.02;
   }
   return globalAudioRef;
 }
