@@ -539,7 +539,7 @@ export default function App() {
 
   function goOutcome() {
     const isNew = !getCompletedIds().includes(task.id);
-    completeTask(task.id, sessionStars, childSolution);
+    completeTask(task.id, sessionStars, childSolution, task);
     setChildSolution('');
     checkUnlocks();
     updateStreak();
@@ -883,7 +883,7 @@ export default function App() {
             onWantsMore={() => {
               trackEvent(EVENTS.TASK_COMPLETED, { taskId: task?.id, wantsMore: true });
               const isFirstEver = !getCompletedIds().includes(task.id) && completedTasks.length === 0;
-              completeTask(task.id, sessionStars, childSolution);
+              completeTask(task.id, sessionStars, childSolution, task);
               updateStreak();
               updateAdaptive({ hints: sessionHints, attempts: sessionAttempts });
               if (isFirstEver) {

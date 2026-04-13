@@ -19,8 +19,15 @@ export default function ParentView({ completedTasks, totalStars, streak, TASKS =
   const solvedTasks = (completedTasks || [])
     .map(ct => {
       const task = taskMap[ct.taskId];
-      if (!task) return null;
-      return { ...ct, task };
+      // Fallback to snapshot metadata stored at completion time
+      const resolved = task || (ct.taskTitle ? {
+        id: ct.taskId,
+        title: ct.taskTitle,
+        icon: ct.taskIcon || '📝',
+        category: ct.taskCategory || '',
+      } : null);
+      if (!resolved) return null;
+      return { ...ct, task: resolved };
     })
     .filter(Boolean);
 
@@ -62,8 +69,8 @@ export default function ParentView({ completedTasks, totalStars, streak, TASKS =
           {solvedTasks.length === 0 && (
             <div className="text-center py-8 text-gray-400">
               <div className="text-4xl mb-3">🌱</div>
-              <p className="text-[14px]">Ребёнок ещё не решил ни одной задачи</p>
-              <p className="text-[12px]">Начните играть — здесь появится прогресс</p>
+              <p className="text-[14px]">Ты ещё не решил ни одной задачи</p>
+              <p className="text-[12px]">Начни играть — здесь появится прогресс</p>
             </div>
           )}
 

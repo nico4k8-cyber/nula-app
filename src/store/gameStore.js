@@ -216,7 +216,7 @@ export const useGameStore = create(
         return { unlockedBuildings: [...state.unlockedBuildings, buildingId] };
       }),
 
-      completeTask: (taskId, starsEarned, foundPrinciple = '') => set((state) => {
+      completeTask: (taskId, starsEarned, foundPrinciple = '', taskMeta = null) => set((state) => {
         const existingIdx = state.completedTasks.findIndex(t => (typeof t === 'object' ? t.taskId : t) === taskId);
 
         if (existingIdx >= 0) {
@@ -232,6 +232,9 @@ export const useGameStore = create(
             solutions: newSolutions,
             foundPrinciple: newSolutions[newSolutions.length - 1] || existing.foundPrinciple,
             solvedAt: new Date().toISOString(),
+            taskTitle: existing.taskTitle || taskMeta?.title || null,
+            taskIcon: existing.taskIcon || taskMeta?.icon || null,
+            taskCategory: existing.taskCategory || taskMeta?.category || null,
           };
           const nextTasks = [...state.completedTasks];
           nextTasks[existingIdx] = updated;
@@ -244,6 +247,10 @@ export const useGameStore = create(
           foundPrinciple,
           solutions: foundPrinciple ? [foundPrinciple] : [],
           solvedAt: new Date().toISOString(),
+          // snapshot of task metadata so ParentView can display without TASKS array
+          taskTitle: taskMeta?.title || null,
+          taskIcon: taskMeta?.icon || null,
+          taskCategory: taskMeta?.category || null,
         };
         const nextTasks = [...state.completedTasks, taskEntry];
         const nextStars = state.totalStars + starsEarned;

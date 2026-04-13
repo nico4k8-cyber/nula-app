@@ -112,6 +112,26 @@ export default function DebriefView({
         </div>
       )}
 
+      {/* Online lesson invite — show after task 3+ */}
+      {(completedCount ?? 0) >= 2 && (
+        <div className="mx-5 mb-3 bg-emerald-50 border-2 border-emerald-100 rounded-[20px] p-4 flex items-center gap-3">
+          <span className="text-2xl flex-shrink-0">👩‍🏫</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] text-emerald-900 font-medium leading-snug">
+              Хочешь разбирать задачи с живым преподавателем?{' '}
+              <a
+                href="https://trizintellect.tilda.ws/triz_lesson"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-black text-emerald-700 underline decoration-emerald-300 underline-offset-2"
+              >
+                Попробуй пробный урок →
+              </a>
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1" />
 
       {/* CTA buttons */}
