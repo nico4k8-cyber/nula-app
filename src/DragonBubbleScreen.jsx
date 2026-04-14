@@ -40,7 +40,7 @@ const STEPS_EN = [
   },
 ];
 
-export default function DragonBubbleScreen({ onStart, t, theme, lang = "ru" }) {
+export default function DragonBubbleScreen({ onStart, onSkip, onLogin, t, theme, lang = "ru" }) {
   const [step, setStep] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -91,6 +91,23 @@ export default function DragonBubbleScreen({ onStart, t, theme, lang = "ru" }) {
 
   return (
     <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 z-[9999]">
+      {/* Top bar: skip + login */}
+      <div className="absolute top-6 left-0 right-0 flex justify-between px-6">
+        <button
+          onClick={onSkip}
+          className="text-white/40 text-[13px] font-medium hover:text-white/70 transition-colors"
+        >
+          {lang === "en" ? "Skip" : "Пропустить"}
+        </button>
+        {onLogin && (
+          <button
+            onClick={onLogin}
+            className="text-amber-400 text-[13px] font-bold hover:text-amber-300 transition-colors"
+          >
+            {lang === "en" ? "Sign in" : "Войти"}
+          </button>
+        )}
+      </div>
       <style>{`
         @keyframes floatChar {
           0%, 100% { transform: translateY(0px); }

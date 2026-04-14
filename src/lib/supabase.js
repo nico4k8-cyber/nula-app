@@ -11,13 +11,23 @@ const isPlaceholder = () => supabaseUrl.includes('placeholder');
 export const syncProgress = async (userId, data) => {
   if (!userId || isPlaceholder()) return null;
 
+  // Normalize completedTasks to rich objects (preserve solutions, stars, foundPrinciple)
+  const richTasks = (data.completedTasks || []).map(t =>
+    typeof t === 'object' && t !== null
+      ? { taskId: String(t.taskId ?? t.id ?? t), stars: t.stars || 1, foundPrinciple: t.foundPrinciple || '', solutions: t.solutions || [], solvedAt: t.solvedAt || '' }
+      : { taskId: String(t), stars: 1, foundPrinciple: '', solutions: [], solvedAt: '' }
+  );
+
   const payload = {
     id: userId,
     stars: data.stars ?? data.totalStars ?? 0,
-    completed_tasks: (data.completedTasks || []).map(t =>
-      typeof t === 'object' && t !== null ? String(t.taskId ?? t.id ?? t) : String(t)
-    ), // extract taskId from objects, normalize to strings
+    // Keep text[] for backward compat (other queries may read it)
+    completed_tasks: richTasks.map(t => t.taskId),
+    // Rich jsonb column: full objects with solutions and stars
+    progress_json: richTasks,
     unlocked_buildings: data.unlockedBuildings || [],
+    streak: data.streak ?? 0,
+    last_play_date: data.lastPlayDate ?? null,
     updated_at: new Date().toISOString()
   };
   if (data.email) payload.email = data.email;
@@ -36,18 +46,33 @@ export const loadProgress = async (userId) => {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('stars, completed_tasks, unlocked_buildings')
+    .select('stars, completed_tasks, progress_json, unlocked_buildings, streak, last_play_date')
     .eq('id', userId)
     .single();
 
   if (error && error.code !== 'PGRST116') console.error('Supabase load error:', error);
   if (!data) return null;
 
-  // Map snake_case → camelCase for the app
+  // Use rich progress_json if available, fall back to plain IDs
+  let completedTasks;
+  if (data.progress_json && Array.isArray(data.progress_json) && data.progress_json.length > 0) {
+    completedTasks = data.progress_json.map(t =>
+      typeof t === 'object' && t !== null
+        ? { taskId: String(t.taskId), stars: t.stars || 1, foundPrinciple: t.foundPrinciple || '', solutions: Array.isArray(t.solutions) ? t.solutions : [], solvedAt: t.solvedAt || '' }
+        : { taskId: String(t), stars: 1, foundPrinciple: '', solutions: [], solvedAt: '' }
+    );
+  } else {
+    completedTasks = (data.completed_tasks || []).map(id =>
+      ({ taskId: String(id), stars: 1, foundPrinciple: '', solutions: [], solvedAt: '' })
+    );
+  }
+
   return {
     stars: data.stars || 0,
-    completedTasks: (data.completed_tasks || []).map(String), // normalize to strings
+    completedTasks,
     unlockedBuildings: data.unlocked_buildings || [],
+    streak: data.streak || 0,
+    lastPlayDate: data.last_play_date || null,
   };
 };
 

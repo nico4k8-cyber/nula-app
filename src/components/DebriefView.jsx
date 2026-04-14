@@ -136,32 +136,46 @@ export default function DebriefView({
 
       {/* CTA buttons */}
       <div className="px-5 pb-10 pt-3 flex flex-col gap-3">
-        {/* Retry for 3 stars — shown when solution is not ideal (R:1 or R:2) */}
-        {stars < 3 && onRetry && (
-          <button
-            onClick={onRetry}
-            className="w-full bg-violet-500 text-white text-[16px] font-black py-4 px-5 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-violet-200 leading-snug"
-          >
-            {retryHint || (lang === 'en' ? 'There might be another way — want to look? →' : 'А ещё есть один способ — хочешь найти? →')}
-          </button>
+        {stars < 3 && onRetry ? (
+          <>
+            {/* Hook text — separate from button, specific to flaw in current answer */}
+            <p className="text-[14px] text-slate-500 text-center px-2 leading-snug">
+              {retryHint || (lang === 'en' ? 'There might be another approach without that limitation.' : 'Есть способ, где этого недостатка не будет.')}
+            </p>
+            <button
+              onClick={onRetry}
+              className="w-full bg-violet-500 text-white text-[16px] font-black py-4 px-5 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-violet-200"
+            >
+              {lang === 'en' ? 'Look for a better way →' : 'Поискать лучше →'}
+            </button>
+            <button
+              onClick={onWantsMore || onNext}
+              className="w-full bg-orange-500 text-white text-[16px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-orange-200"
+            >
+              {lang === 'en' ? 'No, give me another task' : 'Нет, хочу другую задачу'}
+            </button>
+          </>
+        ) : (
+          <>
+            {onWantsMore && (
+              <button
+                onClick={onWantsMore}
+                className="w-full bg-orange-500 text-white text-[17px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-orange-200"
+              >
+                {lang === 'en' ? 'Another task! →' : 'Ещё задачу! →'}
+              </button>
+            )}
+            <button
+              onClick={onNext}
+              className={`w-full text-[16px] font-bold py-4 rounded-[22px] active:scale-[0.97] transition-all ${onWantsMore ? 'bg-slate-100 text-slate-600' : 'bg-orange-500 text-white shadow-lg shadow-orange-200 text-[17px] font-black'}`}
+            >
+              {onWantsMore
+                ? (lang === 'en' ? 'Back to island' : 'На остров')
+                : (lang === 'en' ? 'Continue →' : 'Продолжить →')
+              }
+            </button>
+          </>
         )}
-        {onWantsMore && (
-          <button
-            onClick={onWantsMore}
-            className="w-full bg-orange-500 text-white text-[17px] font-black py-4 rounded-[22px] active:scale-[0.97] transition-all shadow-lg shadow-orange-200"
-          >
-            {lang === 'en' ? 'Another task! →' : 'Ещё задачу! →'}
-          </button>
-        )}
-        <button
-          onClick={onNext}
-          className={`w-full text-[16px] font-bold py-4 rounded-[22px] active:scale-[0.97] transition-all ${(onWantsMore || (stars < 3 && onRetry)) ? 'bg-slate-100 text-slate-600' : 'bg-orange-500 text-white shadow-lg shadow-orange-200 text-[17px] font-black'}`}
-        >
-          {(onWantsMore || (stars < 3 && onRetry))
-            ? (lang === 'en' ? 'Back to island' : 'На остров')
-            : (lang === 'en' ? 'Continue →' : 'Продолжить →')
-          }
-        </button>
       </div>
     </div>
   );

@@ -94,7 +94,18 @@ export default function App() {
   } = useGameStore();
 
   // Navigation & UI State
-  const [phase, setPhase] = useState("dragon-splash");
+  // Skip splash if returning from OAuth redirect — go directly to the page user came from
+  const getInitialPhase = () => {
+    const isOAuthRedirect = window.location.hash.includes('access_token') ||
+      window.location.search.includes('code=');
+    if (!isOAuthRedirect) return "dragon-splash";
+    // Peek at saved return phase without popping (onAuthStateChange will pop it)
+    try {
+      const saved = localStorage.getItem('nula-auth-return-phase');
+      return (saved && saved !== 'auth') ? saved : "city";
+    } catch { return "city"; }
+  };
+  const [phase, setPhase] = useState(getInitialPhase);
   const [lang, setLang] = useState(saved?.lang || "ru");
   const [theme, setTheme] = useState(saved?.theme || "hayday");
   const [isDark, setIsDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -210,32 +221,67 @@ export default function App() {
           isMergingRef.current = true;
 
           // Read local progress directly from localStorage (bypasses Zustand hydration race)
-          let localCompleted = [], localStars = 0, localBuildings = [];
+          let localTasks = [], localStars = 0, localBuildings = [], localStreak = 0, localLastPlayDate = null;
           try {
             const raw = localStorage.getItem('nula-game-storage');
             const saved = raw ? JSON.parse(raw) : {};
             const s = saved.state || {};
-            localCompleted = (s.completedTasks || []).map(t => String(typeof t === 'object' ? t.taskId : t)); // normalize IDs to strings
+            localTasks = (s.completedTasks || []).map(t =>
+              typeof t === 'object' && t !== null ? t : { taskId: String(t), stars: 1, foundPrinciple: '', solutions: [], solvedAt: '' }
+            );
             localStars = s.totalStars || 0;
             localBuildings = s.unlockedBuildings || [];
+            localStreak = s.streak || 0;
+            localLastPlayDate = s.lastPlayDate || null;
           } catch {}
 
           // Also read from current Zustand state (in case rehydration has newer data than localStorage snapshot)
           const currentZustand = useGameStore.getState();
-          localCompleted = Array.from(new Set([...localCompleted, ...currentZustand.completedTasks.map(t => String(typeof t === 'object' ? t.taskId : t))]));
+          // Merge local+zustand tasks by taskId, keeping richer data
+          const localTaskMap = new Map(localTasks.map(t => [String(t.taskId), t]));
+          for (const t of currentZustand.completedTasks) {
+            const id = String(typeof t === 'object' ? t.taskId : t);
+            const obj = typeof t === 'object' ? t : { taskId: id, stars: 1, foundPrinciple: '', solutions: [], solvedAt: '' };
+            if (!localTaskMap.has(id) || (obj.solutions?.length || 0) > (localTaskMap.get(id).solutions?.length || 0)) {
+              localTaskMap.set(id, obj);
+            }
+          }
+          localTasks = Array.from(localTaskMap.values());
           localStars = Math.max(localStars, currentZustand.totalStars);
           localBuildings = Array.from(new Set([...localBuildings, ...currentZustand.unlockedBuildings]));
+          localStreak = Math.max(localStreak, currentZustand.streak || 0);
+          localLastPlayDate = localLastPlayDate || currentZustand.lastPlayDate || null;
 
           // 1. Load cloud FIRST (before any write — don't overwrite with stale local data)
           const cloudData = await loadProgress(session.user.id);
-          const cloudCompleted = cloudData?.completedTasks || [];
+          const cloudTasks = cloudData?.completedTasks || []; // now rich objects
           const cloudStars = cloudData?.stars || 0;
           const cloudBuildings = cloudData?.unlockedBuildings || [];
+          const cloudStreak = cloudData?.streak || 0;
+          const cloudLastPlayDate = cloudData?.lastPlayDate || null;
 
-          // 2. Merge: union of tasks, max stars, union of buildings
-          const mergedCompleted = Array.from(new Set([...cloudCompleted, ...localCompleted]));
+          // 2. Merge rich task objects — union by taskId, prefer richer solutions[], higher stars
+          const mergedTaskMap = new Map(cloudTasks.map(t => [String(t.taskId), t]));
+          for (const t of localTasks) {
+            const id = String(t.taskId);
+            const cloud = mergedTaskMap.get(id);
+            if (!cloud) {
+              mergedTaskMap.set(id, t);
+            } else {
+              mergedTaskMap.set(id, {
+                ...cloud,
+                stars: Math.max(cloud.stars || 1, t.stars || 1),
+                solutions: (t.solutions?.length || 0) >= (cloud.solutions?.length || 0) ? (t.solutions || []) : (cloud.solutions || []),
+                foundPrinciple: t.foundPrinciple || cloud.foundPrinciple || '',
+                solvedAt: t.solvedAt || cloud.solvedAt || '',
+              });
+            }
+          }
+          const mergedCompleted = Array.from(mergedTaskMap.values());
           const mergedStars = Math.max(localStars, cloudStars);
           const mergedBuildings = Array.from(new Set([...cloudBuildings, ...localBuildings]));
+          const mergedStreak = Math.max(localStreak, cloudStreak);
+          const mergedLastPlayDate = localLastPlayDate || cloudLastPlayDate;
 
           // 3. Save merged result back to cloud
           await syncProgress(session.user.id, {
@@ -243,17 +289,20 @@ export default function App() {
             stars: mergedStars,
             completedTasks: mergedCompleted,
             unlockedBuildings: mergedBuildings,
+            streak: mergedStreak,
+            lastPlayDate: mergedLastPlayDate,
           });
 
-          // 4. Apply to Zustand — preserve object format, merge in new IDs from cloud as minimal objects
+          // 4. Apply to Zustand — use merged rich objects directly
           useGameStore.setState((state) => {
             const existingIds = new Set(state.completedTasks.map(t => String(typeof t === 'object' ? t.taskId : t)));
-            const cloudOnlyIds = mergedCompleted.filter(id => !existingIds.has(String(id)));
-            const cloudAsObjects = cloudOnlyIds.map(id => ({ taskId: String(id), stars: 1, foundPrinciple: '', solvedAt: '' }));
+            const cloudOnly = mergedCompleted.filter(t => !existingIds.has(String(t.taskId)));
             return {
               totalStars: Math.max(state.totalStars, mergedStars),
-              completedTasks: [...state.completedTasks, ...cloudAsObjects],
-              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings]))
+              completedTasks: [...state.completedTasks, ...cloudOnly],
+              unlockedBuildings: Array.from(new Set([...state.unlockedBuildings, ...mergedBuildings])),
+              streak: Math.max(state.streak || 0, mergedStreak),
+              lastPlayDate: state.lastPlayDate || mergedLastPlayDate,
             };
           });
 
@@ -261,8 +310,10 @@ export default function App() {
           isMergingRef.current = false;
 
           // For toast: what was new vs already in cloud
-          const newlyAdded = localCompleted.filter(id => !cloudCompleted.includes(id));
-          const alreadyHad = localCompleted.filter(id => cloudCompleted.includes(id));
+          const cloudIds = new Set(cloudTasks.map(t => String(t.taskId)));
+          const localIds = localTasks.map(t => String(t.taskId));
+          const newlyAdded = localIds.filter(id => !cloudIds.has(id));
+          const alreadyHad = localIds.filter(id => cloudIds.has(id));
 
           // Show sync result toast
           if (localCompleted.length > 0) {
@@ -746,20 +797,23 @@ export default function App() {
         )}
 
         {phase === "dragon-bubble" && (
-          <DragonBubbleScreen t={t} theme={theme} lang={lang} onStart={(opts) => {
-            setHasSeenOnboarding(true);
-            if (opts?.tutorial) {
-              const allTasks = remoteTasks || TASKS;
-              setTask(allTasks.find(t => t.id === tutorialTaskId) || allTasks[0]);
-              setIsTutorial(true);
-              setPhase("task-preview");
-              setTimeout(() => onboarding.startOnboarding(), 400);
-            } else {
-              setPhase("city");
-              // Start tooltip onboarding after city renders
-              setTimeout(() => onboarding.checkAndStart(), 600);
-            }
-          }} />
+          <DragonBubbleScreen t={t} theme={theme} lang={lang}
+            onStart={(opts) => {
+              setHasSeenOnboarding(true);
+              if (opts?.tutorial) {
+                const allTasks = remoteTasks || TASKS;
+                setTask(allTasks.find(t => t.id === tutorialTaskId) || allTasks[0]);
+                setIsTutorial(true);
+                setPhase("task-preview");
+                setTimeout(() => onboarding.startOnboarding(), 400);
+              } else {
+                setPhase("city");
+                setTimeout(() => onboarding.checkAndStart(), 600);
+              }
+            }}
+            onSkip={() => { setHasSeenOnboarding(true); setPhase("city"); }}
+            onLogin={() => { saveReturnPhase("city"); setPhase("auth"); }}
+          />
         )}
 
         {phase === "auth" && (

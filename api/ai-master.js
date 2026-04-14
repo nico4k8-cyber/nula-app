@@ -106,8 +106,8 @@ export default async function handler(req) {
 
       const retryHintInstruction = stars < 3
         ? (lang === 'en'
-          ? `3. "retryHint" — 1 warm sentence: acknowledge what the child found, then hint that another approach exists. Format: "You found [their idea] — and there's actually another way too. Want to look?" Be specific to their solution, inviting, not critical.`
-          : `3. "retryHint" — 1 тёплое предложение: признай что нашёл ребёнок, намекни что есть ещё один способ. Формат: "Ты нашёл [их идея] — а ещё есть один интересный способ. Хочешь попробовать найти?" Конкретно к их решению, приглашение, без критики.`)
+          ? `3. "retryHint" — 1-2 short sentences: notice a specific flaw or limitation in the child's current solution (e.g. requires effort, has a side effect, is not elegant, involves bringing something external). Then invite them to find an approach without that flaw. Format: "Your solution works, but [specific limitation]. Want to find one without that?" Be concrete about the actual flaw, not generic.`
+          : `3. "retryHint" — 1-2 коротких предложения: замечай конкретный недостаток текущего решения ребёнка (например: требует усилий, есть побочный эффект, нужно что-то принести/купить, не очень элегантно). Затем предложи найти вариант, где этого не будет. Формат: "Твоё решение работает, но [конкретный недостаток]. Хочешь найти, где этого не будет?" Конкретно к реальному решению, без шаблонов.`)
         : '';
 
       const prompt = lang === 'en'

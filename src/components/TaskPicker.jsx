@@ -19,19 +19,25 @@ export default function TaskPicker({
   t,
   lang = 'ru'
 }) {
+  // Normalize completedTasks to a Set of string IDs (handles both object[] and id[] formats)
+  const completedIds = React.useMemo(
+    () => new Set(completedTasks.map(t => String(typeof t === 'object' ? t.taskId : t))),
+    [completedTasks]
+  );
+
   const filtered = TASKS
     .filter(taskItem => taskItem.category === activeCategory)
     .sort((a, b) => (a.difficulty || 1) - (b.difficulty || 1));
 
   // Difficulty locking: difficulty:3 locked until all difficulty:1-2 in category are done
   const easyTasks = filtered.filter(t => (t.difficulty || 1) < 3);
-  const allEasyDone = easyTasks.length > 0 && easyTasks.every(t => completedTasks.includes(t.id));
+  const allEasyDone = easyTasks.length > 0 && easyTasks.every(t => completedIds.has(String(t.id)));
   const isDifficultyLocked = (taskItem) => (taskItem.difficulty || 1) >= 3 && !allEasyDone;
 
   const dailyTask = getDailyTask(TASKS);
   const isDailyInThisCategory = dailyTask?.category === activeCategory;
 
-  const doneCount = filtered.filter(t => completedTasks.includes(t.id)).length;
+  const doneCount = filtered.filter(t => completedIds.has(String(t.id))).length;
 
   const getTitle = (taskItem) => {
     if (lang === 'en' && taskItem.title_en) return taskItem.title_en;
@@ -114,7 +120,7 @@ export default function TaskPicker({
          <div className="grid grid-cols-2 gap-4 max-w-[600px] mx-auto">
            {/* Daily task card — full width, only if it belongs to this category */}
            {isDailyInThisCategory && (() => {
-             const isDone = completedTasks.includes(dailyTask.id);
+             const isDone = completedIds.has(String(dailyTask.id));
              return (
                <button key={`daily-${dailyTask.id}`}
                  onClick={() => onStartTask(dailyTask.id)}
@@ -163,12 +169,12 @@ export default function TaskPicker({
                {!allEasyDone && filtered.some(t => isDifficultyLocked(t)) && (
                  <div className="col-span-2 py-3 px-4 text-center bg-slate-50 rounded-2xl border border-slate-200 mb-1">
                    <p className="text-xs text-slate-500 font-bold">
-                     Реши ещё {easyTasks.filter(t => !completedTasks.includes(t.id)).length} задач{easyTasks.filter(t => !completedTasks.includes(t.id)).length === 1 ? 'у' : ''} чтобы открыть сложные
+                     Реши ещё {easyTasks.filter(t => !completedIds.has(String(t.id))).length} задач{easyTasks.filter(t => !completedIds.has(String(t.id))).length === 1 ? 'у' : ''} чтобы открыть сложные
                    </p>
                  </div>
                )}
                {filtered.map((taskItem) => {
-               const isDone = completedTasks.includes(taskItem.id);
+               const isDone = completedIds.has(String(taskItem.id));
                const isDaily = isDailyInThisCategory && taskItem.id === dailyTask.id;
                const isLocked = isDifficultyLocked(taskItem);
                return (
