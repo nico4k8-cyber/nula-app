@@ -210,26 +210,44 @@ Ruflo MCP запущен на `/opt/homebrew/bin/ruflo`. Используй ег
 
 ### Начало каждой сессии:
 ```
-mcp__ruflo__memory_search  namespace=nula, query="project context"
-mcp__ruflo__task_list      → посмотреть pending задачи
+1. mcp__ruflo__memory_search  namespace=nula, query="project context"
+2. mcp__ruflo__task_list      → посмотреть pending задачи
+3. выбрать приоритетную задачу и запустить поток ниже
 ```
 
-### Новый баг / задача:
+### Поток выполнения задачи (3 шага):
+
+**Шаг 1 — ПЛАН** (агент-планировщик, Sonnet):
 ```
-mcp__ruflo__task_create    type=bugfix/feature, priority=high/normal/low
-mcp__ruflo__hooks_route    → получить рекомендацию какой агент/модель
+Agent(subagent_type="planner", model="sonnet")
+→ анализирует задачу, читает нужные файлы
+→ возвращает: что менять, в каких файлах, как именно
+→ план одобряется (или корректируется) перед шагом 2
+```
+
+**Шаг 2 — ВЫПОЛНЕНИЕ** (агент-исполнитель, Haiku):
+```
+Agent(subagent_type="coder", model="haiku")
+→ получает готовый план из шага 1
+→ вносит изменения строго по плану
+→ не принимает архитектурных решений
+```
+
+**Шаг 3 — PUSH**:
+```
+git push  (auto-commit уже сделал commit через хук)
+mcp__ruflo__task_update  status=completed
+mcp__ruflo__memory_store namespace=nula, key=last-commit
 ```
 
 ### Роутинг моделей:
-| Задача | Модель |
-|--------|--------|
-| Механическая правка по готовому плану (1-2 файла) | `Agent(model="haiku")` |
-| Отладка логики, промпты, архитектура | Sonnet (основная сессия) |
-| Стратегия, сложные решения | Sonnet |
-| НЕ использовать | Opus |
+| Ситуация | Модель |
+|----------|--------|
+| Планирование, отладка логики, промпты | Sonnet (основная сессия или planner агент) |
+| Выполнение по готовому плану | `Agent(model="haiku")` |
+| Архитектура, тупик, глобальные решения | Opus (2-3 раза за цикл разработки) |
 
-### После выполнения задачи:
-```
-mcp__ruflo__task_update    status=completed
-mcp__ruflo__memory_store   namespace=nula, key=last-commit, value=summary
-```
+### Когда использовать Opus:
+- общая архитектура новой фичи
+- зашли в тупик и Sonnet не решает
+- глобальный рефакторинг или новая фаза продукта
