@@ -156,6 +156,7 @@ export default function App() {
   const inputRef = useRef(null);
   const isMergingRef = useRef(false); // prevents Cloud Sync Effect from overwriting during login merge
   const msgIdRef = useRef(0); // monotonic counter for stable message keys
+  const debriefGenRef = useRef(0); // increments on each new task start; lets async debrief discard stale results
   const nextMsgId = () => { msgIdRef.current += 1; return msgIdRef.current; };
 
   // Audio Hook - Plays main theme throughout the app
@@ -475,6 +476,7 @@ export default function App() {
     setIsHinting(false);
     setDebriefAI(null);
     setChildSolution('');
+    debriefGenRef.current++;
     setPhase("dialog");
     setIsTyping(true);
     setTimeout(() => inputRef.current?.focus(), 200);
@@ -514,6 +516,7 @@ export default function App() {
     setIsHinting(false);
     setDebriefAI(null);
     setChildSolution('');
+    debriefGenRef.current++;
 
     // Auto-create TRIZ state if it's a TRIZ task (has core_problem or ikr)
     if (task.core_problem || task.ikr) {
@@ -598,9 +601,13 @@ export default function App() {
           trackEvent(EVENTS.DEBRIEF_VIEWED, { taskId: task?.id, stars: rating });
           // Start generating personalized debrief in background
           setDebriefAI(null);
+          const debriefGenId = ++debriefGenRef.current;
           const history = messages.map(m => ({ role: m.type === 'bot' ? 'assistant' : 'user', text: m.text }));
           generateDebrief({ task, history, stars: rating, childSolution: sol, lang }).then(ai => {
-            setDebriefAI(ai || { feedback: null, insight: null });
+            // Discard result if a new task has already started
+            if (debriefGenRef.current === debriefGenId) {
+              setDebriefAI(ai || { feedback: null, insight: null });
+            }
           });
         }, 2000);
       }
