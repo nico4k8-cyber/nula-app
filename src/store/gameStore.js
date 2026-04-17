@@ -33,7 +33,7 @@ export const useGameStore = create(
 
       // ---- СТРУКТУРА ДЛЯ РЕЖИМА WORLD MAP (АРХИПЕЛАГИ) ----
       islands: {
-        'main': { solved: 0, total: 17, stars: 0, status: 'locked' }, // unlocked after first task
+        'main': { solved: 0, total: 17, stars: 0, status: 'active' }, // open by default for new users
         'craft': { solved: 0, total: 13, stars: 0, status: 'locked' }, // workshop(7) + farm(6)
         'science': { solved: 0, total: 0, stars: 0, status: 'fog' },
         'summit': { solved: 0, total: 0, stars: 0, status: 'fog' },
@@ -347,7 +347,7 @@ export const useGameStore = create(
     }),
     {
       name: 'nula-game-storage',
-      version: 5,
+      version: 6,
       migrate: (state, version) => {
         if (version < 4) {
           state = {
@@ -362,6 +362,12 @@ export const useGameStore = create(
               'summit':  { solved: 0, total: 0,  stars: 0, status: 'fog' },
             },
           };
+        }
+        if (version < 6) {
+          // Fix: main island was locked by default — new users were stuck with no tasks
+          if (state.islands?.main?.status === 'locked') {
+            state = { ...state, islands: { ...state.islands, main: { ...state.islands.main, status: 'active' } } };
+          }
         }
         if (version < 5) {
           const oldTasks = state.completedTasks || [];
