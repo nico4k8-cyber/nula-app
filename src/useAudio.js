@@ -78,10 +78,30 @@ export function useAudio(tracks = []) {
   // Unlock AudioContext on first user gesture (required for iOS Safari + Chrome mobile)
   useEffect(() => {
     const unlock = () => {
-      tryUnlockAudio();
+      // Inline synchronous unlock for iOS Safari: audioCtx.resume() and audio.play()
+      // MUST be called directly in the gesture handler to work on iOS
+      const audio = getGlobalAudio();
+
+      // Create and resume AudioContext synchronously
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          gainNode = audioCtx.createGain();
+          gainNode.gain.value = TARGET_GAIN;
+          mediaSourceNode = audioCtx.createMediaElementSource(audio);
+          mediaSourceNode.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+      } catch {
+        // Web Audio API not available — fall back silently
+      }
+
       // If music is enabled but was blocked by autoplay policy, start it now
-      if (isEnabledRef.current && audioRef.current && audioRef.current.src && audioRef.current.paused) {
-        audioRef.current.play().catch(() => {});
+      if (isEnabledRef.current && audio && audio.src && audio.paused) {
+        audio.play().catch(() => {});
       }
     };
     document.addEventListener('touchstart', unlock, { once: true, passive: true });
