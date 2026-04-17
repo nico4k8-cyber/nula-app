@@ -99,7 +99,13 @@ export default function DialogView({
   const chatScrollRef     = useRef(null);
 
   useEffect(() => {
-    bottomRef?.current?.scrollIntoView({ behavior: "smooth" });
+    const el = bottomRef?.current;
+    if (el) {
+      try { el.scrollIntoView({ behavior: "smooth", block: "end" }); } catch {}
+      // Fallback для Telegram WebView где scrollIntoView не работает
+      const parent = el.closest('[class*="scroll"]') || el.parentElement;
+      if (parent) parent.scrollTop = parent.scrollHeight;
+    }
   }, [messages]);
 
   useEffect(() => {

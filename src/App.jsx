@@ -174,6 +174,15 @@ export default function App() {
 
   /* ═══ Effects ═══ */
 
+  // Telegram Mini App: инициализация
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand(); // разворачиваем на весь экран
+    }
+  }, []);
+
   // Start music on first user interaction (browsers block autoplay until gesture)
   useEffect(() => {
     const audioRef = { current: audio };

@@ -76,7 +76,7 @@ export default async function handler(req, res) {
                 const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+                    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", reply_markup: JSON.stringify({ inline_keyboard: [[ { text: "🎮 Открыть задачу", web_app: { url: "https://triznula.vercel.app" } } ]] }) }),
                 });
                 if (resp.ok) {
                     sent++;
