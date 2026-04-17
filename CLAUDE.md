@@ -201,3 +201,35 @@ npx @claude-flow/cli@latest doctor --fix
 
 - Documentation: https://github.com/ruvnet/claude-flow
 - Issues: https://github.com/ruvnet/claude-flow/issues
+
+---
+
+## Ruflo Workflow (ОБЯЗАТЕЛЬНО)
+
+Ruflo MCP запущен на `/opt/homebrew/bin/ruflo`. Используй его активно в каждой сессии.
+
+### Начало каждой сессии:
+```
+mcp__ruflo__memory_search  namespace=nula, query="project context"
+mcp__ruflo__task_list      → посмотреть pending задачи
+```
+
+### Новый баг / задача:
+```
+mcp__ruflo__task_create    type=bugfix/feature, priority=high/normal/low
+mcp__ruflo__hooks_route    → получить рекомендацию какой агент/модель
+```
+
+### Роутинг моделей:
+| Задача | Модель |
+|--------|--------|
+| Механическая правка по готовому плану (1-2 файла) | `Agent(model="haiku")` |
+| Отладка логики, промпты, архитектура | Sonnet (основная сессия) |
+| Стратегия, сложные решения | Sonnet |
+| НЕ использовать | Opus |
+
+### После выполнения задачи:
+```
+mcp__ruflo__task_update    status=completed
+mcp__ruflo__memory_store   namespace=nula, key=last-commit, value=summary
+```
