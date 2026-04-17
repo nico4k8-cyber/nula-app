@@ -21,6 +21,9 @@ const TIMEZONES = [
   { label: "🌏 UTC+12 (Fiji, New Zealand)", offset: 12 },
 ];
 
+const SUPPORT_CHAT = process.env.TELEGRAM_SUPPORT_CHAT || "@triznula_support";
+const APP_URL = process.env.APP_URL || "https://triznula.vercel.app";
+
 async function supabaseUpsert(url, key, chatId) {
   const resp = await fetch(`${url}/rest/v1/telegram_subscribers`, {
     method: "POST",
@@ -108,6 +111,42 @@ async function handleTimezoneSelection(botToken, chatId, hour) {
   });
 }
 
+async function supabaseDelete(url, key, chatId) {
+  const resp = await fetch(`${url}/rest/v1/telegram_subscribers?chat_id=eq.${chatId}`, {
+    method: "DELETE",
+    headers: {
+      "apikey": key,
+      "Authorization": `Bearer ${key}`,
+    },
+  });
+  if (!resp.ok) {
+    const txt = await resp.text();
+    console.error("Supabase delete error:", resp.status, txt);
+  }
+  return resp;
+}
+
+async function sendStartMessage(botToken, chatId) {
+  const keyboard = {
+    inline_keyboard: [
+      [{ text: "⏰ Настроить время уведомлений", callback_data: "cmd:time" }],
+      [{ text: "🎮 Открыть Город ТРИЗ", web_app: { url: APP_URL } }],
+      [{ text: "❌ Отписаться", callback_data: "cmd:unsubscribe" }],
+    ]
+  };
+  await sendMessage(botToken, chatId,
+    `👋 Привет! Я буду присылать тебе <b>задачу дня</b> из Города ТРИЗ.\n\n` +
+    `📚 <b>Что умею:</b>\n` +
+    `/time — изменить время уведомлений\n` +
+    `/unsubscribe — отписаться\n` +
+    `/subscribe — подписаться снова\n` +
+    `/help — помощь\n` +
+    `/support — написать в поддержку\n\n` +
+    `Выбери удобное время — и каждый день получай новую задачу!`,
+    { reply_markup: JSON.stringify(keyboard) }
+  );
+}
+
 async function handleTimezoneConfirm(botToken, supabaseUrl, supabaseKey, chatId, hour, offset) {
   const notifyHourUtc = ((hour - offset) % 24 + 24) % 24;
 
@@ -175,6 +214,21 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // Обработка cmd: кнопок
+    if (data.startsWith("cmd:")) {
+      const cmd = data.split(":")[1];
+      if (cmd === "time" && botToken) {
+        await handleTimeSelection(botToken, chatId);
+      } else if (cmd === "subscribe" && supabaseUrl && supabaseKey) {
+        await supabaseUpsert(supabaseUrl, supabaseKey, chatId);
+        if (botToken) await sendMessage(botToken, chatId, "✅ Ты снова подписан! Используй /time для настройки времени.");
+      } else if (cmd === "unsubscribe" && supabaseUrl && supabaseKey) {
+        await supabaseDelete(supabaseUrl, supabaseKey, chatId);
+        if (botToken) await sendMessage(botToken, chatId, "👋 Ты отписался. Напиши /subscribe чтобы вернуться.");
+      }
+      return res.status(200).json({ ok: true });
+    }
+
     return res.status(200).json({ ok: true });
   }
 
@@ -189,26 +243,72 @@ export default async function handler(req, res) {
 
   if (!chatId) return res.status(200).json({ ok: true });
 
-  // Обработка /start
+  // /start — подписаться + приветствие
   if (text.startsWith("/start")) {
     if (supabaseUrl && supabaseKey) {
       await supabaseUpsert(supabaseUrl, supabaseKey, chatId);
     }
-
     if (botToken) {
-      await sendMessage(botToken, chatId, "👋 Привет! Я буду присылать тебе задачу дня из Города ТРИЗ.");
-      await handleTimeSelection(botToken, chatId);
+      await sendStartMessage(botToken, chatId);
     }
-
     return res.status(200).json({ ok: true });
   }
 
-  // Обработка /time для изменения времени
+  // /subscribe — подписаться
+  if (text.startsWith("/subscribe")) {
+    if (supabaseUrl && supabaseKey) {
+      await supabaseUpsert(supabaseUrl, supabaseKey, chatId);
+    }
+    if (botToken) {
+      await sendMessage(botToken, chatId, "✅ Ты подписан на задачи дня! Используй /time чтобы выбрать удобное время.");
+    }
+    return res.status(200).json({ ok: true });
+  }
+
+  // /unsubscribe — отписаться
+  if (text.startsWith("/unsubscribe")) {
+    if (supabaseUrl && supabaseKey) {
+      await supabaseDelete(supabaseUrl, supabaseKey, chatId);
+    }
+    if (botToken) {
+      await sendMessage(botToken, chatId,
+        "👋 Ты отписался от задач дня.\n\nЕсли захочешь вернуться — просто напиши /subscribe.",
+        { reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔔 Подписаться снова", callback_data: "cmd:subscribe" }]] }) }
+      );
+    }
+    return res.status(200).json({ ok: true });
+  }
+
+  // /time — изменить время уведомлений
   if (text.startsWith("/time")) {
     if (botToken) {
       await handleTimeSelection(botToken, chatId);
     }
+    return res.status(200).json({ ok: true });
+  }
 
+  // /help — помощь
+  if (text.startsWith("/help")) {
+    if (botToken) {
+      await sendMessage(botToken, chatId,
+        `ℹ️ <b>Город ТРИЗ — бот задач дня</b>\n\n` +
+        `/subscribe — подписаться на задачи\n` +
+        `/unsubscribe — отписаться\n` +
+        `/time — изменить время уведомлений\n` +
+        `/support — написать в поддержку\n\n` +
+        `🎮 <a href="${APP_URL}">Открыть приложение</a>`
+      );
+    }
+    return res.status(200).json({ ok: true });
+  }
+
+  // /support — написать в поддержку
+  if (text.startsWith("/support")) {
+    if (botToken) {
+      await sendMessage(botToken, chatId,
+        `📩 Напишите нам в поддержку: ${SUPPORT_CHAT}\n\nМы отвечаем в рабочее время.`
+      );
+    }
     return res.status(200).json({ ok: true });
   }
 
