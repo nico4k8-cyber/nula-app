@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const secret = process.env.NOTIFY_SECRET;
   if (!secret) return res.status(500).json({ error: "NOTIFY_SECRET not set" });
 
-  const appUrl = process.env.APP_URL || "https://nula-triz.vercel.app";
+  const appUrl = process.env.APP_URL || "https://triznula.vercel.app";
   const today = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
 
   const message = `🧠 Задача дня — ${today}!\n\nЗайди в Город ТРИЗ и реши сегодняшнюю задачу. Не прерывай серию! 🔥`;
