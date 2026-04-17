@@ -650,9 +650,32 @@ export default function App() {
     }
   }
 
+  // Логирование диалога в Telegram при завершении задачи (fire-and-forget)
+  const sendDialogLog = useCallback(async (currentTask, currentMessages, stars, solution) => {
+    const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+    const chatId = import.meta.env.VITE_TELEGRAM_LOG_CHAT;
+    if (!botToken || !chatId) return;
+    try {
+      const header = `🎮 <b>${currentTask?.title || currentTask?.id}</b>\n⭐ ${stars}/3 | 💡 ${solution || '—'}\n\n`;
+      const body = (currentMessages || [])
+        .filter(m => m.text && !m.loading)
+        .map(m => `<b>${m.type === 'child' ? '👤' : '🤖'}:</b> ${m.text}`)
+        .join('\n\n');
+      const full = header + body;
+      for (let i = 0; i < full.length; i += 3800) {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: full.slice(i, i + 3800), parse_mode: 'HTML' }),
+        });
+      }
+    } catch (e) { console.warn('Telegram log failed:', e); }
+  }, []);
+
   function goOutcome() {
     const isNew = !getCompletedIds().includes(task.id);
     completeTask(task.id, sessionStars, childSolution, task);
+    sendDialogLog(task, messages, sessionStars, childSolution).catch(() => {});
     setChildSolution('');
     checkUnlocks();
     updateStreak();
