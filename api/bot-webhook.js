@@ -21,8 +21,17 @@ const TIMEZONES = [
   { label: "🌏 UTC+12 (Fiji, New Zealand)", offset: 12 },
 ];
 
-const SUPPORT_CHAT = process.env.TELEGRAM_SUPPORT_CHAT || "@triznula_support";
 const APP_URL = process.env.APP_URL || "https://triznula.vercel.app";
+const SUPPORT_MODE_PREFIX = "nula_support_mode:";
+const SUPPORT_MSG_PREFIX = "nula_support_msg:";
+
+async function kvCmd(url, token, ...parts) {
+  const resp = await fetch(`${url}/${parts.map(p => encodeURIComponent(p)).join("/")}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!resp.ok) throw new Error(`KV error: ${resp.status} ${await resp.text()}`);
+  return resp.json();
+}
 
 async function supabaseUpsert(url, key, chatId) {
   const resp = await fetch(`${url}/rest/v1/telegram_subscribers`, {
@@ -55,12 +64,11 @@ async function sendMessage(botToken, chatId, text, extra = {}) {
     body: JSON.stringify(payload),
   });
 
+  const data = await resp.json();
   if (!resp.ok) {
-    const txt = await resp.text();
-    console.error("Telegram sendMessage error:", resp.status, txt);
+    console.error("Telegram sendMessage error:", resp.status, JSON.stringify(data));
   }
-
-  return resp;
+  return data;
 }
 
 async function updateSubscriber(url, key, chatId, fields) {
@@ -177,6 +185,9 @@ export default async function handler(req, res) {
   const botToken = process.env.TELEGRAM_SUBSCRIBER_BOT_TOKEN;
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  const adminChatId = process.env.TELEGRAM_LOG_CHAT;
+  const kvUrl = process.env.KV_REST_API_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN;
 
   const update = req.body;
 
@@ -239,9 +250,27 @@ export default async function handler(req, res) {
   }
 
   const chatId = message.chat?.id;
-  const text = message.text || "";
+  const text = (message.text || "").trim();
+  const firstName = message.from?.first_name || "друг";
+  const username = message.from?.username || "";
 
   if (!chatId) return res.status(200).json({ ok: true });
+
+  // ═══ ADMIN REPLY → пересылаем пользователю ═══
+  if (adminChatId && String(chatId) === String(adminChatId) && message.reply_to_message && kvUrl && kvToken) {
+    try {
+      const repliedMsgId = message.reply_to_message.message_id;
+      const result = await kvCmd(kvUrl, kvToken, "get", `${SUPPORT_MSG_PREFIX}${repliedMsgId}`);
+      const userChatId = result.result;
+      if (userChatId && botToken) {
+        await sendMessage(botToken, userChatId, `💬 <b>Ответ от команды Города ТРИЗ:</b>\n\n${text}`);
+        await sendMessage(botToken, adminChatId, `✅ Ответ доставлен пользователю.`);
+        return res.status(200).json({ ok: true });
+      }
+    } catch (e) {
+      console.error("Admin reply error:", e.message);
+    }
+  }
 
   // /start — подписаться + приветствие
   if (text.startsWith("/start")) {
@@ -302,14 +331,54 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  // /support — написать в поддержку
+  // /support — включить режим поддержки
   if (text.startsWith("/support")) {
+    if (kvUrl && kvToken) {
+      try {
+        await kvCmd(kvUrl, kvToken, "set", `${SUPPORT_MODE_PREFIX}${chatId}`, "1", "EX", "600");
+      } catch (e) {
+        console.error("KV set support mode error:", e.message);
+      }
+    }
     if (botToken) {
       await sendMessage(botToken, chatId,
-        `📩 Напишите нам в поддержку: ${SUPPORT_CHAT}\n\nМы отвечаем в рабочее время.`
+        `📩 <b>Поддержка</b>\n\n` +
+        `Напиши своё сообщение — я передам его команде. Ответим как можно скорее!\n\n` +
+        `<i>Можешь описать ошибку, задать вопрос или оставить отзыв.</i>`
       );
     }
     return res.status(200).json({ ok: true });
+  }
+
+  // Обычное сообщение — проверяем режим поддержки
+  if (kvUrl && kvToken && botToken && adminChatId) {
+    try {
+      const supportMode = await kvCmd(kvUrl, kvToken, "get", `${SUPPORT_MODE_PREFIX}${chatId}`);
+      if (supportMode.result) {
+        const userLabel = username ? `@${username}` : `id:${chatId}`;
+        const adminMsg = await sendMessage(botToken, adminChatId,
+          `📩 <b>Сообщение в поддержку</b>\n` +
+          `От: <b>${firstName}</b> (${userLabel})\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `${text}\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `<i>↩️ Ответь на это сообщение — ответ уйдёт пользователю</i>`
+        );
+        if (adminMsg.ok && adminMsg.result?.message_id) {
+          await kvCmd(kvUrl, kvToken, "set",
+            `${SUPPORT_MSG_PREFIX}${adminMsg.result.message_id}`,
+            String(chatId), "EX", "604800"
+          );
+        }
+        await kvCmd(kvUrl, kvToken, "del", `${SUPPORT_MODE_PREFIX}${chatId}`);
+        await sendMessage(botToken, chatId,
+          `✅ Сообщение отправлено! Ответим как можно скорее.\n\nЕщё вопрос? Напиши /support`
+        );
+        return res.status(200).json({ ok: true });
+      }
+    } catch (e) {
+      console.error("Support mode check error:", e.message);
+    }
   }
 
   return res.status(200).json({ ok: true });
