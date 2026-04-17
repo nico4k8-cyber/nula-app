@@ -870,7 +870,7 @@ export default function App() {
 
         {phase === "city" && (
           <div className="flex flex-col flex-1 min-h-screen relative overflow-hidden">
-            <div className="absolute top-0 inset-x-0 z-30 px-3 pt-3 pointer-events-none">
+            <div className="absolute top-0 inset-x-0 z-30 px-3 pt-3 pointer-events-none pr-32">
               <div className="pointer-events-auto">
                 <DailyChallenge
                   TASKS={remoteTasks || TASKS}
