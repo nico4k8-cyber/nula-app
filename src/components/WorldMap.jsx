@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
 
 const MAP_CONFIG = [
-  { id: 'main', name: 'Главный остров', left: '45%', top: 250, icon: '/assets/webp/main_island.webp' },
-  { id: 'craft', name: 'Заповедник', left: '30%', top: 650, icon: '/assets/webp/island_zapovednik.webp' },
-  { id: 'science', name: 'Остров Науки', left: '60%', top: 1050, icon: '/assets/webp/island_laboratory.webp' },
-  { id: 'summit', name: 'Пик Изобретателей', left: '40%', top: 1450, icon: '/assets/webp/island_tsar.webp' },
+  { id: 'main', name: 'Главный остров', left: '45%', top: 250, icon: '/img/webp/main_island.webp' },
+  { id: 'craft', name: 'Заповедник', left: '30%', top: 650, icon: '/img/webp/island_zapovednik.webp' },
+  { id: 'science', name: 'Остров Науки', left: '60%', top: 1050, icon: '/img/webp/island_laboratory.webp' },
+  { id: 'summit', name: 'Пик Изобретателей', left: '40%', top: 1450, icon: '/img/webp/island_tsar.webp' },
 ];
 
 function BezierPath({ p1, p2, isDone }) {
@@ -24,8 +24,9 @@ function BezierPath({ p1, p2, isDone }) {
   return (
     <path 
       d={d}
-      stroke={isDone ? '#34d399' : 'rgba(0,0,0,0.15)'}      strokeWidth={isDone ? '6' : '4'}
-      strokeDasharray={isDone ? 'none' : '12,10'}
+      stroke={isDone ? '#2d9b7f' : 'rgba(201,169,110,0.45)'}
+      strokeWidth={isDone ? '5' : '3'}
+      strokeDasharray={isDone ? 'none' : '10,9'}
       strokeLinecap="round"
       fill="none"
       className="transition-all duration-1000"
@@ -147,11 +148,12 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
       ref={containerRef}
       onScroll={handleScroll}
       data-onboard="world-map"
-      className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden overscroll-none bg-sky-300 select-none scrollbar-hide"
+      className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden overscroll-none select-none scrollbar-hide"
+      style={{ background: 'linear-gradient(180deg, #e8a87c 0%, #d99060 35%, #a07080 65%, #5b4e8c 100%)' }}
     >
       <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute top-[20%] left-[-10%] w-[60%] h-[40%] bg-indigo-600/20 blur-[150px] animate-pulse-soft" />
-        <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] bg-violet-600/20 blur-[150px] animate-pulse-soft" style={{ animationDelay: '3s' }} />
+        <div className="absolute top-[10%] left-[-10%] w-[70%] h-[40%] rounded-full" style={{ background: 'rgba(232,168,124,0.25)', filter: 'blur(120px)', animation: 'pulse-soft 6s ease-in-out infinite' }} />
+        <div className="absolute bottom-[15%] right-[-10%] w-[60%] h-[50%] rounded-full" style={{ background: 'rgba(91,78,140,0.3)', filter: 'blur(100px)', animation: 'pulse-soft 8s ease-in-out infinite 3s' }} />
       </div>
 
       <div 
@@ -256,7 +258,8 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
           onClick={() => setSelectedLock(null)}
         >
           <div 
-            className="flex flex-col h-[100dvh] w-full sm:w-[500px] bg-slate-900 rounded-t-[40px] border-t border-white/10 shadow-full p-10 transform animate-slideUp text-white"
+            className="flex flex-col h-[100dvh] w-full sm:w-[500px] rounded-t-[40px] border-t shadow-full p-10 transform animate-slideUp text-white"
+            style={{ background: '#1a2440', borderColor: 'rgba(201,169,110,0.2)' }}
             onClick={e => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-10" />
@@ -271,15 +274,15 @@ export default function WorldMap({ islands, unlockRequirements, totalSolved, onS
               </p>
             </div>
             
-            <div className="bg-slate-800/50 rounded-[32px] p-8 mb-10 border border-white/5">
+            <div className="rounded-[24px] p-8 mb-10" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(201,169,110,0.15)' }}>
                <div className="flex justify-between items-center mb-4">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t?.('hud.progress') || 'Прогресс'}</span>
                   <span className="text-sm font-bold text-indigo-400">{totalSolved} / {selectedLock.reqCount}</span>
                </div>
-               <div className="bg-slate-900 rounded-full h-3 overflow-hidden border border-white/5">
-                  <div 
-                    className="bg-indigo-500 h-full transition-all duration-1000 shadow-[0_0_15px_rgba(79,70,229,0.5)]" 
-                    style={{ width: `${Math.min((totalSolved / selectedLock.reqCount) * 100, 100)}%` }} 
+               <div className="rounded-full h-3 overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <div
+                    className="h-full transition-all duration-1000"
+                    style={{ background: 'linear-gradient(90deg, #e85d2f, #f07c4a)', boxShadow: '0 0 12px rgba(232,93,47,0.5)', width: `${Math.min((totalSolved / selectedLock.reqCount) * 100, 100)}%` }}
                   />
                </div>
             </div>
