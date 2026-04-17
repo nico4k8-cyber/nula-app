@@ -11,6 +11,7 @@ export default async function handler(req, res) {
 
   const appUrl = process.env.APP_URL || "https://triznula.vercel.app";
   const today = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  const currentHour = new Date().getUTCHours();
 
   const message = `🧠 Задача дня — ${today}!\n\nЗайди в Город ТРИЗ и реши сегодняшнюю задачу. Не прерывай серию! 🔥`;
 
@@ -21,6 +22,7 @@ export default async function handler(req, res) {
       secret,
       message,
       taskUrl: appUrl,
+      hour: currentHour,
     }),
   });
 

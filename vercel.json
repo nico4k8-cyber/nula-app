@@ -37,6 +37,6 @@
   ],
   "crons": [
     { "path": "/api/daily-summary", "schedule": "0 20 * * *" },
-    { "path": "/api/notify-daily", "schedule": "0 8 * * *" }
+    { "path": "/api/notify-daily", "schedule": "0 * * * *" }
   ]
 }

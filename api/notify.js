@@ -11,8 +11,12 @@
  *   NOTIFY_SECRET                 — произвольный секрет для защиты эндпоинта
  */
 
-async function getSubscribers(supabaseUrl, supabaseKey) {
-    const resp = await fetch(`${supabaseUrl}/rest/v1/telegram_subscribers?select=chat_id`, {
+async function getSubscribers(supabaseUrl, supabaseKey, hour = null) {
+    let url = `${supabaseUrl}/rest/v1/telegram_subscribers?select=chat_id`;
+    if (hour !== null) {
+        url = `${supabaseUrl}/rest/v1/telegram_subscribers?notify_hour_utc=eq.${hour}&select=chat_id`;
+    }
+    const resp = await fetch(url, {
         headers: {
             "apikey": supabaseKey,
             "Authorization": `Bearer ${supabaseKey}`,
@@ -40,7 +44,7 @@ export default async function handler(req, res) {
     if (req.method === "OPTIONS") return res.status(200).end();
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    const { secret, message, taskUrl } = req.body;
+    const { secret, message, taskUrl, hour } = req.body;
     const notifySecret = process.env.NOTIFY_SECRET;
 
     if (!notifySecret || secret !== notifySecret) {
@@ -56,7 +60,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const subscribers = await getSubscribers(supabaseUrl, supabaseKey);
+        const subscribers = await getSubscribers(supabaseUrl, supabaseKey, hour);
 
         if (subscribers.length === 0) {
             return res.status(200).json({ sent: 0, message: "No subscribers" });
