@@ -37,7 +37,7 @@ export default function SettingsMenu({
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center">
       <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white rounded-t-[48px] p-8 pb-12 flex flex-col gap-6 shadow-2xl animate-fade-in-up border-t border-slate-100">
+      <div className="relative w-full max-w-md bg-white rounded-t-[48px] p-8 pb-12 flex flex-col gap-6 shadow-2xl animate-fade-in-up border-t border-slate-100 max-h-[90dvh] overflow-y-auto">
         <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto -mt-4 mb-2" />
         
         <div className="flex flex-col gap-4">
