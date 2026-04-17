@@ -23,6 +23,7 @@ function parseTag(rawText) {
         .replace(/\[S:[0-4]\|R:[1-3]\]/g, '')
         .replace(/\[S:[0-4]\|R:[1-3]?/g, '')  // partial tag without closing ]
         .replace(/\[S:[0-4]?\|?R?:?[0-3]?\]?$/g, '')  // trailing broken tag at end
+        .replace(/\[S:[0-4]\]/g, '')            // bare [S:N] without R part
         .replace(/\n{3,}/g, '\n\n')
         .replace(/^["'\s]+|["'\s]+$/g, '')
         .trim();

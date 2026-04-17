@@ -464,6 +464,41 @@ export default function App() {
     setPhase("task-preview");
   }
 
+  async function startDialogRetry(prevSolution, retryHint) {
+    trackEvent(EVENTS.TASK_STARTED, { taskId: task?.id, retry: true });
+    setMessages([]);
+    setSessionStars(0);
+    setTaskRating(1);
+    setTwistChoice(null);
+    setPrizStep(1);
+    prizStepRef.current = 1;
+    setIsHinting(false);
+    setDebriefAI(null);
+    setChildSolution('');
+    setPhase("dialog");
+    setIsTyping(true);
+    setTimeout(() => inputRef.current?.focus(), 200);
+
+    // Show the retryHint as first bot message, then ask AI to continue from S:1
+    const hintText = retryHint || 'Попробуем найти другой вариант — без этого ограничения.';
+    setMessages([{ id: nextMsgId(), type: 'bot', text: hintText, ts: Date.now() }]);
+
+    // Send AI a context message: knows the previous solution, guides toward a new direction
+    const contextMsg = `[ПОВТОР] Предыдущее решение: "${prevSolution || '—'}". ${retryHint ? `Ориентир: ${retryHint}` : 'Ищем другой подход.'} Задай один короткий вопрос, который направит в другую сторону.`;
+    try {
+      const result = await askTriz(contextMsg, task, { phase: 1 }, [], difficulty);
+      if (result.newState) setTrizState(result.newState);
+      const aiText = result.text;
+      if (aiText) {
+        setMessages(prev => [...prev, { id: nextMsgId(), type: 'bot', text: aiText, ts: Date.now() }]);
+      }
+    } catch {
+      // hintText already shown, that's enough
+    } finally {
+      setIsTyping(false);
+    }
+  }
+
   async function startDialog() {
     if (!isPremium && dailyTasksCount >= 3) {
       setPhase("paywall");
@@ -475,7 +510,10 @@ export default function App() {
     setTaskRating(1);
     setTwistChoice(null);
     setPrizStep(0);
+    prizStepRef.current = 0;
     setIsHinting(false);
+    setDebriefAI(null);
+    setChildSolution('');
 
     // Auto-create TRIZ state if it's a TRIZ task (has core_problem or ikr)
     if (task.core_problem || task.ikr) {
@@ -938,9 +976,9 @@ export default function App() {
             lang={lang}
             onNext={goOutcome}
             onRetry={() => {
-              // Retry same task to get 3 stars (only offered when stars < 3)
+              // Retry same task — AI picks up from previous solution context
               trackEvent(EVENTS.TASK_STARTED, { taskId: task?.id, retry: true });
-              startDialog();
+              startDialogRetry(childSolution, debriefAI?.retryHint);
             }}
             onWantsMore={() => {
               trackEvent(EVENTS.TASK_COMPLETED, { taskId: task?.id, wantsMore: true });
