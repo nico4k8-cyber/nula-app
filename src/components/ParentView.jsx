@@ -131,7 +131,7 @@ export default function ParentView({ completedTasks, totalStars, streak, TASKS =
           onClick={() => onUnlock && onUnlock()}
           className="w-full py-4 rounded-[18px] bg-orange-500 text-white font-bold text-[16px] shadow-lg shadow-orange-200 active:scale-95 transition-all"
         >
-          КУПИТЬ ВСЁ ЗА 199₽/год
+          КУПИТЬ ВСЁ ЗА 199₽/мес при оплате за год
         </button>
 
         <p className="text-[11px] text-gray-400">
