@@ -40,7 +40,10 @@ export default function DebriefView({
   const showPrinciple = task?.trick?.name && (completedCount ?? 0) >= 5;
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-white animate-fade-in-up overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-white animate-fade-in-up">
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
 
       {/* Top celebration zone */}
       <div className="flex flex-col items-center justify-center pt-10 pb-4 px-6">
@@ -132,10 +135,10 @@ export default function DebriefView({
         </div>
       )}
 
-      <div className="flex-1" />
+      </div>{/* end scrollable */}
 
-      {/* CTA buttons */}
-      <div className="px-5 pb-10 pt-3 flex flex-col gap-3">
+      {/* CTA buttons — fixed at bottom */}
+      <div className="px-5 pb-10 pt-3 flex flex-col gap-3 flex-shrink-0">
         {stars < 3 && onRetry ? (
           <>
             {/* Hook text — separate from button, specific to flaw in current answer */}

@@ -428,7 +428,7 @@ export default function DialogView({
         )}
 
         {/* Задача решена */}
-        {prizStep >= 4 ? (
+        {prizStep >= 3 ? (
           <button
             onClick={onGoToDebrief}
             style={{ width:'100%', padding:16, background:`linear-gradient(135deg,${C.glow2},${C.glow})`, color:'#fff', fontSize:17, fontWeight:900, borderRadius:22, border:'none', cursor:'pointer', boxShadow:`0 4px 20px rgba(255,90,30,0.4)`, fontFamily:"'Baloo 2',sans-serif" }}

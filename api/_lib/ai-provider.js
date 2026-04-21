@@ -68,7 +68,7 @@ export async function getClaudeResponse({
 
     // Runtime stage guard — injected only when task already solved
     const stageGuard = prizStep >= 3
-      ? "\n⚡ ТЕКУЩАЯ СТАДИЯ: S:3. Задача уже решена. Применяй только правила S:3."
+      ? "\n⚡ ТЕКУЩАЯ СТАДИЯ: S:3. Задача уже решена. Если ребёнок пишет что-то после решения — ответь одной короткой тёплой фразой и предложи перейти к следующей задаче. Не отказывайся общаться и не говори что не можешь продолжать."
       : "";
 
     systemPrompt = `${persona.prompt}
