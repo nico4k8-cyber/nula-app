@@ -202,8 +202,12 @@ export default function App() {
   // Load tasks from Supabase; silently fall back to local TASKS if unavailable
   useEffect(() => {
     loadTasks().then(data => {
-      if (data && data.length > 0) setRemoteTasks(data);
-    }).catch(() => {/* offline — use local fallback */});
+      if (data && data.length > 0) {
+        setRemoteTasks(data);
+      } else {
+        console.error('[loadTasks] No active tasks returned from Supabase. data=', data);
+      }
+    }).catch((err) => { console.error('[loadTasks] fetch failed:', err); });
     loadAppConfig('tutorial_task_id').then(val => {
       if (val) setTutorialTaskId(Number(val));
     }).catch(() => {});

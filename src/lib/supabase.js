@@ -242,9 +242,10 @@ export const loadTasks = async (category) => {
   }
   const { data, error } = await query;
   if (error) {
-    console.error('loadTasks error:', error);
+    console.error('[loadTasks] Supabase error:', error.code, error.message);
     return null;
   }
+  console.log('[loadTasks] returned', data?.length ?? 'null', 'tasks');
   return data;
 };
 
